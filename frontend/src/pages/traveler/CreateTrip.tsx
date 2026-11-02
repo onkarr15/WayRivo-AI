@@ -65,7 +65,12 @@ const transports = ['Private AC Innova/Cab', 'Chauffeured Luxury Sedan', 'Self-D
 const CreateTrip: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const destinationParam = searchParams.get('destination');
+  const destinationParam = searchParams.get('destination') || '';
+  const fromLocationParam = searchParams.get('fromLocation') || '';
+  const startDateParam = searchParams.get('startDate') || '';
+  const travelersCountParam = parseInt(searchParams.get('travelersCount') || '2', 10) || 2;
+  const budgetParam = searchParams.get('budget') || '60000';
+  const preferenceParam = searchParams.get('preference') || 'Family Retreat';
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -74,16 +79,16 @@ const CreateTrip: React.FC = () => {
   const [aiInsights, setAiInsights] = useState<any>(null);
 
   const [form, setForm] = useState({
-    fromLocation: '',
-    destination: destinationParam || '',
-    startDate: '',
+    fromLocation: fromLocationParam,
+    destination: destinationParam,
+    startDate: startDateParam,
     endDate: '',
     numberOfDays: 5,
-    travelersCount: 2,
-    travelType: 'Family',
-    budget: '60000',
+    travelersCount: travelersCountParam,
+    travelType: travelersCountParam > 2 ? 'Family' : travelersCountParam === 2 ? 'Couple' : 'Solo',
+    budget: budgetParam,
     currency: 'INR',
-    travelStyle: 'Family Retreat',
+    travelStyle: preferenceParam,
     accommodationPreference: '4-Star Premium Resort',
     transportPreference: 'Private AC Innova/Cab',
     interests: ['Backwaters', 'Tea & Coffee Estates', 'Ayurvedic Spa'] as string[],
