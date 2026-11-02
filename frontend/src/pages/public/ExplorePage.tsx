@@ -108,8 +108,8 @@ const ExplorePage: React.FC = () => {
   const fetchDestinations = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await destinationService.getAll(0, 50);
-      const items = res.data?.data?.content;
+      const res = await destinationService.getAll(1, 50);
+      const items = Array.isArray(res.data?.data) ? res.data.data : res.data?.data?.content;
       if (items && items.length > 0) {
         setDestinations(items);
       } else {
