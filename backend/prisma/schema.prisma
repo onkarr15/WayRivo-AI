@@ -143,19 +143,22 @@ model User {
 // 2. DESTINATION
 // -------------------------------------------------------------
 model Destination {
-  id              String         @id @default(cuid())
-  name            String
-  slug            String         @unique
-  country         String         @default("India")
-  state           String?
-  description     String         @db.Text
-  imageUrl        String
-  bestTimeToVisit String?
-  averageBudget   Decimal        @default(25000.00) @db.Decimal(10, 2)
-  currency        String         @default("INR")
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                  String         @id @default(cuid())
+  name                String
+  slug                String         @unique
+  country             String         @default("India")
+  state               String?
+  description         String         @db.Text
+  imageUrl            String
+  bestTimeToVisit     String?
+  averageBudget       Decimal        @default(25000.00) @db.Decimal(10, 2)
+  currency            String         @default("INR")
+  popularAttractions  String[]       @default([])
+  travelTips          String[]       @default([])
+  highlights          String[]       @default([])
+  isActive            Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   // Relations
   hotels          Hotel[]
@@ -182,6 +185,9 @@ model Hotel {
   currency       String       @default("INR")
   amenities      String[]
   imageUrls      String[]
+  roomTypes      Json?
+  totalRooms     Int          @default(15)
+  availableRooms Int          @default(10)
   contactEmail   String?
   contactPhone   String?
   isActive       Boolean      @default(true)
@@ -208,6 +214,10 @@ model Activity {
   pricePerPerson Decimal      @db.Decimal(10, 2)
   currency       String       @default("INR")
   location       String?
+  difficultyLevel String?     @default("Moderate")
+  maxSlots       Int          @default(20)
+  availableSlots Int          @default(12)
+  includedItems  String[]     @default([])
   imageUrls      String[]
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
@@ -234,8 +244,11 @@ model TravelPackage {
   currency           String       @default("INR")
   inclusions         String[]
   exclusions         String[]
+  highlights         String[]     @default([])
+  imageUrls          String[]     @default([])
   cancellationPolicy String       @db.Text
   isRecommended      Boolean      @default(false)
+  availableSeats     Int          @default(15)
   expertName         String
   organizationName   String
   expertRating       Decimal      @default(4.8) @db.Decimal(2, 1)

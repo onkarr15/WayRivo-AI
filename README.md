@@ -73,26 +73,58 @@
 
 ---
 
-## 5. Phase Verification Checkpoint
+## 5. Travel Discovery & Booking Marketplace Endpoints (`/api/v1`)
 
-| Check | Result | Details |
-|---|---|---|
-| **Database Migrations** | ✅ Passed | Prisma schema updated with Phase 4 profile attributes and pushed to PostgreSQL |
-| **Backend TypeScript Build** | ✅ Passed | `tsc` compiled 100% cleanly into `backend/dist` with 0 errors |
-| **Frontend Production Build** | ✅ Passed | `tsc -b && vite build` compiled with 0 errors (2,339 modules in 499ms) |
-| **Integration Test Suite** | ✅ Passed | 14/14 API tests passed (Health, Register, Cookie, Verify Email, Login, Profile, Password Reset, RBAC Admin) |
-| **Security & Cookies** | ✅ Verified | HTTP-only cookie `wayrivo_token`, Rate limiting on auth attempts, BCrypt salt rounds 10 |
-| **Frontend Pages & UX** | ✅ Verified | Login, Register, Forgot Password, Reset Password, Profile, and Account Settings with Midnight Navy aesthetic |
+| Endpoint | Method | Description | Auth Required |
+|---|---|---|---|
+| `/api/v1/destinations` | GET | List destinations with pagination, state filter, search, & sorting | Public |
+| `/api/v1/destinations/:id` | GET | Retrieve destination by ID with associated hotels, activities, & packages | Public |
+| `/api/v1/destinations/slug/:slug` | GET | Retrieve destination by slug with popular attractions, travel tips, & inventory | Public |
+| `/api/v1/destinations` | POST | Create destination with photography, attractions & budget | `ADMIN` Role Required |
+| `/api/v1/destinations/:id` | PUT | Update destination details & attractions | `ADMIN` Role Required |
+| `/api/v1/destinations/:id` | DELETE | Soft-delete destination from live catalog | `ADMIN` Role Required |
+| `/api/v1/hotels` | GET | Filter hotels by destination, minStars, maxPrice, search, with room availability | Public |
+| `/api/v1/hotels/:id` | GET | Hotel details including room categories, amenities, & live room capacity | Public |
+| `/api/v1/hotels` | POST | Add hotel to inventory with room types & live room inventory | `ADMIN` Role Required |
+| `/api/v1/hotels/:id` | PUT | Update hotel pricing, amenities, & room availability | `ADMIN` Role Required |
+| `/api/v1/hotels/:id` | DELETE | Remove hotel from inventory | `ADMIN` Role Required |
+| `/api/v1/activities` | GET | Filter activities by category (Adventure, Sightseeing, Water sports, Cultural), duration & slots | Public |
+| `/api/v1/activities/:id` | GET | Activity details, difficulty level, included items, & slot availability | Public |
+| `/api/v1/activities` | POST | Create excursion with difficulty, duration, slots & pricing | `ADMIN` Role Required |
+| `/api/v1/activities/:id` | PUT | Update activity details & slot limits | `ADMIN` Role Required |
+| `/api/v1/activities/:id` | DELETE | Remove activity from catalog | `ADMIN` Role Required |
+| `/api/v1/packages` | GET | List packages with filters for recommendation, destination, & pricing | Public |
+| `/api/v1/packages/:id` | GET | Package details with inclusions, exclusions, cancellation policy, & seat capacity | Public |
+| `/api/v1/packages` | POST | Publish verified agency travel package with inclusions & seats | `ADMIN` Role Required |
+| `/api/v1/packages/:id` | PUT | Update travel package pricing, seats, & highlights | `ADMIN` Role Required |
+| `/api/v1/packages/:id` | DELETE | Unpublish travel package | `ADMIN` Role Required |
+| `/api/v1/admin/inventory` | GET | Catalog overview counts & low-inventory alerts (rooms <= 5, slots <= 6) | `ADMIN` Role Required |
 
 ---
 
-## 6. Development Roadmap
+## 6. Phase Verification Checkpoint
+
+| Check | Result | Details |
+|---|---|---|
+| **Database Migrations** | ✅ Passed | Prisma schema expanded with attractions, tips, room types, live availability, slot capacity & seat limits |
+| **Database Seeding** | ✅ Passed | 8 curated destinations (Kerala, Rajasthan, Goa, Ladakh, Manali, Andaman Islands, Varanasi, Meghalaya) seeded with hotels, activities, & packages |
+| **Backend TypeScript Build** | ✅ Passed | `tsc` compiled 100% cleanly into `backend/dist` with 0 errors |
+| **Frontend Production Build** | ✅ Passed | `tsc -b && vite build` compiled with 0 errors (2,346 modules in 565ms) |
+| **Integration Test Suite** | ✅ Passed | 20/20 automated API tests passed (Health, Auth, Profile, RBAC, Marketplace Listings, Detail Views, Filters, Admin Inventory CUD) |
+| **Security & RBAC Guard** | ✅ Verified | All Admin inventory endpoints (`POST`, `PUT`, `DELETE`, `/admin/inventory`) strictly guarded by `requireRoles([UserRole.ADMIN])` |
+| **Marketplace Discovery & UX** | ✅ Verified | Unified `/marketplace` hub, `/destinations/:id` deep-dive, reusable marketplace cards (`DestinationCard`, `HotelCard`, `ActivityCard`, `PackageCard`), dynamic modals, and interactive "Add to Trip" plan basket drawer |
+
+---
+
+## 7. Development Roadmap
 
 - [x] **Phase 0**: Project Audit & Architectural Inspection
 - [x] **Phase 1**: WayRivo AI 2.0 Design System & Visual Foundation
 - [x] **Phase 2**: WayRivo AI 2.0 Cinematic Landing Page & AI Search Experience
 - [x] **Phase 3**: Node.js + Express + TypeScript + Prisma Backend & Supabase Database
 - [x] **Phase 4**: Secure Authentication, Extended Profile Management & Role-Based Authorization
-- [ ] **Phase 5**: Google Gemini AI Engine with Autonomous Travel Agent & Tool Calling
-- [ ] **Phase 6**: PayPal Developer Sandbox Smart Checkout & Escrow Engine
-- [ ] **Phase 7**: End-to-End Validation, Security Hardening & Deployment
+- [x] **Phase 5**: Travel Discovery & Booking Marketplace (Destinations, Hotels, Activities, Packages & Admin Inventory)
+- [ ] **Phase 6**: Google Gemini AI Engine with Autonomous Travel Agent & Tool Calling
+- [ ] **Phase 7**: PayPal Developer Sandbox Smart Checkout & Escrow Engine
+- [ ] **Phase 8**: End-to-End Validation, Security Hardening & Deployment
+

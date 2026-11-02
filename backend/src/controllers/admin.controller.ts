@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { prisma } from '../config/db';
 import { sendSuccess } from '../utils/response';
 import { AuthRequest } from '../types';
+import { inventoryService } from '../services/inventory.service';
 
 export const getAdminStats = async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -40,6 +41,15 @@ export const getAuditLogs = async (req: AuthRequest, res: Response, next: NextFu
       },
     });
     sendSuccess(res, logs);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getInventoryOverview = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const overview = await inventoryService.getInventoryOverview();
+    sendSuccess(res, overview);
   } catch (error) {
     next(error);
   }
