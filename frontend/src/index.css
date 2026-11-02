@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+@theme {
+  /* Midnight Navy Backgrounds */
+  --color-navy-dark: #060D1A;
+  --color-navy: #0A1324;
+  --color-navy-light: #111D33;
+  --color-navy-card: #0F1D35;
+
+  /* Deep Blue Surfaces */
+  --color-surface-dark: #0A1526;
+  --color-surface: #101F36;
+  --color-surface-elevated: #162A47;
+  --color-surface-hover: #1C3459;
+  --color-border: #1E3352;
+  --color-border-light: #2B456C;
+  --color-border-cyan: rgba(0, 240, 255, 0.25);
+  --color-border-gold: rgba(212, 175, 55, 0.3);
+
+  /* Electric Cyan & Turquoise Accents */
+  --color-cyan: #00F0FF;
+  --color-cyan-light: #52F5FF;
+  --color-cyan-dark: #00B3BF;
+  --color-cyan-glow: rgba(0, 240, 255, 0.4);
+  --color-turquoise: #14B8A6;
+  --color-turquoise-light: #2DD4BF;
+  --color-turquoise-dark: #0D9488;
+
+  /* Champagne Gold Highlights */
+  --color-gold: #D4AF37;
+  --color-gold-light: #F3E5AB;
+  --color-gold-dark: #AA820A;
+  --color-gold-glow: rgba(212, 175, 55, 0.35);
+
+  /* Legacy Accent Compatibility (Mapped to rich cyan/gold) */
+  --color-orange: #00F0FF;
+  --color-orange-light: #52F5FF;
+  --color-orange-dark: #00B3BF;
+
+  /* Neutrals & Text */
+  --color-bg: #060D1A;
+  --color-text: #F1F5F9;
+  --color-text-muted: #94A3B8;
+  --color-text-light: #94A3B8;
+  --color-text-lighter: #64748B;
+
+  /* Functional Status */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #00F0FF;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Manrope', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    background-color: var(--color-navy-dark);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-400 to-cyan-500 text-slate-950 font-bold hover:from-cyan-300 hover:to-cyan-400 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-surface-elevated text-slate-100 hover:bg-surface-hover border border-border-light hover:border-cyan/40 shadow-sm active:scale-[0.98];
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-bold hover:from-amber-300 hover:to-yellow-400 shadow-lg shadow-amber-500/20 active:scale-[0.98];
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-2 border-cyan/70 text-cyan hover:bg-cyan/10 hover:border-cyan active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-slate-400 hover:text-slate-100 hover:bg-white/5;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-red-500/90 hover:bg-red-500 text-white shadow-lg shadow-red-500/20 active:scale-[0.98];
+  }
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/20 active:scale-[0.98];
+  }
+
+  /* Cards & Surfaces */
+  .card {
+    @apply bg-surface/90 rounded-2xl border border-border shadow-lg shadow-black/20 hover:border-border-light transition-all duration-300 backdrop-blur-md;
+  }
+  .card-glow {
+    @apply bg-surface/90 rounded-2xl border border-cyan/30 shadow-lg shadow-cyan-500/10 hover:border-cyan/50 hover:shadow-cyan-500/20 transition-all duration-300 backdrop-blur-md;
+  }
+  .card-gold {
+    @apply bg-surface/90 rounded-2xl border border-gold/30 shadow-lg shadow-amber-500/10 hover:border-gold/50 transition-all duration-300 backdrop-blur-md;
+  }
+
+  /* Inputs & Forms */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-border bg-surface-dark/80 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan/40 focus:border-cyan transition-all duration-200 text-sm;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-300 mb-1.5;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide;
+  }
+  .badge-cyan {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30;
+  }
+  .badge-turquoise {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30;
+  }
+  .badge-gold {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30;
+  }
+  .badge-success {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30;
+  }
+  .badge-warning {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30;
+  }
+  .badge-danger {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-300 border border-red-500/30;
+  }
+  .badge-info {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30;
+  }
+  .badge-neutral {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700;
+  }
+
+  /* Headings */
+  .section-title {
+    @apply text-3xl md:text-4xl font-extrabold text-white tracking-tight;
+  }
+  .section-subtitle {
+    @apply text-slate-400 text-base md:text-lg mt-2 max-w-2xl;
+  }
+
+  /* Skeleton Loading */
+  .skeleton {
+    @apply animate-pulse bg-slate-800/80 rounded-xl;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-cyan-400 to-teal-300;
+  }
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-cyan-400 to-teal-300;
+  }
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-200;
+  }
+  .glass {
+    @apply bg-surface/80 backdrop-blur-xl border border-border-light/60;
+  }
+  .glass-card {
+    @apply bg-surface/75 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/40;
+  }
+  .glass-panel {
+    @apply bg-navy-light/80 backdrop-blur-2xl border border-border/80;
+  }
+  .cyan-glow {
+    box-shadow: 0 0 25px -3px rgba(0, 240, 255, 0.3);
+  }
+  .gold-glow {
+    box-shadow: 0 0 25px -3px rgba(212, 175, 55, 0.3);
+  }
+}

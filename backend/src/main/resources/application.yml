@@ -1,0 +1,45 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: wayrivo-backend
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/wayrivo?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: onkarrp15
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    open-in-view: true
+
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+app:
+  jwt:
+    secret: WayRivoSuperSecretKeyForJWTTokenGeneration2026MustBeAtLeast256BitsLong!!
+    expiration-ms: 86400000
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://10.161.123.219:5173
+
+logging:
+  level:
+    com.wayrivo: INFO
+    org.springframework.security: WARN
