@@ -12,22 +12,35 @@ interface JwtPayload {
 
 export const authenticate = async (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('Authentication token missing or invalid');
+    let token: string | undefined;
+
+    // 1. Check HTTP-only cookie
+    if (req.cookies && req.cookies.wayrivo_token) {
+      token = req.cookies.wayrivo_token;
     }
 
-    const token = authHeader.split(' ')[1];
+    // 2. Fall back to Authorization Header: Bearer <token>
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
+
+    if (!token) {
+      throw new UnauthorizedError('Authentication token missing or expired. Please sign in.');
+    }
+
     let decoded: JwtPayload;
 
     try {
       decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
     } catch (err) {
-      throw new UnauthorizedError('Invalid or expired token');
+      throw new UnauthorizedError('Invalid or expired authentication session');
     }
 
     const user = await prisma.user.findUnique({
@@ -38,6 +51,8 @@ export const authenticate = async (
         name: true,
         role: true,
         status: true,
+        isEmailVerified: true,
+        avatarUrl: true,
       },
     });
 
@@ -46,7 +61,7 @@ export const authenticate = async (
     }
 
     if (user.status === 'SUSPENDED') {
-      throw new ForbiddenError('Account is suspended. Please contact support.');
+      throw new ForbiddenError('Account is suspended. Please contact WayRivo security support.');
     }
 
     req.user = user as AuthenticatedUser;
@@ -57,13 +72,20 @@ export const authenticate = async (
 };
 
 export const requireRoles = (allowedRoles: UserRole[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+  return (req: AuthRequest, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       next(new UnauthorizedError('Authentication required'));
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = req.user.role;
+    // Transparent equivalence: USER matches TRAVELER and vice versa
+    const isMatched =
+      allowedRoles.includes(userRole) ||
+      (allowedRoles.includes(UserRole.USER) && userRole === UserRole.TRAVELER) ||
+      (allowedRoles.includes(UserRole.TRAVELER) && userRole === UserRole.USER);
+
+    if (!isMatched) {
       next(new ForbiddenError(`Access denied. Requires one of roles: ${allowedRoles.join(', ')}`));
       return;
     }

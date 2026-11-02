@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authService } from '../services';
 
-interface User {
-  userId: number;
+export interface User {
+  id: string;
+  userId?: string | number; // Legacy alias
   name: string;
   email: string;
   role: string;
+  phone?: string;
+  avatarUrl?: string;
+  isEmailVerified?: boolean;
+  preferredDestinations?: string[];
+  travelInterests?: string[];
+  budgetPreference?: string;
+  preferredCurrency?: string;
 }
 
 interface AuthContextType {
@@ -14,8 +22,9 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<any>;
   register: (data: any) => Promise<any>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
+  refreshProfile: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -42,32 +51,89 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     const res = await authService.login({ email, password });
-    const data = res.data;
-    if (data.success) {
-      const userData: User = { userId: data.userId, name: data.name, email: data.email, role: data.role };
-      setToken(data.token);
+    const payload = res.data;
+    if (payload.success) {
+      const u = payload.data?.user || payload;
+      const authToken = payload.data?.token || payload.token;
+
+      const userData: User = {
+        id: u.id || u.userId || payload.userId,
+        userId: u.id || u.userId || payload.userId,
+        name: u.name || payload.name,
+        email: u.email || payload.email,
+        role: u.role || payload.role,
+        phone: u.phone,
+        avatarUrl: u.avatarUrl,
+        isEmailVerified: u.isEmailVerified,
+        preferredDestinations: u.preferredDestinations || [],
+        travelInterests: u.travelInterests || [],
+        budgetPreference: u.budgetPreference || 'Moderate',
+        preferredCurrency: u.preferredCurrency || 'INR',
+      };
+
+      setToken(authToken);
       setUser(userData);
-      localStorage.setItem('wayrivo_token', data.token);
+      localStorage.setItem('wayrivo_token', authToken);
       localStorage.setItem('wayrivo_user', JSON.stringify(userData));
     }
-    return data;
+    return payload;
   };
 
   const register = async (formData: any) => {
     const res = await authService.register(formData);
-    const data = res.data;
-    if (data.success) {
-      const userData: User = { userId: data.userId, name: data.name, email: data.email, role: data.role };
-      setToken(data.token);
+    const payload = res.data;
+    if (payload.success) {
+      const u = payload.data?.user || payload;
+      const authToken = payload.data?.token || payload.token;
+
+      const userData: User = {
+        id: u.id || u.userId,
+        userId: u.id || u.userId,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        phone: u.phone,
+        avatarUrl: u.avatarUrl,
+        isEmailVerified: u.isEmailVerified,
+      };
+
+      setToken(authToken);
       setUser(userData);
-      localStorage.setItem('wayrivo_token', data.token);
+      localStorage.setItem('wayrivo_token', authToken);
       localStorage.setItem('wayrivo_user', JSON.stringify(userData));
     }
-    return data;
+    return payload;
+  };
+
+  const refreshProfile = async () => {
+    try {
+      const res = await authService.getProfile();
+      if (res.data?.success && res.data.data) {
+        const u = res.data.data;
+        const updated: User = {
+          id: u.id,
+          userId: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          phone: u.phone,
+          avatarUrl: u.avatarUrl,
+          isEmailVerified: u.isEmailVerified,
+          preferredDestinations: u.preferredDestinations || [],
+          travelInterests: u.travelInterests || [],
+          budgetPreference: u.budgetPreference || 'Moderate',
+          preferredCurrency: u.preferredCurrency || 'INR',
+        };
+        setUser(updated);
+        localStorage.setItem('wayrivo_user', JSON.stringify(updated));
+      }
+    } catch (e) {
+      console.warn('Failed to refresh profile:', e);
+    }
   };
 
   const updateUser = (userData: Partial<User>) => {
-    setUser(prev => {
+    setUser((prev) => {
       if (!prev) return null;
       const updated = { ...prev, ...userData };
       localStorage.setItem('wayrivo_user', JSON.stringify(updated));
@@ -75,15 +141,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('wayrivo_token');
-    localStorage.removeItem('wayrivo_user');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore network errors on logout
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('wayrivo_token');
+      localStorage.removeItem('wayrivo_user');
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, updateUser, isAuthenticated: !!token }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        login,
+        register,
+        logout,
+        updateUser,
+        refreshProfile,
+        isAuthenticated: !!token,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

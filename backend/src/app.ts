@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import apiRouter from './routes';
 import { standardRateLimiter } from './middleware/rateLimiter';
@@ -11,6 +12,9 @@ export const app = express();
 
 // Security Headers
 app.use(helmet());
+
+// Cookie Parser for secure HTTP-only cookies
+app.use(cookieParser());
 
 // CORS Configuration
 const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
@@ -25,7 +29,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key', 'X-CSRF-Token'],
   })
 );
 

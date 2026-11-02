@@ -13,6 +13,7 @@ import {
   MapPin,
   Sparkles,
   Bot,
+  Settings,
 } from 'lucide-react';
 import { notificationService, messageService } from '../services';
 
@@ -235,12 +236,21 @@ const Navbar: React.FC = () => {
                       </Link>
 
                       <Link
-                        to={user?.role === 'EXPERT' ? '/expert/profile' : '/traveler/profile'}
+                        to="/profile"
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
                       >
                         <User className="w-3.5 h-3.5 text-teal-400" />
                         Profile
+                      </Link>
+
+                      <Link
+                        to="/settings"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-slate-400" />
+                        Account Settings
                       </Link>
 
                       <div className="my-1 border-t border-border/80" />

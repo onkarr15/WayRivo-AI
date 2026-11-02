@@ -13,8 +13,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-navy-dark flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -23,10 +23,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (roles && user && !roles.includes(user.role)) {
-    const dashboardPath = user.role === 'ADMIN' ? '/admin/dashboard' :
-      user.role === 'EXPERT' ? '/expert/dashboard' : '/traveler/dashboard';
-    return <Navigate to={dashboardPath} replace />;
+  if (roles && user) {
+    const isAuthorized =
+      roles.includes(user.role) ||
+      (roles.includes('TRAVELER') && user.role === 'USER') ||
+      (roles.includes('USER') && user.role === 'TRAVELER');
+
+    if (!isAuthorized) {
+      const dashboardPath =
+        user.role === 'ADMIN'
+          ? '/admin/dashboard'
+          : user.role === 'EXPERT'
+          ? '/expert/dashboard'
+          : '/traveler/dashboard';
+      return <Navigate to={dashboardPath} replace />;
+    }
   }
 
   return <>{children}</>;

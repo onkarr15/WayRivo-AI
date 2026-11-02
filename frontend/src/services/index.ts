@@ -3,9 +3,14 @@ import api from './api';
 export const authService = {
   register: (data: any) => api.post('/auth/register', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
   getMe: () => api.get('/auth/me'),
-  updateProfile: (data: any) => api.put('/auth/profile', data),
-  changePassword: (data: any) => api.post('/auth/change-password', data),
+  verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (data: { token: string; newPassword: string }) => api.post('/auth/reset-password', data),
+  getProfile: () => api.get('/users/profile'),
+  updateProfile: (data: any) => api.patch('/users/profile', data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) => api.put('/users/change-password', data),
 };
 
 export const tripRequestService = {
@@ -70,22 +75,22 @@ export const expertService = {
 };
 
 export const messageService = {
-  send: (data: { recipientId?: number; receiverId?: number; content?: string; message?: string; tripRequestId?: number }) =>
+  send: (data: { recipientId?: number | string; receiverId?: number | string; content?: string; message?: string; tripRequestId?: number | string }) =>
     api.post('/messages', {
       receiverId: data.receiverId || data.recipientId,
       message: data.message || data.content,
       tripRequestId: data.tripRequestId,
     }),
   getConversations: () => api.get('/messages/conversations'),
-  getConversation: (partnerId: number) => api.get(`/messages/conversation/${partnerId}`),
+  getConversation: (partnerId: number | string) => api.get(`/messages/conversation/${partnerId}`),
   getUnreadCount: () => api.get('/messages/unread-count'),
-  markAsRead: (messageId: number) => api.patch(`/messages/${messageId}/read`),
+  markAsRead: (messageId: number | string) => api.patch(`/messages/${messageId}/read`),
 };
 
 export const notificationService = {
   getAll: (page = 0, size = 20) => api.get(`/notifications?page=${page}&size=${size}`),
   getUnreadCount: () => api.get('/notifications/unread-count'),
-  markAsRead: (id: number) => api.patch(`/notifications/${id}/read`),
+  markAsRead: (id: number | string) => api.patch(`/notifications/${id}/read`),
   markAllAsRead: () => api.patch('/notifications/read-all'),
 };
 

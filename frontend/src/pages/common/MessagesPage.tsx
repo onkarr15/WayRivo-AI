@@ -5,10 +5,10 @@ import { messageService } from '../../services';
 import { Send, User, MessageSquare, Clock } from 'lucide-react';
 
 interface Message {
-  id: number;
-  senderId: number;
+  id: number | string;
+  senderId: number | string;
   senderName: string;
-  recipientId: number;
+  recipientId: number | string;
   recipientName: string;
   content: string;
   sentAt: string;
@@ -16,7 +16,7 @@ interface Message {
 }
 
 interface ConversationSummary {
-  partnerId: number;
+  partnerId: number | string;
   partnerName: string;
   partnerRole?: string;
   lastMessage: string;
@@ -27,10 +27,10 @@ interface ConversationSummary {
 const MessagesPage: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const initialRecipientId = searchParams.get('recipientId') ? Number(searchParams.get('recipientId')) : null;
+  const initialRecipientId = searchParams.get('recipientId') ? searchParams.get('recipientId') : null;
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [activePartnerId, setActivePartnerId] = useState<number | null>(initialRecipientId);
+  const [activePartnerId, setActivePartnerId] = useState<number | string | null>(initialRecipientId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loadingConv, setLoadingConv] = useState(true);
@@ -56,7 +56,7 @@ const MessagesPage: React.FC = () => {
     },
   ], []);
 
-  const fallbackMessages = React.useMemo<Record<number, Message[]>>(() => ({
+  const fallbackMessages = React.useMemo<Record<string | number, Message[]>>(() => ({
     2: [
       { id: 1, senderId: 2, senderName: 'Vikram Mehta', recipientId: user?.userId || 1, recipientName: user?.name || 'You', content: 'Hello! I noticed your request for the Manali trip. Would you prefer river rafting included?', sentAt: '10:30 AM', readStatus: true },
       { id: 2, senderId: user?.userId || 1, senderName: user?.name || 'You', recipientId: 2, recipientName: 'Vikram Mehta', content: 'Yes please! We would love that, along with a camp stay.', sentAt: '10:38 AM', readStatus: true },
@@ -93,7 +93,7 @@ const MessagesPage: React.FC = () => {
     setLoadingConv(false);
   }, [activePartnerId, fallbackConversations]);
 
-  const fetchMessages = React.useCallback(async (partnerId: number) => {
+  const fetchMessages = React.useCallback(async (partnerId: number | string) => {
     try {
       const res = await messageService.getConversation(partnerId);
       const data = res.data?.data;

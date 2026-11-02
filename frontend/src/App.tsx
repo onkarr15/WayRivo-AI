@@ -14,8 +14,10 @@ import HowItWorksPage from './pages/public/HowItWorksPage';
 import AboutPage from './pages/public/AboutPage';
 import LoginPage from './pages/public/LoginPage';
 import RegisterPage from './pages/public/RegisterPage';
+import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
+import ResetPasswordPage from './pages/public/ResetPasswordPage';
 
-// Traveler pages
+// Traveler & User pages
 import TravelerDashboard from './pages/traveler/TravelerDashboard';
 import CreateTrip from './pages/traveler/CreateTrip';
 import MyRequests from './pages/traveler/MyRequests';
@@ -24,6 +26,7 @@ import CompareProposals from './pages/traveler/CompareProposals';
 import Bookings from './pages/traveler/Bookings';
 import BookingConfirmationPage from './pages/traveler/BookingConfirmationPage';
 import TravelerProfile from './pages/traveler/TravelerProfile';
+import AccountSettingsPage from './pages/traveler/AccountSettingsPage';
 
 // Expert pages
 import ExpertDashboard from './pages/expert/ExpertDashboard';
@@ -60,6 +63,8 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
 
             {/* Traveler Protected Routes */}
@@ -79,6 +84,9 @@ function App() {
               <Route path="/traveler/booking-confirmation/:id" element={<BookingConfirmationPage />} />
               <Route path="/traveler/messages" element={<MessagesPage />} />
               <Route path="/traveler/profile" element={<TravelerProfile />} />
+              <Route path="/traveler/settings" element={<AccountSettingsPage />} />
+              <Route path="/profile" element={<TravelerProfile />} />
+              <Route path="/settings" element={<AccountSettingsPage />} />
             </Route>
 
             {/* Expert Protected Routes */}

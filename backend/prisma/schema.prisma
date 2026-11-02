@@ -13,6 +13,7 @@ generator client {
 // -------------------------------------------------------------
 
 enum UserRole {
+  USER
   TRAVELER
   EXPERT
   ADMIN
@@ -111,9 +112,20 @@ model User {
   role          UserRole     @default(TRAVELER)
   phone         String?
   avatarUrl     String?
-  status        UserStatus   @default(ACTIVE)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  status                 UserStatus   @default(ACTIVE)
+  isEmailVerified        Boolean      @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+
+  // Extended Profile Preferences
+  preferredDestinations  String[]     @default([])
+  travelInterests        String[]     @default([])
+  budgetPreference       String?      @default("Moderate")
+  preferredCurrency      String       @default("INR")
+
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   // Relations
   bookings      Booking[]

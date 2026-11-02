@@ -1,97 +1,273 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { Eye, EyeOff, MapPin } from 'lucide-react';
+import { Bot, Sparkles, Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Return to previous route or default dashboard
+  const from = (location.state as any)?.from?.pathname;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       const data = await login(email, password);
       if (data.success) {
-        const path = data.role === 'ADMIN' ? '/admin/dashboard' : data.role === 'EXPERT' ? '/expert/dashboard' : '/traveler/dashboard';
-        navigate(path);
+        if (from) {
+          navigate(from, { replace: true });
+        } else {
+          const role = data.data?.user?.role || data.role;
+          const target =
+            role === 'ADMIN'
+              ? '/admin/dashboard'
+              : role === 'EXPERT'
+              ? '/expert/dashboard'
+              : '/traveler/dashboard';
+          navigate(target, { replace: true });
+        }
       } else {
-        setError(data.message || 'Login failed');
+        setError(data.message || 'Login failed. Please check your credentials.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          'Invalid email or password. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFillDemo = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword('password123');
+    setError('');
+  };
+
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-navy via-navy-light to-navy items-center justify-center p-12">
-        <div className="max-w-md text-white">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange to-orange-dark rounded-2xl flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold">Way<span className="text-orange">Rivo</span></span>
+    <div className="min-h-screen bg-navy-dark flex">
+      {/* Left Column: Cinematic Visual & Demo Quick-Login */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-surface-dark overflow-hidden flex-col justify-between p-12 border-r border-border">
+        {/* Ambient Glows */}
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-0 w-80 h-80 bg-gold-400/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Brand */}
+        <Link to="/" className="flex items-center gap-2.5 z-10 group w-fit">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+            <Bot className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-3xl font-bold mb-4">Welcome Back!</h2>
-          <p className="text-gray-300 text-lg leading-relaxed">Sign in to access your dashboard, manage your trips, and connect with travel experts.</p>
-          <div className="mt-10 p-6 bg-white/10 backdrop-blur rounded-2xl">
-            <p className="text-sm text-gray-300 mb-3 font-semibold">Demo Accounts:</p>
-            <div className="space-y-2 text-sm text-gray-400">
-              <p>👤 Traveler: <code className="text-orange">arjun@example.com</code></p>
-              <p>🏢 Expert: <code className="text-orange">vikram@example.com</code></p>
-              <p>🔑 Admin: <code className="text-orange">admin@wayrivo.com</code></p>
-              <p className="text-xs mt-2">Password for all: <code className="text-orange">password123</code></p>
-            </div>
+          <div className="flex flex-col">
+            <span className="font-heading font-extrabold text-xl text-white tracking-tight flex items-center gap-1.5">
+              WayRivo <span className="text-cyan-400">AI</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                2.0
+              </span>
+            </span>
           </div>
+        </Link>
+
+        {/* Cinematic Headline & Copy */}
+        <div className="max-w-md z-10 my-auto py-8">
+          <Badge variant="cyan" size="sm" icon={<Sparkles className="w-3.5 h-3.5 text-cyan-400" />}>
+            Intelligent Travel Ecosystem
+          </Badge>
+          <h2 className="text-3xl font-extrabold text-white mt-4 tracking-tight leading-tight">
+            Step Into the Future of <span className="gradient-text">Autonomous Travel</span>.
+          </h2>
+          <p className="text-slate-400 text-sm mt-3 leading-relaxed">
+            Access your AI-orchestrated itineraries, review specialist proposals, and complete verified bookings backed by PayPal Escrow security.
+          </p>
+
+          {/* Quick Demo Credentials Panel */}
+          <div className="mt-8 p-5 rounded-2xl bg-surface/80 border border-cyan-500/20 backdrop-blur-xl shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-cyan-400" /> Demo Credentials (Click to Autofill)
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => handleFillDemo('arjun@example.com')}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-surface-dark border border-border hover:border-cyan-500/40 text-left transition-all group cursor-pointer"
+              >
+                <div>
+                  <p className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                    👤 Traveler Account
+                  </p>
+                  <p className="text-[11px] text-slate-400">arjun@example.com</p>
+                </div>
+                <Badge variant="cyan" size="sm">Select</Badge>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFillDemo('vikram@example.com')}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-surface-dark border border-border hover:border-cyan-500/40 text-left transition-all group cursor-pointer"
+              >
+                <div>
+                  <p className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                    🏢 Travel Expert Agency
+                  </p>
+                  <p className="text-[11px] text-slate-400">vikram@example.com</p>
+                </div>
+                <Badge variant="cyan" size="sm">Select</Badge>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFillDemo('admin@wayrivo.com')}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-surface-dark border border-border hover:border-gold-500/40 text-left transition-all group cursor-pointer"
+              >
+                <div>
+                  <p className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                    🔑 System Administrator
+                  </p>
+                  <p className="text-[11px] text-slate-400">admin@wayrivo.com</p>
+                </div>
+                <Badge variant="gold" size="sm">Admin</Badge>
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 text-center mt-3">
+              Default password: <code className="text-cyan-300">password123</code>
+            </p>
+          </div>
+        </div>
+
+        {/* Footer Note */}
+        <div className="text-xs text-slate-500 z-10">
+          WayRivo AI 2.0 • Secured with 256-bit encryption & PayPal Escrow
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange to-orange-dark rounded-xl flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-navy">Way<span className="text-orange">Rivo</span></span>
+      {/* Right Column: Sign In Form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-md"
+        >
+          {/* Mobile Header */}
+          <div className="lg:hidden flex items-center gap-2 mb-6 justify-center">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-heading font-extrabold text-xl text-white">
+                WayRivo <span className="text-cyan-400">AI</span>
+              </span>
+            </Link>
           </div>
 
-          <h1 className="text-2xl font-bold text-navy mb-1">Sign In</h1>
-          <p className="text-text-light mb-8">Enter your credentials to continue</p>
+          <div className="text-left mb-6">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Welcome back
+            </h1>
+            <p className="text-slate-400 text-sm mt-1.5">
+              Enter your credentials to access your traveler dashboard
+            </p>
+          </div>
 
-          {error && <div className="bg-red-50 text-danger text-sm px-4 py-3 rounded-xl mb-6 border border-red-200">{error}</div>}
+          {/* Error Banner */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-3.5 mb-5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-rose-300 text-xs leading-relaxed"
+            >
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </motion.div>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="label">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" placeholder="you@example.com" required />
-            </div>
-            <div>
-              <label className="label">Password</label>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                Email Address
+              </label>
               <div className="relative">
-                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="input pr-10" placeholder="••••••••" required />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-text">
-                  {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="traveler@example.com"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full pl-10 pr-11 py-3 rounded-xl bg-surface border border-border text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                >
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full py-3">
-              {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Sign In'}
-            </button>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={loading}
+              rightIcon={<ArrowRight className="w-4 h-4 ml-1" />}
+            >
+              Sign In to WayRivo
+            </Button>
           </form>
 
-          <p className="text-center text-sm text-text-light mt-6">
-            Don't have an account? <Link to="/register" className="text-orange font-semibold hover:underline">Sign Up</Link>
+          {/* Registration link */}
+          <p className="text-center text-sm text-slate-400 mt-6">
+            Don't have an account yet?{' '}
+            <Link to="/register" className="font-bold text-cyan-400 hover:text-cyan-300 transition-colors">
+              Create an account
+            </Link>
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
