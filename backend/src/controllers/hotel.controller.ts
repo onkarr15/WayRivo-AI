@@ -6,7 +6,11 @@ export const getHotels = async (req: Request, res: Response, next: NextFunction)
   try {
     const options = {
       destinationId: req.query.destinationId as string | undefined,
-      minStars: req.query.stars ? parseInt(req.query.stars as string) : undefined,
+      minStars: req.query.stars
+        ? parseInt(req.query.stars as string)
+        : req.query.minStars
+        ? parseInt(req.query.minStars as string)
+        : undefined,
       minPrice: req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined,
       maxPrice: req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined,
       search: req.query.search as string | undefined,

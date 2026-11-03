@@ -108,7 +108,7 @@ export const AdminInventory: React.FC = () => {
       setHotels(hotelRes.data?.data || []);
       setActivities(actRes.data?.data || []);
       setPackages(pkgRes.data?.data || []);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to load inventory data');
     } finally {
       setLoading(false);
@@ -338,7 +338,7 @@ export const AdminInventory: React.FC = () => {
       if (activeTab === 'packages') await packageService.delete(id);
       toast.success(`Removed "${name}" from inventory`);
       loadData();
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to delete item');
     }
   };

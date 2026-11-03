@@ -8,9 +8,12 @@ export class DestinationService {
   }
 
   async getDestinationById(id: string) {
-    const destination = await destinationRepository.findById(id);
+    let destination = await destinationRepository.findById(id);
     if (!destination) {
-      throw new NotFoundError(`Destination not found with id: ${id}`);
+      destination = await destinationRepository.findBySlug(id);
+    }
+    if (!destination) {
+      throw new NotFoundError(`Destination not found with id or slug: ${id}`);
     }
     return destination;
   }
