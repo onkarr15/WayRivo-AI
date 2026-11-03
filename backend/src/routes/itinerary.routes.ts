@@ -4,13 +4,25 @@ import {
   getItineraryById,
   getUserItineraries,
 } from '../controllers/itinerary.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validate';
-import { saveItinerarySchema } from '../validators/itinerary.validator';
+import {
+  generateAdvancedItinerary,
+  calculateDetailedBudget,
+  optimizeItineraryBudget,
+  saveCompleteItinerary,
+  updateItineraryWithSafetyCheck,
+} from '../controllers/itinerary-intelligence.controller';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.post('/', authenticate, validate(saveItinerarySchema), saveItinerary);
+// Advanced Itinerary & Budget Intelligence Endpoints
+router.post('/generate', optionalAuthenticate, generateAdvancedItinerary);
+router.post('/calculate-budget', optionalAuthenticate, calculateDetailedBudget);
+router.post('/optimize-budget', optionalAuthenticate, optimizeItineraryBudget);
+
+// Itinerary Management
+router.post('/', authenticate, saveCompleteItinerary);
+router.put('/:id', authenticate, updateItineraryWithSafetyCheck);
 router.get('/my', authenticate, getUserItineraries);
 router.get('/:id', authenticate, getItineraryById);
 

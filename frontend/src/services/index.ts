@@ -182,3 +182,48 @@ export const adminService = {
   getBookings: (page = 0, size = 10) => api.get(`/admin/bookings?page=${page}&size=${size}`),
   getReviews: (page = 0, size = 10) => api.get(`/admin/reviews?page=${page}&size=${size}`),
 };
+
+export const itineraryIntelligenceService = {
+  generateItinerary: (data: {
+    destinationId?: string;
+    destinationName?: string;
+    numberOfDays?: number;
+    startDate?: string;
+    travelersCount?: number;
+    interests?: string[];
+    budget?: number;
+    hotelId?: string;
+    activityIds?: string[];
+    travelStyle?: string;
+  }) => api.post('/itineraries/generate', data),
+
+  calculateBudget: (data: {
+    destinationName?: string;
+    numberOfDays?: number;
+    travelersCount?: number;
+    userBudget?: number;
+    selectedHotel?: any;
+    selectedActivities?: any[];
+    selectedPackage?: any;
+    travelStyle?: string;
+    transportMode?: string;
+  }) => api.post('/itineraries/calculate-budget', data),
+
+  optimizeBudget: (data: {
+    destinationId?: string;
+    destinationName?: string;
+    numberOfDays?: number;
+    travelersCount?: number;
+    userBudget: number;
+    currentHotelId?: string;
+    currentActivityIds?: string[];
+    travelStyle?: string;
+    startDate?: string;
+  }) => api.post('/itineraries/optimize-budget', data),
+
+  saveItinerary: (data: any) => api.post('/itineraries', data),
+  updateItinerary: (id: string, data: any) => api.put(`/itineraries/${id}`, data),
+  getMyItineraries: () => api.get('/itineraries/my'),
+  getById: (id: string) => api.get(`/itineraries/${id}`),
+};
+

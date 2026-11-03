@@ -30,6 +30,7 @@ import Bookings from './pages/traveler/Bookings';
 import BookingConfirmationPage from './pages/traveler/BookingConfirmationPage';
 import TravelerProfile from './pages/traveler/TravelerProfile';
 import AccountSettingsPage from './pages/traveler/AccountSettingsPage';
+import ItineraryDashboard from './pages/traveler/ItineraryDashboard';
 
 // Expert pages
 import ExpertDashboard from './pages/expert/ExpertDashboard';
@@ -67,6 +68,8 @@ function App() {
                 <Route path="/destinations/:id" element={<DestinationDetailPage />} />
                 <Route path="/agent" element={<AiTravelAgentPage />} />
                 <Route path="/ai" element={<AiTravelAgentPage />} />
+                <Route path="/itinerary-planner" element={<ItineraryDashboard />} />
+                <Route path="/itinerary" element={<ItineraryDashboard />} />
                 <Route path="/experts/:id" element={<ExpertPublicProfile />} />
                 <Route path="/how-it-works" element={<HowItWorksPage />} />
                 <Route path="/about" element={<AboutPage />} />
@@ -86,6 +89,7 @@ function App() {
               >
                 <Route path="/traveler/dashboard" element={<TravelerDashboard />} />
                 <Route path="/traveler/agent" element={<AiTravelAgentPage />} />
+                <Route path="/traveler/itinerary" element={<ItineraryDashboard />} />
                 <Route path="/traveler/create-trip" element={<CreateTrip />} />
                 <Route path="/traveler/requests" element={<MyRequests />} />
                 <Route path="/traveler/requests/:id" element={<RequestDetail />} />

@@ -161,6 +161,16 @@ const Navbar: React.FC = () => {
               <span>WayRivo AI Agent</span>
             </Link>
 
+            {/* AI Itinerary & Budget Planner */}
+            <Link
+              to="/itinerary-planner"
+              className={`text-xs font-bold transition-colors ${
+                location.pathname === '/itinerary-planner' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Itinerary & Budget
+            </Link>
+
             <Link
               to="/about"
               className={`text-xs font-bold transition-colors ${
@@ -332,6 +342,13 @@ const Navbar: React.FC = () => {
           >
             <Bot className="w-4 h-4" />
             WayRivo AI Agent
+          </Link>
+          <Link
+            to="/itinerary-planner"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-2 py-2 text-sm font-bold text-slate-200 hover:text-cyan-400"
+          >
+            Itinerary & Budget
           </Link>
           <Link
             to="/about"

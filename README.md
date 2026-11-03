@@ -1,12 +1,12 @@
 # WayRivo AI 2.0 — Intelligent Travel Commerce Platform
 **Event**: PayPal AI Hackathon 2026  
-**Status**: Phase 6 Verified & Tested (Google Gemini Autonomous AI Travel Agent & Tool Calling Operational)
+**Status**: Phase 7 Verified & Tested (AI Itinerary Generator, Budget Intelligence & Optimization Engine Operational)
 
 ---
 
 ## 1. Project Overview
 
-**WayRivo AI 2.0** is an intelligent AI-powered travel planning, booking, and escrow payment platform. Travelers converse with an autonomous AI travel agent powered by Google Gemini, explore curated destinations, receive bespoke packages from verified destination agencies, optimize travel budgets, and complete secure escrow bookings backed by the **PayPal Developer Sandbox Orders API**.
+**WayRivo AI 2.0** is an intelligent AI-powered travel planning, booking, and escrow payment platform. Travelers converse with an autonomous AI travel agent powered by Google Gemini, explore curated destinations, receive bespoke day-by-day itineraries with meal breaks and travel time estimates, optimize travel budgets against real inventory, and complete secure escrow bookings backed by the **PayPal Developer Sandbox Orders API**.
 
 ---
 
@@ -30,6 +30,7 @@
 - **Validation**: Zod schema validation on all authentication and profile requests
 - **Security**: Helmet, CORS (`withCredentials: true`), Express Rate Limit on login attempts, Plaintext protection
 - **AI Engine**: Google Gemini API Integration (`gemini-2.0-flash`)
+- **Budget Intelligence Engine**: Real-time accommodation, excursion, and transportation optimization with PostgreSQL inventory substitution
 - **Payment Gateway**: PayPal Developer Sandbox (Orders v2, Server Capture, Escrow Hold, Cryptographic Webhooks)
 
 ---
@@ -119,40 +120,60 @@ The WayRivo AI 2.0 Agent operates strictly through the backend with 10 structure
 | `save_itinerary` | Persists day-by-day route into `Itinerary` & `ItineraryDay` | Associated with authenticated traveler account |
 | `create_booking_proposal` | Generates draft booking with reference `WR-2026-XXXX` | Status `PENDING_PAYMENT` (Never captures funds) |
 
-### Agent HTTP & Streaming Endpoints
+---
+
+## 7. AI Itinerary & Budget Intelligence Engine (`/api/v1/itineraries`)
+
+Phase 7 delivers a comprehensive travel planning engine that generates structured, realistic multi-day itineraries and performs budget intelligence analysis using real database inventory.
+
+### Day-Wise Itinerary Structure
+Every generated itinerary day contains:
+- **Date & Day of Week**: Calculated accurately from the traveler's departure date.
+- **Morning Activities**: Time window, activity title, attraction description, travel time estimate, and cost.
+- **Afternoon Activities**: Time window, activity title, attraction description, travel time estimate, and cost.
+- **Evening Activities**: Time window, activity title, attraction description, travel time estimate, and cost.
+- **Suggested Meal Breaks**: Breakfast, Lunch, and Dinner culinary recommendations.
+- **Practical Travel Notes**: Specific local advice (dress codes, camera permits, packing essentials, transit tips).
+
+### Budget Optimization & Intelligence
+- **Exceeded Budget Detection**: Flags when estimated expenses exceed traveler target.
+- **Cost Driver Identification**: Pinpoints expensive components (e.g. luxury resort representing 65% of trip cost, high-cost excursions).
+- **Alternative Substitution**: Queries PostgreSQL for cheaper hotels with room capacity and suitable activity substitutes.
+- **Side-by-Side Comparison**: Compares original vs optimized estimates and itemized savings.
+- **Natural Language Savings Explanation**: Concise explanation of changes and financial impact.
+- **AI Safety Guard**: Strictly prohibits autonomous modification of itineraries linked to confirmed bookings (`status === 'CONFIRMED' || 'ESCROW_HOLD'`) with `403 Forbidden` response.
 
 | Endpoint | Method | Description | Auth Required |
 |---|---|---|---|
-| `/api/v1/agent/chat` | POST | Conversational interaction with autonomous tool-calling loop | Optional (Session / Token) |
-| `/api/v1/agent/chat/stream` | POST | Server-Sent Events (SSE) progressive event stream (status, tool, final) | Optional (Session / Token) |
-| `/api/v1/agent/conversations` | GET | Retrieve user chat session history | Optional (Session / Token) |
-| `/api/v1/agent/conversations` | POST | Initialize new trip planning dialogue | Optional (Session / Token) |
-| `/api/v1/agent/conversations/:id` | GET | Retrieve complete conversation history and persisted messages | Optional (Session / Token) |
-| `/api/v1/agent/conversations/:id` | DELETE | Archive conversation | Optional (Session / Token) |
-| `/api/v1/agent/save-itinerary` | POST | Persist crafted route to traveler profile | Optional (Session / Token) |
-| `/api/v1/agent/create-proposal` | POST | Generate unconfirmed booking proposal for PayPal Smart Checkout | Optional (Session / Token) |
-| `/api/v1/agent/suggested-prompts` | GET | Starter travel prompts (Goa adventure, Kerala romance, Ladakh trek, Rajasthan culture) | Public |
+| `/api/v1/itineraries/generate` | POST | Generate complete day-wise itinerary with morning/afternoon/evening slots and travel times | Optional |
+| `/api/v1/itineraries/calculate-budget` | POST | Independent itemized budget calculation (stay, activities, transport, dining, permits, 5% GST) | Optional |
+| `/api/v1/itineraries/optimize-budget` | POST | Budget intelligence analysis: identify drivers, suggest DB alternatives, recalculate and explain savings | Optional |
+| `/api/v1/itineraries` | POST | Save completed itinerary to traveler profile | Bearer / Cookie |
+| `/api/v1/itineraries/:id` | PUT | Update editable activities & title with safety lock on confirmed bookings | Bearer / Cookie |
+| `/api/v1/itineraries/my` | GET | Retrieve user's saved itineraries | Bearer / Cookie |
+| `/api/v1/itineraries/:id` | GET | Fetch itinerary by ID with daily schedules and destination info | Bearer / Cookie |
 
 ---
 
-## 7. Phase Verification Checkpoint
+## 8. Phase Verification Checkpoint
 
 | Check | Result | Details |
 |---|---|---|
 | **Database Migrations** | ✅ Passed | Prisma schema with 16 models: User, Destination, Hotel, Activity, TravelPackage, Conversation, Message, Itinerary, ItineraryDay, Booking, BookingItem, Payment, GroupTrip, GroupExpense, AgentAction, AuditLog |
 | **Backend TypeScript Build** | ✅ Passed | `tsc` compiled 100% cleanly into `backend/dist` with 0 errors |
-| **Frontend Production Build** | ✅ Passed | `tsc -b && vite build` compiled with 0 errors (2,354 modules in 361ms) |
-| **Frontend Code Quality** | ✅ Passed | `oxlint` ran across 79 files with 0 errors |
-| **API Test Suite 1** | ✅ Passed | 20/20 automated tests passed (`backend/test-api.ts`) covering Auth, Profile, RBAC & Filters |
-| **API Test Suite 2** | ✅ Passed | 17/17 comprehensive tests passed (`backend/verify-comprehensive.ts`) covering CUD lifecycles & inventory alerts |
-| **API Test Suite 3 (Phase 6 Agent)** | ✅ Passed | 7/7 automated tests passed (`backend/test-agent-workflow.ts`) covering extraction, live tool calling, budget calculation, itinerary generation, DB save, and draft proposal generation |
-| **Total Automated Tests** | ✅ Passed | **44 / 44 tests passing** with 0 regressions across all phases |
-| **AI Safety & Accuracy** | ✅ Verified | Tool grounding in database; zero hallucinated prices; unconfirmed booking state (`PENDING_PAYMENT`); no autonomous fund capture |
-| **Chat Interface & UX** | ✅ Verified | Route `/agent` with session history, dynamic status indicator, interactive recommendation cards, itinerary accordion, budget breakdown, route editor modal, and proposal checkout modal |
+| **Frontend Production Build** | ✅ Passed | `tsc -b && vite build` compiled with 0 errors (2,355 modules in 375ms) |
+| **Frontend Code Quality** | ✅ Passed | `oxlint` ran across 80 files with 0 errors |
+| **Test Suite 1 (API Auth & RBAC)** | ✅ Passed | 20/20 automated tests passed (`backend/test-api.ts`) |
+| **Test Suite 2 (Comprehensive CUD)** | ✅ Passed | 17/17 comprehensive tests passed (`backend/verify-comprehensive.ts`) |
+| **Test Suite 3 (AI Agent Workflow)** | ✅ Passed | 7/7 automated tests passed (`backend/test-agent-workflow.ts`) |
+| **Test Suite 4 (Phase 7 Budget Intelligence)** | ✅ Passed | 8/8 automated tests passed (`backend/test-budget-intelligence.ts`) |
+| **Total Automated Tests** | ✅ Passed | **52 / 52 tests passing** with 0 regressions across all phases |
+| **AI Modification Lock** | ✅ Verified | Enforces `403 Forbidden` when attempting to mutate confirmed bookings without user approval |
+| **Interactive Dashboard** | ✅ Verified | `/itinerary-planner` with day timeline, hotel card, activity editor, live budget breakdown, and 1-click AI optimization |
 
 ---
 
-## 8. Development Roadmap
+## 9. Development Roadmap
 
 - [x] **Phase 0**: Project Audit & Architectural Inspection
 - [x] **Phase 1**: WayRivo AI 2.0 Design System & Visual Foundation
@@ -161,6 +182,6 @@ The WayRivo AI 2.0 Agent operates strictly through the backend with 10 structure
 - [x] **Phase 4**: Secure Authentication, Extended Profile Management & Role-Based Authorization
 - [x] **Phase 5**: Travel Discovery & Booking Marketplace (Destinations, Hotels, Activities, Packages & Admin Inventory)
 - [x] **Phase 6**: Google Gemini AI Engine with Autonomous Travel Agent & Tool Calling
-- [ ] **Phase 7**: PayPal Developer Sandbox Smart Checkout & Escrow Engine
-- [ ] **Phase 8**: End-to-End Validation, Security Hardening & Deployment
-
+- [x] **Phase 7**: AI Itinerary & Budget Intelligence Engine (Day Timeline, Budget Optimization & Modification Guard)
+- [ ] **Phase 8**: PayPal Developer Sandbox Smart Checkout & Escrow Engine
+- [ ] **Phase 9**: End-to-End Validation, Security Hardening & Deployment
