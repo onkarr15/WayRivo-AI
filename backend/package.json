@@ -14,6 +14,7 @@
     "seed": "tsx src/repositories/seed.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.32.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",

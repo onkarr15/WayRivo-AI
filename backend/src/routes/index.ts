@@ -10,6 +10,7 @@ import itineraryRoutes from './itinerary.routes';
 import bookingRoutes from './booking.routes';
 import paymentRoutes from './payment.routes';
 import aiRoutes from './ai.routes';
+import agentRoutes from './agent.routes';
 import adminRoutes from './admin.routes';
 
 const router = Router();
@@ -65,6 +66,7 @@ router.use('/itineraries', itineraryRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/ai', aiRoutes);
+router.use('/agent', agentRoutes);
 router.use('/admin', adminRoutes);
 
 export default router;

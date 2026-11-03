@@ -11,6 +11,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import HomePage from './pages/public/HomePage';
 import MarketplacePage from './pages/public/MarketplacePage';
 import DestinationDetailPage from './pages/public/DestinationDetailPage';
+import AiTravelAgentPage from './pages/public/AiTravelAgentPage';
 import ExpertPublicProfile from './pages/public/ExpertPublicProfile';
 import HowItWorksPage from './pages/public/HowItWorksPage';
 import AboutPage from './pages/public/AboutPage';
@@ -64,6 +65,8 @@ function App() {
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/destinations" element={<MarketplacePage />} />
                 <Route path="/destinations/:id" element={<DestinationDetailPage />} />
+                <Route path="/agent" element={<AiTravelAgentPage />} />
+                <Route path="/ai" element={<AiTravelAgentPage />} />
                 <Route path="/experts/:id" element={<ExpertPublicProfile />} />
                 <Route path="/how-it-works" element={<HowItWorksPage />} />
                 <Route path="/about" element={<AboutPage />} />
@@ -82,6 +85,7 @@ function App() {
                 }
               >
                 <Route path="/traveler/dashboard" element={<TravelerDashboard />} />
+                <Route path="/traveler/agent" element={<AiTravelAgentPage />} />
                 <Route path="/traveler/create-trip" element={<CreateTrip />} />
                 <Route path="/traveler/requests" element={<MyRequests />} />
                 <Route path="/traveler/requests/:id" element={<RequestDetail />} />

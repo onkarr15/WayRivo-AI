@@ -152,13 +152,13 @@ const Navbar: React.FC = () => {
               Packages
             </button>
 
-            {/* AI Travel Planner */}
+            {/* AI Travel Agent */}
             <Link
-              to="/traveler/create-trip"
+              to="/agent"
               className="inline-flex items-center gap-1.5 text-xs font-extrabold text-cyan-300 hover:text-cyan-200 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400/50 transition-all shadow-[0_0_12px_rgba(0,240,255,0.15)]"
             >
               <Bot className="w-3.5 h-3.5 text-cyan-400" />
-              <span>AI Travel Planner</span>
+              <span>WayRivo AI Agent</span>
             </Link>
 
             <Link
@@ -326,12 +326,12 @@ const Navbar: React.FC = () => {
             Packages
           </button>
           <Link
-            to="/traveler/create-trip"
+            to="/agent"
             onClick={() => setMobileOpen(false)}
             className="flex items-center gap-2 py-2 text-sm font-bold text-cyan-400"
           >
             <Bot className="w-4 h-4" />
-            AI Travel Planner
+            WayRivo AI Agent
           </Link>
           <Link
             to="/about"

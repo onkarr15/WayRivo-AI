@@ -157,6 +157,18 @@ export const publicService = {
   getStatistics: () => api.get('/public/statistics'),
 };
 
+export const aiAgentService = {
+  chat: (message: string, conversationId?: string) =>
+    api.post('/agent/chat', { message, conversationId }),
+  getConversations: () => api.get('/agent/conversations'),
+  getConversation: (id: string) => api.get(`/agent/conversations/${id}`),
+  createConversation: (title?: string) => api.post('/agent/conversations', { title }),
+  deleteConversation: (id: string) => api.delete(`/agent/conversations/${id}`),
+  saveItinerary: (data: any) => api.post('/agent/save-itinerary', data),
+  createProposal: (data: any) => api.post('/agent/create-proposal', data),
+  getSuggestedPrompts: () => api.get('/agent/suggested-prompts'),
+};
+
 export const adminService = {
   getDashboardStats: () => api.get('/admin/stats'),
   getAnalytics: () => api.get('/admin/stats'),

@@ -71,6 +71,57 @@ export const authenticate = async (
   }
 };
 
+export const optionalAuthenticate = async (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    let token: string | undefined;
+
+    if (req.cookies && req.cookies.wayrivo_token) {
+      token = req.cookies.wayrivo_token;
+    }
+
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    try {
+      const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          isEmailVerified: true,
+          avatarUrl: true,
+        },
+      });
+
+      if (user && user.status !== 'SUSPENDED') {
+        req.user = user as AuthenticatedUser;
+      }
+    } catch {
+      // Ignore token verification errors for optional authentication
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const requireRoles = (allowedRoles: UserRole[]) => {
   return (req: AuthRequest, _res: Response, next: NextFunction): void => {
     if (!req.user) {
