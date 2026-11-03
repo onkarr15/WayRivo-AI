@@ -190,3 +190,4 @@ export const getSuggestedPrompts = async (_req: AuthRequest, res: Response) => {
 
   sendSuccess(res, prompts);
 };
+

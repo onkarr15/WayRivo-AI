@@ -88,3 +88,4 @@ export const DestinationRecommendationCard: React.FC<DestinationCardProps> = ({ 
     </div>
   );
 };
+

@@ -30,3 +30,4 @@ router.post('/create-proposal', optionalAuthenticate, createAgentBookingProposal
 router.get('/suggested-prompts', getSuggestedPrompts);
 
 export default router;
+

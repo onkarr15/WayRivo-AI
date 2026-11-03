@@ -125,3 +125,4 @@ export const BookingProposalModal: React.FC<BookingProposalModalProps> = ({
     </div>
   );
 };
+
