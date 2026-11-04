@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Communicate with deployed Render backend via VITE_API_BASE_URL
+// Defaults to '/api' for local Vite dev proxy and Vercel same-origin rewrites
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const baseURL = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, '') : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
