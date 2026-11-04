@@ -14,8 +14,8 @@ async function bootstrap() {
     logger.info('✅ PostgreSQL / Supabase database connected successfully.');
   }
 
-  const server = app.listen(port, () => {
-    logger.info(`🚀 WayRivo AI 2.0 Backend listening on port ${port}`);
+  const server = app.listen(port, '0.0.0.0', () => {
+    logger.info(`🚀 WayRivo AI 2.0 Backend listening on port ${port} (0.0.0.0)`);
     logger.info(`🌐 Health check: http://localhost:${port}/api/v1/health`);
     logger.info(`✨ Environment: ${env.NODE_ENV}`);
   });
