@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'gold' | 'outline' | 'ghost' | 'danger' | 'success';
@@ -27,7 +27,8 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50';
+  const shouldReduceMotion = useReducedMotion();
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50';
 
   const sizeStyles: Record<ButtonSize, string> = {
     sm: 'text-xs px-3.5 py-1.5 gap-1.5 rounded-lg',
@@ -53,10 +54,14 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';
+  const hoverScale = disabled || isLoading || shouldReduceMotion ? 1 : 1.02;
+  const tapScale = disabled || isLoading || shouldReduceMotion ? 1 : 0.98;
 
   return (
     <motion.button
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
+      whileHover={{ scale: hoverScale }}
+      whileTap={{ scale: tapScale }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
       disabled={disabled || isLoading}
       className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${widthStyle} ${className}`}
       {...props}

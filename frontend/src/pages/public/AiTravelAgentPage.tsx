@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
   Send,
@@ -8,7 +9,6 @@ import {
   MessageSquare,
   Trash2,
   ShieldCheck,
-  Loader2,
   Zap,
   ChevronRight,
   Compass,
@@ -22,6 +22,7 @@ import { BudgetSummaryCard } from '../../components/agent/BudgetSummaryCard';
 import { ItineraryPreviewCard } from '../../components/agent/ItineraryPreviewCard';
 import { EditItineraryModal } from '../../components/agent/EditItineraryModal';
 import { BookingProposalModal } from '../../components/agent/BookingProposalModal';
+import { staggerContainer, staggerItem } from '../../utils/animations';
 
 interface MessageItem {
   id: string;
@@ -44,38 +45,29 @@ export const AiTravelAgentPage: React.FC = () => {
 
   // State
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(
-    searchParams.get('session') || null
-  );
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [typingStatus, setTypingStatus] = useState<string | null>(null);
+  const [inputMessage, setInputMessage] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [typingStatus, setTypingStatus] = useState<string>('');
   const [suggestedPrompts, setSuggestedPrompts] = useState<any[]>([]);
 
   // Modals
-  const [editingItinerary, setEditingItinerary] = useState<any>(null);
-  const [proposalModal, setProposalModal] = useState<any>(null);
+  const [editingItinerary, setEditingItinerary] = useState<any | null>(null);
+  const [proposalModal, setProposalModal] = useState<any | null>(null);
   const [savedItineraryIds, setSavedItineraryIds] = useState<Set<string>>(new Set());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const loadConversations = React.useCallback(async () => {
-    try {
-      const res = await aiAgentService.getConversations();
-      if (Array.isArray(res.data?.data)) {
-        setConversations(res.data.data);
-      }
-    } catch {
-      // Ignore for guest sessions
-    }
-  }, []);
-
-  // Auto-scroll to bottom of thread
-  useEffect(() => {
+  // Auto-scroll to bottom of messages
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typingStatus]);
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
 
   // Load Suggested Prompts & Conversations
   useEffect(() => {
@@ -87,7 +79,23 @@ export const AiTravelAgentPage: React.FC = () => {
       .catch(() => {});
 
     loadConversations();
-  }, [loadConversations]);
+  }, []);
+
+  const loadConversations = () => {
+    aiAgentService
+      .getConversations()
+      .then((res: any) => {
+        if (res.data?.data) {
+          setConversations(res.data.data);
+          // If query param has conversationId, open it
+          const initialId = searchParams.get('conversationId');
+          if (initialId) {
+            setActiveConversationId(initialId);
+          }
+        }
+      })
+      .catch(() => {});
+  };
 
   // Load Conversation messages when active conversation changes
   useEffect(() => {
@@ -107,15 +115,28 @@ export const AiTravelAgentPage: React.FC = () => {
     }
   }, [activeConversationId]);
 
-  // Start a new conversation
+  // Handle Initial Prompt from Query Params
+  useEffect(() => {
+    const initialPrompt = searchParams.get('prompt');
+    if (initialPrompt && messages.length === 0 && !loading) {
+      handleSendMessage(initialPrompt);
+      // Clean query param
+      searchParams.delete('prompt');
+      setSearchParams(searchParams);
+    }
+  }, [searchParams]);
+
+  // Start New Conversation
   const handleNewConversation = () => {
     setActiveConversationId(null);
     setMessages([]);
-    setSearchParams({});
+    setInputMessage('');
+    searchParams.delete('conversationId');
+    setSearchParams(searchParams);
     inputRef.current?.focus();
   };
 
-  // Delete / Archive Conversation
+  // Delete Conversation
   const handleDeleteConversation = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
@@ -124,16 +145,16 @@ export const AiTravelAgentPage: React.FC = () => {
       if (activeConversationId === id) {
         handleNewConversation();
       }
-      toast.success('Session removed');
+      toast.success('Conversation removed.');
     } catch {
-      toast.error('Failed to remove conversation');
+      toast.error('Failed to remove conversation.');
     }
   };
 
-  // Send Message Handler
+  // Send Message
   const handleSendMessage = async (textToSend?: string) => {
-    const text = (textToSend || inputMessage).trim();
-    if (!text || loading) return;
+    const query = (textToSend || inputMessage).trim();
+    if (!query || loading) return;
 
     setInputMessage('');
 
@@ -141,21 +162,21 @@ export const AiTravelAgentPage: React.FC = () => {
     const tempUserMsg: MessageItem = {
       id: `temp-${Date.now()}`,
       sender: 'USER',
-      content: text,
+      content: query,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, tempUserMsg]);
+
     setLoading(true);
-    setTypingStatus('WayRivo AI is analyzing your travel requirements...');
+    setTypingStatus('Analyzing requirements & consulting database tools...');
 
     try {
-      const res = await aiAgentService.chat(text, activeConversationId || undefined);
-      const data = res.data?.data;
+      const res = await aiAgentService.chat(query, activeConversationId || undefined);
 
-      if (data) {
-        if (!activeConversationId && data.conversationId) {
+      if (res.data?.success && res.data.data) {
+        const data = res.data.data;
+        if (data.conversationId && data.conversationId !== activeConversationId) {
           setActiveConversationId(data.conversationId);
-          setSearchParams({ session: data.conversationId });
           loadConversations();
         }
 
@@ -163,40 +184,41 @@ export const AiTravelAgentPage: React.FC = () => {
           id: data.messageId || `asst-${Date.now()}`,
           sender: 'ASSISTANT',
           content: data.reply,
-          metadata: data.metadata,
+          metadata: {
+            toolsExecuted: data.toolsExecuted,
+            destinations: data.destinations,
+            hotels: data.hotels,
+            activities: data.activities,
+            packages: data.packages,
+            budgetAnalysis: data.budgetAnalysis,
+            itinerary: data.itinerary,
+            suggestedActions: data.suggestedActions,
+            savedItineraryId: data.savedItineraryId,
+          },
           createdAt: new Date().toISOString(),
         };
 
         setMessages((prev) => [...prev, assistantMsg]);
+      } else {
+        toast.error(res.data?.error || 'Failed to get a response from AI agent.');
       }
-    } catch {
-      toast.error('AI Agent encountered an issue. Please try again.');
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          sender: 'ASSISTANT',
-          content: '⚠️ I encountered a temporary network issue. Please re-send your message.',
-        },
-      ]);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Network error communicating with AI agent.');
     } finally {
       setLoading(false);
-      setTypingStatus(null);
+      setTypingStatus('');
     }
   };
 
-  // Save Itinerary to user account
+  // Save Itinerary to User Profile
   const handleSaveItinerary = async (itinerary: any) => {
     try {
       const res = await aiAgentService.saveItinerary({
-        title: itinerary.title || `${itinerary.destinationName} Travel Plan`,
-        destinationName: itinerary.destinationName,
-        destinationId: itinerary.destinationId,
-        numberOfDays: itinerary.numberOfDays,
-        travelersCount: itinerary.travelersCount,
-        budget: itinerary.totalEstimatedCost,
-        travelStyle: itinerary.travelStyle,
-        days: itinerary.days,
+        destinationId: itinerary.destinationId || itinerary.destination?.id,
+        title: itinerary.title || `${itinerary.numberOfDays || 5}-Day ${itinerary.destinationName || 'Travel'} Itinerary`,
+        numberOfDays: itinerary.numberOfDays || 5,
+        totalCost: itinerary.totalCost || itinerary.budget?.totalCalculatedCost || 25000,
+        itineraryData: itinerary,
       });
 
       if (res.data?.data?.itineraryId) {
@@ -231,7 +253,6 @@ export const AiTravelAgentPage: React.FC = () => {
 
   // Handle Edit Itinerary save
   const handleSaveModifiedItinerary = (modified: any) => {
-    // Update local message metadata
     setMessages((prev) =>
       prev.map((msg) => {
         if (msg.metadata?.itinerary) {
@@ -393,134 +414,172 @@ export const AiTravelAgentPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                /* Message Thread */
-                messages.map((msg) => {
-                  const isUser = msg.sender === 'USER';
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {!isUser && (
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 shrink-0 mt-1 shadow-md shadow-cyan-500/20">
-                          <Bot className="w-4 h-4 font-black" />
-                        </div>
-                      )}
-
-                      <div className={`max-w-2xl space-y-3 ${isUser ? 'items-end' : 'items-start'}`}>
-                        {/* Message Bubble */}
-                        <div
-                          className={`p-4 rounded-3xl text-xs sm:text-sm leading-relaxed ${
-                            isUser
-                              ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-tr-none shadow-lg shadow-cyan-600/20'
-                              : 'bg-slate-800/80 border border-white/10 text-slate-100 rounded-tl-none shadow-md'
-                          }`}
-                        >
-                          <div className="prose prose-invert max-w-none whitespace-pre-line">
-                            {msg.content}
-                          </div>
-
-                          {/* Tool Execution Badges */}
-                          {msg.metadata?.toolsExecuted && msg.metadata.toolsExecuted.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-white/10 text-[10px]">
-                              {msg.metadata.toolsExecuted.map((t: any, i: number) => (
-                                <span
-                                  key={i}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 font-mono text-[9px]"
-                                >
-                                  <Zap className="w-2.5 h-2.5 text-cyan-400" />
-                                  <span>{t.tool}()</span>
-                                  <span className="text-slate-400">({t.latencyMs}ms)</span>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Interactive Cards Attached to Agent Reply */}
-                        {!isUser && msg.metadata && (
-                          <div className="space-y-3 w-full">
-                            {/* Destination Card */}
-                            {msg.metadata.destinations && msg.metadata.destinations.length > 0 && (
-                              <DestinationRecommendationCard
-                                destination={msg.metadata.destinations[0]}
-                              />
-                            )}
-
-                            {/* Budget Summary Card */}
-                            {msg.metadata.budgetAnalysis && (
-                              <BudgetSummaryCard budget={msg.metadata.budgetAnalysis} />
-                            )}
-
-                            {/* Itinerary Preview Card */}
-                            {msg.metadata.itinerary && (
-                              <ItineraryPreviewCard
-                                itinerary={msg.metadata.itinerary}
-                                onSave={handleSaveItinerary}
-                                onEdit={(itin) => setEditingItinerary(itin)}
-                                onPrepareBooking={handlePrepareBooking}
-                                isSaved={savedItineraryIds.has(msg.metadata.savedItineraryId)}
-                              />
-                            )}
-
-                            {/* Hotel Cards Carousel / List */}
-                            {msg.metadata.hotels && msg.metadata.hotels.length > 0 && (
-                              <div>
-                                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
-                                  <span>Verified Accommodations in Inventory</span>
-                                </h5>
-                                {msg.metadata.hotels.slice(0, 2).map((h: any) => (
-                                  <HotelRecommendationCard key={h.id} hotel={h} />
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Activity Cards List */}
-                            {msg.metadata.activities && msg.metadata.activities.length > 0 && (
-                              <div>
-                                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
-                                  <span>Curated Excursions & Adventures</span>
-                                </h5>
-                                {msg.metadata.activities.slice(0, 2).map((a: any) => (
-                                  <ActivityRecommendationCard key={a.id} activity={a} />
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Suggested Follow-up Actions */}
-                            {msg.metadata.suggestedActions && msg.metadata.suggestedActions.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 pt-1">
-                                {msg.metadata.suggestedActions.map((act: string, idx: number) => (
-                                  <button
-                                    key={idx}
-                                    onClick={() => handleSendMessage(act)}
-                                    className="py-1 px-2.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/20 text-[11px] font-semibold transition-all cursor-pointer"
-                                  >
-                                    {act}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                /* Message Thread with Fluid Entrance Animations */
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => {
+                    const isUser = msg.sender === 'USER';
+                    return (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {!isUser && (
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 shrink-0 mt-1 shadow-md shadow-cyan-500/20">
+                            <Bot className="w-4 h-4 font-black" />
                           </div>
                         )}
-                      </div>
-                    </div>
-                  );
-                })
+
+                        <div className={`max-w-2xl space-y-3 ${isUser ? 'items-end' : 'items-start'}`}>
+                          {/* Message Bubble */}
+                          <div
+                            className={`p-4 rounded-3xl text-xs sm:text-sm leading-relaxed ${
+                              isUser
+                                ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-tr-none shadow-lg shadow-cyan-600/20'
+                                : 'bg-slate-800/80 border border-white/10 text-slate-100 rounded-tl-none shadow-md'
+                            }`}
+                          >
+                            <div className="prose prose-invert max-w-none whitespace-pre-line">
+                              {msg.content}
+                            </div>
+
+                            {/* Tool Execution Badges */}
+                            {msg.metadata?.toolsExecuted && msg.metadata.toolsExecuted.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-white/10 text-[10px]">
+                                {msg.metadata.toolsExecuted.map((t: any, i: number) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 font-mono text-[9px]"
+                                  >
+                                    <Zap className="w-2.5 h-2.5 text-cyan-400" />
+                                    <span>{t.tool}()</span>
+                                    <span className="text-slate-400">({t.latencyMs}ms)</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Interactive Recommendation Cards with Staggered Entrance */}
+                          {!isUser && msg.metadata && (
+                            <motion.div
+                              variants={staggerContainer}
+                              initial="hidden"
+                              animate="visible"
+                              className="space-y-3 w-full"
+                            >
+                              {/* Destination Card */}
+                              {msg.metadata.destinations && msg.metadata.destinations.length > 0 && (
+                                <motion.div variants={staggerItem}>
+                                  <DestinationRecommendationCard
+                                    destination={msg.metadata.destinations[0]}
+                                  />
+                                </motion.div>
+                              )}
+
+                              {/* Budget Summary Card */}
+                              {msg.metadata.budgetAnalysis && (
+                                <motion.div variants={staggerItem}>
+                                  <BudgetSummaryCard budget={msg.metadata.budgetAnalysis} />
+                                </motion.div>
+                              )}
+
+                              {/* Itinerary Preview Card */}
+                              {msg.metadata.itinerary && (
+                                <motion.div variants={staggerItem}>
+                                  <ItineraryPreviewCard
+                                    itinerary={msg.metadata.itinerary}
+                                    onSave={handleSaveItinerary}
+                                    onEdit={(itin) => setEditingItinerary(itin)}
+                                    onPrepareBooking={handlePrepareBooking}
+                                    isSaved={savedItineraryIds.has(msg.metadata.savedItineraryId)}
+                                  />
+                                </motion.div>
+                              )}
+
+                              {/* Hotel Cards List */}
+                              {msg.metadata.hotels && msg.metadata.hotels.length > 0 && (
+                                <motion.div variants={staggerItem}>
+                                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
+                                    <span>Verified Accommodations in Inventory</span>
+                                  </h5>
+                                  {msg.metadata.hotels.slice(0, 2).map((h: any) => (
+                                    <HotelRecommendationCard key={h.id} hotel={h} />
+                                  ))}
+                                </motion.div>
+                              )}
+
+                              {/* Activity Cards List */}
+                              {msg.metadata.activities && msg.metadata.activities.length > 0 && (
+                                <motion.div variants={staggerItem}>
+                                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
+                                    <span>Curated Excursions & Adventures</span>
+                                  </h5>
+                                  {msg.metadata.activities.slice(0, 2).map((a: any) => (
+                                    <ActivityRecommendationCard key={a.id} activity={a} />
+                                  ))}
+                                </motion.div>
+                              )}
+
+                              {/* Suggested Follow-up Actions */}
+                              {msg.metadata.suggestedActions && msg.metadata.suggestedActions.length > 0 && (
+                                <motion.div variants={staggerItem} className="flex flex-wrap gap-1.5 pt-1">
+                                  {msg.metadata.suggestedActions.map((act: string, idx: number) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => handleSendMessage(act)}
+                                      className="py-1 px-2.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/20 text-[11px] font-semibold transition-all cursor-pointer"
+                                    >
+                                      {act}
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </motion.div>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               )}
 
-              {/* Dynamic Typing & Tool Execution Indicator */}
-              {loading && (
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 shrink-0">
-                    <Bot className="w-4 h-4 font-black" />
-                  </div>
-                  <div className="p-3.5 rounded-2xl rounded-tl-none bg-slate-800/80 border border-white/10 flex items-center gap-2.5 text-xs text-slate-300">
-                    <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                    <span>{typingStatus || 'Consulting live database tools...'}</span>
-                  </div>
-                </div>
-              )}
+              {/* Dynamic Typing Indicator with Animated Pulsing Dots */}
+              <AnimatePresence>
+                {loading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 shrink-0">
+                      <Bot className="w-4 h-4 font-black" />
+                    </div>
+                    <div className="p-3.5 rounded-2xl rounded-tl-none bg-slate-800/80 border border-white/10 flex items-center gap-3 text-xs text-slate-300">
+                      <div className="flex items-center gap-1">
+                        {[0, 1, 2].map((dot) => (
+                          <motion.span
+                            key={dot}
+                            animate={{ y: [-3, 3, -3], opacity: [0.35, 1, 0.35] }}
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              delay: dot * 0.16,
+                              ease: 'easeInOut',
+                            }}
+                            className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block"
+                          />
+                        ))}
+                      </div>
+                      <span className="font-medium text-cyan-200">{typingStatus || 'Consulting live database tools...'}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div ref={messagesEndRef} />
             </div>
@@ -544,13 +603,15 @@ export const AiTravelAgentPage: React.FC = () => {
                   className="flex-1 py-3 px-4 rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs sm:text-sm focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
                 />
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   type="submit"
                   disabled={loading || !inputMessage.trim()}
                   className="p-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-cyan-400 hover:to-teal-300 text-slate-950 font-black disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-cyan-500/25 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
-                </button>
+                </motion.button>
               </form>
 
               <div className="flex items-center justify-between text-[10px] text-slate-500 mt-2 px-1">

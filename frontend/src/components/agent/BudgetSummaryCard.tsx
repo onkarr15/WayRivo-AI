@@ -1,5 +1,7 @@
 import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Wallet, ShieldCheck, AlertCircle } from 'lucide-react';
+import { fadeUp } from '../../utils/animations';
 
 interface BudgetSummaryProps {
   budget: {
@@ -28,6 +30,8 @@ interface BudgetSummaryProps {
 }
 
 export const BudgetSummaryCard: React.FC<BudgetSummaryProps> = ({ budget }) => {
+  const shouldReduceMotion = useReducedMotion();
+
   const statusConfig = {
     OPTIMAL: {
       label: 'Optimal Budget',
@@ -70,7 +74,12 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryProps> = ({ budget }) => {
   };
 
   return (
-    <div className="rounded-2xl bg-navy-card/95 border border-cyan-500/25 p-4 my-3 shadow-xl shadow-cyan-950/20">
+    <motion.div
+      variants={fadeUp}
+      initial={shouldReduceMotion ? false : 'hidden'}
+      animate="visible"
+      className="rounded-2xl bg-navy-card/95 border border-cyan-500/25 p-4 my-3 shadow-xl shadow-cyan-950/20"
+    >
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
@@ -110,27 +119,35 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryProps> = ({ budget }) => {
         )}
       </div>
 
-      {/* Segmented Progress Bar */}
+      {/* Segmented Progress Bar with Motion Width Reveal */}
       <div className="space-y-1.5 mb-3">
         <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden flex">
-          <div
-            style={{ width: `${pct.accommodation}%` }}
-            className="bg-cyan-500 transition-all duration-500"
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct.accommodation}%` }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-cyan-500 h-full"
             title={`Stay: ${pct.accommodation}%`}
           />
-          <div
-            style={{ width: `${pct.activities}%` }}
-            className="bg-teal-400 transition-all duration-500"
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct.activities}%` }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-teal-400 h-full"
             title={`Activities: ${pct.activities}%`}
           />
-          <div
-            style={{ width: `${pct.mealsAndDining}%` }}
-            className="bg-amber-400 transition-all duration-500"
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct.mealsAndDining}%` }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-amber-400 h-full"
             title={`Dining: ${pct.mealsAndDining}%`}
           />
-          <div
-            style={{ width: `${pct.localTransport}%` }}
-            className="bg-purple-400 transition-all duration-500"
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct.localTransport}%` }}
+            transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-purple-400 h-full"
             title={`Transport: ${pct.localTransport}%`}
           />
         </div>
@@ -168,6 +185,6 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryProps> = ({ budget }) => {
           {budget.notes}
         </p>
       )}
-    </div>
+    </motion.div>
   );
 };

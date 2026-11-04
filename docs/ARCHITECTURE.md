@@ -66,6 +66,7 @@ WayRivo AI 2.0 is engineered as a multi-tier, autonomous travel commerce platfor
   - Electric Cyan: `#00F2FE`
   - Turquoise: `#4FACFE`
   - Champagne Gold: `#FAD961`
+- **Motion & Interaction System**: Framer Motion (`framer-motion` v14) with reusable variants (`fadeUp`, `scaleReveal`, `staggerContainer`), scroll parallax depth (`useScroll`, `useTransform`), numerical counter animations (`AnimatedCounter`), active tab indicators (`layoutId`), typing indicators, and full accessibility support via `useReducedMotion()`.
 - **Routing & Guards**: React Router DOM v7 with role-based `ProtectedRoute` wrappers for `TRAVELER` and `ADMIN`.
 
 ### B. Business Logic & Integration Layer (Backend)

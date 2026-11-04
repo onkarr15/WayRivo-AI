@@ -159,11 +159,17 @@ async function runE2EJourney() {
 
   // 7. Hotel and activity selection
   await step('7: Hotel & Activity Selection from Real Inventory', async () => {
-    // Ensure test hotel has available inventory
-    await prisma.hotel.updateMany({
-      where: { availableRooms: { lt: 2 } },
-      data: { availableRooms: 10 },
-    });
+    // Ensure test hotel and activities have available inventory
+    await Promise.all([
+      prisma.hotel.updateMany({
+        where: { availableRooms: { lt: 2 } },
+        data: { availableRooms: 10 },
+      }),
+      prisma.activity.updateMany({
+        where: { availableSlots: { lt: 2 } },
+        data: { availableSlots: 20 },
+      }),
+    ]);
 
     const [hRes, aRes] = await Promise.all([
       fetch(`${baseUrl}/hotels?destinationId=${destinationId}&limit=2`),

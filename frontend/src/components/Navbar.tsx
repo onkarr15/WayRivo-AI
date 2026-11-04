@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
   Menu,
@@ -88,21 +89,39 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const navLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/explore', label: 'Explore' },
+    { id: 'destinations', label: 'Destinations', isScroll: true },
+    { id: 'packages', label: 'Packages', isScroll: true },
+    { to: '/itinerary-planner', label: 'Itinerary & Budget' },
+    { to: '/about', label: 'About' },
+  ];
+
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'py-2.5 bg-navy-dark/85 backdrop-blur-xl border-b border-cyan-500/20 shadow-2xl shadow-cyan-950/40'
-          : 'py-4 bg-navy-dark/70 backdrop-blur-md border-b border-white/5'
+    <motion.nav
+      initial={false}
+      animate={{
+        backgroundColor: scrolled ? 'rgba(10, 15, 29, 0.92)' : 'rgba(10, 15, 29, 0.72)',
+        borderColor: scrolled ? 'rgba(0, 240, 255, 0.22)' : 'rgba(255, 255, 255, 0.05)',
+        boxShadow: scrolled ? '0 20px 40px -15px rgba(0, 0, 0, 0.7)' : 'none',
+      }}
+      transition={{ duration: 0.3 }}
+      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b ${
+        scrolled ? 'py-2.5' : 'py-4'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* 1. WayRivo AI Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:shadow-cyan-400/40 transition-shadow">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:shadow-cyan-400/40 transition-shadow"
+            >
               <MapPin className="w-5 h-5 text-slate-950 font-black" />
-            </div>
+            </motion.div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-black tracking-wider text-white">
@@ -118,70 +137,53 @@ const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* Navigation Links: Home, Explore, Destinations, Packages, AI Travel Planner, About */}
+          {/* Desktop Navigation Links */}
           <div className="hidden lg:flex items-center gap-7">
-            <Link
-              to="/"
-              className={`text-xs font-bold transition-colors ${
-                location.pathname === '/' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              Home
-            </Link>
+            {navLinks.map((item) => {
+              if (item.isScroll) {
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id!)}
+                    className="relative text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer py-1"
+                  >
+                    {item.label}
+                  </button>
+                );
+              }
 
-            <Link
-              to="/explore"
-              className={`text-xs font-bold transition-colors ${
-                location.pathname === '/explore' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              Explore
-            </Link>
+              const isActive = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to!}
+                  className={`relative text-xs font-bold transition-colors py-1 ${
+                    isActive ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                  {isActive && (
+                    <motion.span
+                      layoutId="activeNavIndicator"
+                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 to-teal-400 rounded-full"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
 
-            <button
-              onClick={() => scrollToSection('destinations')}
-              className="text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer"
-            >
-              Destinations
-            </button>
-
-            <button
-              onClick={() => scrollToSection('packages')}
-              className="text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer"
-            >
-              Packages
-            </button>
-
-            {/* AI Travel Agent */}
+            {/* AI Travel Agent Spotlight Pill */}
             <Link
               to="/agent"
-              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-cyan-300 hover:text-cyan-200 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400/50 transition-all shadow-[0_0_12px_rgba(0,240,255,0.15)]"
+              className="relative inline-flex items-center gap-1.5 text-xs font-extrabold text-cyan-300 hover:text-cyan-200 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400/60 transition-all shadow-[0_0_15px_rgba(0,240,255,0.2)] hover:shadow-[0_0_20px_rgba(0,240,255,0.35)]"
             >
               <Bot className="w-3.5 h-3.5 text-cyan-400" />
               <span>WayRivo AI Agent</span>
             </Link>
-
-            {/* AI Itinerary & Budget Planner */}
-            <Link
-              to="/itinerary-planner"
-              className={`text-xs font-bold transition-colors ${
-                location.pathname === '/itinerary-planner' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              Itinerary & Budget
-            </Link>
-
-            <Link
-              to="/about"
-              className={`text-xs font-bold transition-colors ${
-                location.pathname === '/about' ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              About
-            </Link>
           </div>
 
-          {/* Auth Controls: Login, Get Started CTA */}
+          {/* Auth Controls */}
           <div className="hidden lg:flex items-center gap-3">
             {isAuthenticated ? (
               <>
@@ -211,9 +213,10 @@ const Navbar: React.FC = () => {
                   )}
                 </Link>
 
-                {/* User Dropdown */}
+                {/* User Dropdown with AnimatePresence */}
                 <div className="relative" ref={dropdownRef}>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setProfileOpen(!profileOpen)}
                     className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated border border-border-light hover:border-cyan-400/40 transition-all cursor-pointer"
                   >
@@ -223,57 +226,69 @@ const Navbar: React.FC = () => {
                     <span className="text-xs font-bold text-white max-w-[100px] truncate">
                       {user?.name?.split(' ')[0]}
                     </span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                        profileOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </motion.button>
 
-                  {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-surface/95 backdrop-blur-2xl border border-white/10 shadow-2xl py-2 z-50">
-                      <div className="px-4 py-2.5 border-b border-border/80">
-                        <p className="text-xs font-bold text-white truncate">{user?.name}</p>
-                        <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                          {user?.role}
-                        </span>
-                      </div>
-
-                      <Link
-                        to={dashboardPath}
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
+                  <AnimatePresence>
+                    {profileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute right-0 mt-2 w-56 rounded-2xl bg-surface/95 backdrop-blur-2xl border border-white/10 shadow-2xl py-2 z-50 origin-top-right"
                       >
-                        <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-                        Dashboard
-                      </Link>
+                        <div className="px-4 py-2.5 border-b border-border/80">
+                          <p className="text-xs font-bold text-white truncate">{user?.name}</p>
+                          <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            {user?.role}
+                          </span>
+                        </div>
 
-                      <Link
-                        to="/profile"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
-                      >
-                        <User className="w-3.5 h-3.5 text-teal-400" />
-                        Profile
-                      </Link>
+                        <Link
+                          to={dashboardPath}
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
+                          Dashboard
+                        </Link>
 
-                      <Link
-                        to="/settings"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-slate-400" />
-                        Account Settings
-                      </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
+                        >
+                          <User className="w-3.5 h-3.5 text-teal-400" />
+                          Profile
+                        </Link>
 
-                      <div className="my-1 border-t border-border/80" />
+                        <Link
+                          to="/settings"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/5 hover:text-cyan-300"
+                        >
+                          <Settings className="w-3.5 h-3.5 text-slate-400" />
+                          Account Settings
+                        </Link>
 
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 w-full text-left cursor-pointer"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
+                        <div className="my-1 border-t border-border/80" />
+
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 w-full text-left cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </>
             ) : (
@@ -295,7 +310,7 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="lg:hidden p-2 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer"
@@ -306,104 +321,112 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
-      {mobileOpen && (
-        <div className="lg:hidden bg-navy-dark/95 backdrop-blur-2xl border-b border-border/80 px-4 py-5 space-y-3">
-          <Link
-            to="/"
-            onClick={() => setMobileOpen(false)}
-            className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+      {/* Mobile Menu with AnimatePresence */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:hidden bg-navy-dark/95 backdrop-blur-2xl border-b border-border/80 px-4 py-5 space-y-3 overflow-hidden"
           >
-            Home
-          </Link>
-          <Link
-            to="/explore"
-            onClick={() => setMobileOpen(false)}
-            className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
-          >
-            Explore
-          </Link>
-          <button
-            onClick={() => scrollToSection('destinations')}
-            className="block w-full text-left py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
-          >
-            Destinations
-          </button>
-          <button
-            onClick={() => scrollToSection('packages')}
-            className="block w-full text-left py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
-          >
-            Packages
-          </button>
-          <Link
-            to="/agent"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2 py-2 text-sm font-bold text-cyan-400"
-          >
-            <Bot className="w-4 h-4" />
-            WayRivo AI Agent
-          </Link>
-          <Link
-            to="/itinerary-planner"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2 py-2 text-sm font-bold text-slate-200 hover:text-cyan-400"
-          >
-            Itinerary & Budget
-          </Link>
-          <Link
-            to="/about"
-            onClick={() => setMobileOpen(false)}
-            className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
-          >
-            About
-          </Link>
+            <Link
+              to="/"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            >
+              Home
+            </Link>
+            <Link
+              to="/explore"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            >
+              Explore
+            </Link>
+            <button
+              onClick={() => scrollToSection('destinations')}
+              className="block w-full text-left py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            >
+              Destinations
+            </button>
+            <button
+              onClick={() => scrollToSection('packages')}
+              className="block w-full text-left py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            >
+              Packages
+            </button>
+            <Link
+              to="/agent"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 py-2 text-sm font-bold text-cyan-400"
+            >
+              <Bot className="w-4 h-4" />
+              WayRivo AI Agent
+            </Link>
+            <Link
+              to="/itinerary-planner"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 py-2 text-sm font-bold text-slate-200 hover:text-cyan-400"
+            >
+              Itinerary & Budget
+            </Link>
+            <Link
+              to="/about"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            >
+              About
+            </Link>
 
-          <div className="border-t border-border/80 pt-3">
-            {isAuthenticated ? (
-              <div className="space-y-2">
-                <Link
-                  to={dashboardPath}
-                  onClick={() => setMobileOpen(false)}
-                  className="block py-2 text-sm font-bold text-cyan-400"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to={messagesPath}
-                  onClick={() => setMobileOpen(false)}
-                  className="block py-2 text-sm font-semibold text-slate-300"
-                >
-                  Messages {unreadMsgs > 0 && `(${unreadMsgs})`}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block py-2 text-sm font-semibold text-red-400 w-full text-left"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 pt-2">
-                <Link
-                  to="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="text-center py-2.5 rounded-xl border border-white/10 text-sm font-semibold text-white"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setMobileOpen(false)}
-                  className="btn-primary text-center text-sm"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </nav>
+            <div className="border-t border-border/80 pt-3">
+              {isAuthenticated ? (
+                <div className="space-y-2">
+                  <Link
+                    to={dashboardPath}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 text-sm font-bold text-cyan-400"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to={messagesPath}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 text-sm font-semibold text-slate-300"
+                  >
+                    Messages {unreadMsgs > 0 && `(${unreadMsgs})`}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block py-2 text-sm font-semibold text-red-400 w-full text-left cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 pt-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-center py-2.5 rounded-xl border border-white/10 text-sm font-semibold text-white"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="btn-primary text-center text-sm"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   Users,
   FileText,
@@ -28,6 +28,16 @@ import { FAQSection } from '../../components/ui/FAQSection';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import {
+  fadeUp,
+  scaleReveal,
+  staggerContainer,
+  staggerItem,
+  wordStaggerContainer,
+  wordStaggerItem,
+  floatingElement,
+  viewportTrigger,
+} from '../../utils/animations';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,6 +46,11 @@ const HomePage: React.FC = () => {
   const [stats, setStats] = useState<any>({});
   const [destinations, setDestinations] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+  // Background Parallax
+  const { scrollY } = useScroll();
+  const bgY = useTransform(scrollY, [0, 800], [0, 120]);
+  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0.45]);
 
   // Carousel ref for horizontal destinations
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -119,31 +134,31 @@ const HomePage: React.FC = () => {
     {
       id: 1,
       category: 'Backwaters',
-      title: 'Kerala Backwater Bliss — 5 Days Family Package',
-      expertName: 'Vikram Travels & Tours',
-      organizationName: 'Vikram Travels & Tours',
+      title: 'Kerala Serenity & Spice Trails — 6 Days All-Inclusive',
+      expertName: 'Kerala Travel Collective',
+      organizationName: 'Kerala Travel Collective',
       expertRating: 4.9,
       expertReviews: 24,
-      durationDays: 5,
-      totalPrice: 55000,
-      pricePerPerson: 13750,
+      durationDays: 6,
+      totalPrice: 48000,
+      pricePerPerson: 24000,
       currency: 'INR',
       inclusions: [
-        'Private AC Deluxe Houseboat with all meals',
-        'Tea plantation suite in Munnar',
-        'Airport pickup & private Innova cab sightseeing',
-        'Kathakali cultural dance & spice garden passes',
+        'Private luxury AC houseboat cruise in Alleppey',
+        '2 nights at 5-star Munnar tea plantation resort',
+        'Chauffeur-driven AC SUV from Kochi throughout',
+        'Kathakali cultural performance and spice garden tour',
       ],
-      cancellationPolicy: 'Free cancellation up to 15 days before departure',
+      cancellationPolicy: '100% refund up to 14 days prior; 50% refund up to 7 days',
       isRecommended: true,
     },
     {
       id: 2,
       category: 'Heritage & Luxury',
-      title: 'Royal Rajasthan Romance — 7 Days Heritage Tour',
-      expertName: 'Raj Tourism Company',
-      organizationName: 'Raj Tourism Company',
-      expertRating: 4.9,
+      title: 'Royal Rajasthan Heritage & Palace Trail — 7 Days Luxury',
+      expertName: 'Rajputana Heritage Tours',
+      organizationName: 'Rajputana Heritage Tours',
+      expertRating: 5.0,
       expertReviews: 31,
       durationDays: 7,
       totalPrice: 78000,
@@ -225,7 +240,7 @@ const HomePage: React.FC = () => {
   const sampleTestimonials = [
     {
       name: 'Aditya & Neha Singhania',
-      role: 'Family Vacation &bull; Pune',
+      role: 'Family Vacation • Pune',
       destination: 'Kerala 5-Day Retreat',
       stars: 5,
       avatar: 'A',
@@ -234,7 +249,7 @@ const HomePage: React.FC = () => {
     },
     {
       name: 'Kavita Menon',
-      role: 'Solo Cultural Explorer &bull; Bangalore',
+      role: 'Solo Cultural Explorer • Bangalore',
       destination: 'Rajasthan Royal Heritage',
       stars: 5,
       avatar: 'K',
@@ -243,7 +258,7 @@ const HomePage: React.FC = () => {
     },
     {
       name: 'Rohan Deshmukh & Friends',
-      role: 'Adventure Group &bull; Mumbai',
+      role: 'Adventure Group • Mumbai',
       destination: 'Ladakh 9-Day Expedition',
       stars: 5,
       avatar: 'R',
@@ -252,12 +267,24 @@ const HomePage: React.FC = () => {
     },
   ];
 
+  const heroWords = [
+    { text: 'Your', gradient: false },
+    { text: 'Journey.', gradient: false },
+    { text: 'Your', gradient: false },
+    { text: 'Budget.', gradient: false },
+    { text: 'Your', gradient: true },
+    { text: 'AI.', gradient: true },
+  ];
+
   return (
     <div className="bg-navy-dark min-h-screen text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* 2. HERO SECTION */}
+      {/* 2. HERO SECTION WITH CINEMATIC PARALLAX & WORD STAGGER */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36 overflow-hidden">
-        {/* Background Travel Photography with Parallax Atmosphere */}
-        <div className="absolute inset-0 z-0">
+        {/* Background Travel Photography with Smooth Depth Parallax */}
+        <motion.div
+          style={{ y: shouldReduceMotion ? 0 : bgY, opacity: heroOpacity }}
+          className="absolute inset-0 z-0 will-change-transform"
+        >
           <img
             src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920&q=80"
             alt="Cinematic World Travel"
@@ -268,46 +295,91 @@ const HomePage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-navy-dark/95 via-navy-dark/80 to-navy-dark" />
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[450px] bg-gradient-to-tr from-cyan-500/15 via-teal-500/20 to-transparent rounded-full blur-[150px] pointer-events-none" />
           <div className="absolute top-16 right-16 w-80 h-80 bg-amber-400/10 rounded-full blur-[140px] pointer-events-none" />
-        </div>
+        </motion.div>
+
+        {/* Ambient Floating Travel Badges (Desktop) */}
+        {!shouldReduceMotion && (
+          <>
+            <motion.div
+              variants={floatingElement}
+              animate="animate"
+              custom={4.2}
+              className="hidden xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-surface/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 absolute top-40 left-12 z-20 pointer-events-none"
+            >
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Budget Intelligence</span>
+                <span className="text-xs font-black text-white">₹24,000 Trip Optimized</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              variants={floatingElement}
+              animate="animate"
+              custom={5.4}
+              className="hidden xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-surface/80 backdrop-blur-xl border border-teal-500/30 shadow-2xl shadow-teal-950/50 absolute top-52 right-12 z-20 pointer-events-none"
+            >
+              <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold">
+                <Shield className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] text-teal-300 font-bold uppercase tracking-wider block">PayPal Sandbox</span>
+                <span className="text-xs font-black text-white">100% Escrow Protection</span>
+              </div>
+            </motion.div>
+          </>
+        )}
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Hackathon Badge Pill */}
           <motion.div
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 text-xs font-black uppercase tracking-widest mb-6 shadow-[0_0_20px_rgba(0,240,255,0.25)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>WayRivo AI 2.0 &bull; PayPal AI Hackathon 2026</span>
+            <span>WayRivo AI 2.0 • PayPal AI Hackathon 2026</span>
           </motion.div>
 
-          {/* Headline: "Your Journey. Your Budget. Your AI." */}
+          {/* Heading with Word Stagger Entrance */}
           <motion.h1
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.1 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.08] max-w-5xl mx-auto font-heading"
+            variants={wordStaggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.08] max-w-5xl mx-auto font-heading flex flex-wrap justify-center gap-x-3 gap-y-1"
           >
-            Your Journey. Your Budget.{' '}
-            <span className="text-gradient-cyan block sm:inline">Your AI.</span>
+            {heroWords.map((word, i) => (
+              <motion.span
+                key={i}
+                variants={wordStaggerItem}
+                className={word.gradient ? 'text-gradient-cyan inline-block' : 'inline-block text-white'}
+              >
+                {word.text}
+              </motion.span>
+            ))}
           </motion.h1>
 
           {/* Supporting text */}
           <motion.p
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={3}
             className="text-base sm:text-xl text-slate-300 mt-6 max-w-2xl mx-auto font-normal leading-relaxed"
           >
             Discover destinations, plan smarter journeys and experience intelligent travel booking with WayRivo AI.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons with Micro-interactions */}
           <motion.div
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={4}
             className="flex flex-wrap items-center justify-center gap-4 mt-8"
           >
             <Link to="/explore">
@@ -328,15 +400,27 @@ const HomePage: React.FC = () => {
           </motion.div>
 
           {/* 3. AI TRAVEL SEARCH FLOATING PANEL */}
-          <div className="mt-12 sm:mt-16">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={5}
+            className="mt-12 sm:mt-16"
+          >
             <AITravelSearchPanel />
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Live Marketplace Telemetry Metrics with Animated Counters */}
       <section className="relative -mt-4 z-10 max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
           {[
             { label: 'Verified Specialists', value: stats.verifiedExperts || 50, suffix: '+', icon: Shield, color: 'text-cyan-400' },
             { label: 'Trips Synthesized', value: stats.tripsCreated || 1200, suffix: '+', icon: FileText, color: 'text-teal-400' },
@@ -345,10 +429,9 @@ const HomePage: React.FC = () => {
           ].map(({ label, value, suffix, icon: Icon, color }) => (
             <motion.div
               key={label}
-              initial={shouldReduceMotion ? {} : { opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
+              variants={staggerItem}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.25 }}
               className="card-glow p-5 sm:p-6 text-center rounded-2xl bg-surface/90 border border-white/10"
             >
               <Icon className={`w-7 h-7 mx-auto mb-2.5 ${color}`} />
@@ -358,12 +441,18 @@ const HomePage: React.FC = () => {
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">{label}</p>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* 4. FEATURED DESTINATIONS CAROUSEL */}
       <section id="destinations" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10"
+        >
           <div>
             <Badge variant="cyan" size="sm" icon={<Compass className="w-3.5 h-3.5 text-cyan-400" />}>
               Featured Destinations
@@ -391,15 +480,23 @@ const HomePage: React.FC = () => {
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Horizontal Swipeable / Scrollable Carousel */}
-        <div
+        <motion.div
           ref={carouselRef}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
           className="flex gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory"
         >
           {displayDestinations.map((d) => (
-            <div key={d.id} className="min-w-[300px] sm:min-w-[340px] max-w-[360px] snap-start flex-shrink-0">
+            <motion.div
+              key={d.id}
+              variants={staggerItem}
+              className="min-w-[300px] sm:min-w-[340px] max-w-[360px] snap-start flex-shrink-0"
+            >
               <DestinationCard
                 id={d.id}
                 name={d.name}
@@ -412,15 +509,21 @@ const HomePage: React.FC = () => {
                 isPopular={d.isPopular}
                 onExplore={handleDestinationExplore}
               />
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* 5. WHY WAYRIVO AI */}
       <section className="py-24 bg-surface/40 border-y border-border/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportTrigger}
+            className="text-center mb-16"
+          >
             <Badge variant="turquoise" size="sm" icon={<Zap className="w-3.5 h-3.5 text-teal-300" />}>
               Next-Gen Architecture
             </Badge>
@@ -428,9 +531,15 @@ const HomePage: React.FC = () => {
             <p className="section-subtitle mx-auto">
               Combining autonomous artificial intelligence with verified human agency expertise
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportTrigger}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
             {[
               {
                 icon: Bot,
@@ -460,14 +569,13 @@ const HomePage: React.FC = () => {
                 color: 'text-cyan-300',
                 border: 'hover:border-cyan-400/50',
               },
-            ].map(({ icon: Icon, title, desc, color, border }, idx) => (
+            ].map(({ icon: Icon, title, desc, color, border }) => (
               <motion.div
                 key={title}
-                initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: idx * 0.08 }}
-                className={`p-6 sm:p-7 rounded-3xl bg-surface/90 border border-border/80 ${border} transition-all duration-300 hover:shadow-xl flex flex-col justify-between`}
+                variants={staggerItem}
+                whileHover={{ y: -6 }}
+                transition={{ duration: 0.25 }}
+                className={`p-6 sm:p-7 rounded-3xl bg-surface/90 border border-border/80 ${border} transition-colors duration-300 hover:shadow-xl hover:shadow-cyan-500/10 flex flex-col justify-between`}
               >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
@@ -482,13 +590,19 @@ const HomePage: React.FC = () => {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* 6. HOW IT WORKS: 4 ILLUSTRATED STEPS */}
       <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="text-center mb-16"
+        >
           <Badge variant="cyan" size="sm" icon={<HeartHandshake className="w-3.5 h-3.5 text-cyan-400" />}>
             Seamless Workflow
           </Badge>
@@ -496,9 +610,15 @@ const HomePage: React.FC = () => {
           <p className="section-subtitle mx-auto">
             From initial intent to unforgettable memories in four clear stages
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 relative"
+        >
           {[
             {
               step: '01',
@@ -524,14 +644,13 @@ const HomePage: React.FC = () => {
               subtitle: '24/7 Supported Journey',
               desc: 'Travel with confirmed vouchers and dedicated specialist support. Escrow funds disburse upon trip completion.',
             },
-          ].map(({ step, title, subtitle, desc }, idx) => (
+          ].map(({ step, title, subtitle, desc }) => (
             <motion.div
               key={step}
-              initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: idx * 0.08 }}
-              className="group p-6 rounded-3xl bg-surface/80 border border-border/80 hover:border-cyan-500/40 transition-all flex flex-col justify-between"
+              variants={staggerItem}
+              whileHover={{ y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="group p-6 rounded-3xl bg-surface/80 border border-border/80 hover:border-cyan-500/40 transition-colors flex flex-col justify-between"
             >
               <div>
                 <span className="text-4xl font-black font-mono text-slate-600 group-hover:text-cyan-400 transition-colors">
@@ -549,13 +668,19 @@ const HomePage: React.FC = () => {
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* 7. POPULAR TRAVEL PACKAGES */}
       <section id="packages" className="py-24 bg-surface/40 border-y border-border/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportTrigger}
+            className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8"
+          >
             <div>
               <Badge variant="gold" size="sm" icon={<Sparkles className="w-3.5 h-3.5 text-amber-300" />}>
                 Curated Packages
@@ -582,39 +707,52 @@ const HomePage: React.FC = () => {
                 </button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportTrigger}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
             {filteredPackages.map((pkg) => (
-              <PackageCard
-                key={pkg.id}
-                id={pkg.id}
-                title={pkg.title}
-                expertName={pkg.expertName}
-                organizationName={pkg.organizationName}
-                expertRating={pkg.expertRating}
-                expertReviews={pkg.expertReviews}
-                durationDays={pkg.durationDays}
-                totalPrice={pkg.totalPrice}
-                pricePerPerson={pkg.pricePerPerson}
-                currency={pkg.currency}
-                inclusions={pkg.inclusions}
-                cancellationPolicy={pkg.cancellationPolicy}
-                isRecommended={pkg.isRecommended}
-                onSelect={handlePackageSelect}
-                onViewDetails={handlePackageSelect}
-              />
+              <motion.div key={pkg.id} variants={staggerItem}>
+                <PackageCard
+                  id={pkg.id}
+                  title={pkg.title}
+                  expertName={pkg.expertName}
+                  organizationName={pkg.organizationName}
+                  expertRating={pkg.expertRating}
+                  expertReviews={pkg.expertReviews}
+                  durationDays={pkg.durationDays}
+                  totalPrice={pkg.totalPrice}
+                  pricePerPerson={pkg.pricePerPerson}
+                  currency={pkg.currency}
+                  inclusions={pkg.inclusions}
+                  cancellationPolicy={pkg.cancellationPolicy}
+                  isRecommended={pkg.isRecommended}
+                  onSelect={handlePackageSelect}
+                  onViewDetails={handlePackageSelect}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* 8. AI TRAVEL ASSISTANT PROMOTION */}
       <AIAssistantPromotion />
 
-      {/* 9. TESTIMONIALS (Clearly Identified Sample/Demo) */}
+      {/* 9. TESTIMONIALS */}
       <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="text-center mb-16"
+        >
           <Badge variant="cyan" size="sm" icon={<Star className="w-3.5 h-3.5 text-cyan-400" />}>
             Curated Traveler Feedback (Demo & Beta Experiences)
           </Badge>
@@ -622,17 +760,22 @@ const HomePage: React.FC = () => {
           <p className="section-subtitle mx-auto">
             Notice: Illustrated beta traveler journeys demonstrating WayRivo AI matching & PayPal Escrow guarantee
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
           {sampleTestimonials.map((t, idx) => (
             <motion.div
               key={idx}
-              initial={shouldReduceMotion ? {} : { opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: idx * 0.08 }}
-              className="card p-6 flex flex-col justify-between hover:border-cyan-500/30 transition-all"
+              variants={staggerItem}
+              whileHover={{ y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="card p-6 flex flex-col justify-between hover:border-cyan-500/30 transition-colors"
             >
               <div>
                 <div className="flex items-center gap-1 mb-3">
@@ -657,7 +800,7 @@ const HomePage: React.FC = () => {
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* 11. FAQ ACCORDION SECTION */}
@@ -667,7 +810,13 @@ const HomePage: React.FC = () => {
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-navy to-navy-dark border-t border-border/80">
         <div className="absolute inset-0 bg-radial-gradient from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+        <motion.div
+          variants={scaleReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportTrigger}
+          className="max-w-4xl mx-auto px-4 text-center relative z-10"
+        >
           <Badge variant="cyan" size="sm" glow icon={<Lock className="w-3.5 h-3.5 text-cyan-400" />}>
             100% Escrow Protection with PayPal Sandbox
           </Badge>
@@ -693,7 +842,7 @@ const HomePage: React.FC = () => {
               </Button>
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

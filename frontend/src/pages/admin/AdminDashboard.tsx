@@ -18,6 +18,9 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
+import { staggerContainer, staggerItem, fadeUp, viewportTrigger } from '../../utils/animations';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -69,28 +72,32 @@ const AdminDashboard: React.FC = () => {
   const primaryCards = [
     {
       label: 'Total Revenue',
-      value: `₹${Number(analytics?.totalRevenue || stats.totalRevenue || 0).toLocaleString('en-IN')}`,
+      rawNumber: Number(analytics?.totalRevenue || stats.totalRevenue || 0),
+      isCurrency: true,
       sub: `$${(Number(analytics?.totalRevenue || 0) / 83.5).toFixed(2)} USD Verified Captures`,
       icon: DollarSign,
       color: 'from-emerald-500/20 to-teal-500/10 text-emerald-400 border-emerald-500/30',
     },
     {
       label: 'Total Bookings',
-      value: analytics?.totalBookings ?? stats.totalBookings ?? 0,
+      rawNumber: Number(analytics?.totalBookings ?? stats.totalBookings ?? 0),
+      isCurrency: false,
       sub: `${analytics?.successfulPayments || 0} Successful Captures`,
       icon: Briefcase,
       color: 'from-blue-500/20 to-cyan-500/10 text-cyan-400 border-cyan-500/30',
     },
     {
       label: 'Escrow Held',
-      value: `₹${Number(analytics?.totalEscrowHeld || stats.totalEscrowHeld || 0).toLocaleString('en-IN')}`,
+      rawNumber: Number(analytics?.totalEscrowHeld || stats.totalEscrowHeld || 0),
+      isCurrency: true,
       sub: 'Protected PayPal Sandbox Deposits',
       icon: ShieldCheck,
       color: 'from-purple-500/20 to-indigo-500/10 text-purple-400 border-purple-500/30',
     },
     {
       label: 'Pending Payments',
-      value: analytics?.pendingPayments ?? 0,
+      rawNumber: Number(analytics?.pendingPayments ?? 0),
+      isCurrency: false,
       sub: 'Awaiting User Approval / Checkout',
       icon: CreditCard,
       color: 'from-amber-500/20 to-orange-500/10 text-amber-400 border-amber-500/30',
@@ -142,11 +149,19 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {primaryCards.map(({ label, value, sub, icon: Icon, color }) => (
-          <div
+      {/* KPI METRIC CARDS with Stagger Entrance */}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        {primaryCards.map(({ label, rawNumber, isCurrency, sub, icon: Icon, color }) => (
+          <motion.div
             key={label}
+            variants={staggerItem}
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
             className={`p-5 rounded-2xl bg-gradient-to-br ${color} bg-slate-900 border shadow-lg space-y-2`}
           >
             <div className="flex items-center justify-between">
@@ -155,18 +170,32 @@ const AdminDashboard: React.FC = () => {
                 <Icon className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-white">{value}</p>
+            <p className="text-2xl font-black text-white font-mono flex items-center">
+              {isCurrency && <span>₹</span>}
+              <AnimatedCounter value={rawNumber} />
+            </p>
             <p className="text-[11px] text-slate-400">{sub}</p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* 10 MODULES QUICK ACCESS MATRIX */}
-      <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportTrigger}
+        className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3"
+      >
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
           <Activity className="w-3.5 h-3.5 text-cyan-400" /> Platform Management Modules
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-2 sm:grid-cols-5 gap-3"
+        >
           {[
             { name: '1. Dashboard Overview', path: '/admin/dashboard', icon: TrendingUp },
             { name: '2. User Management', path: '/admin/users', icon: Users },
@@ -181,25 +210,32 @@ const AdminDashboard: React.FC = () => {
           ].map((mod) => {
             const Icon = mod.icon;
             return (
-              <Link
-                key={mod.name}
-                to={mod.path}
-                className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-cyan-500/40 hover:bg-slate-800/40 transition-all group flex items-center gap-2.5"
-              >
-                <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shrink-0">
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-300 group-hover:text-white truncate">
-                  {mod.name}
-                </span>
-              </Link>
+              <motion.div key={mod.name} variants={staggerItem} whileHover={{ y: -3 }}>
+                <Link
+                  to={mod.path}
+                  className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-cyan-500/40 hover:bg-slate-800/40 transition-colors group flex items-center gap-2.5"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shrink-0">
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[11px] font-semibold text-slate-300 group-hover:text-white truncate">
+                    {mod.name}
+                  </span>
+                </Link>
+              </motion.div>
             );
           })}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* FINANCIAL & BOOKING ANALYTICS (RECHARTS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportTrigger}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      >
         {/* Chart 1: Booking & Revenue Timeline */}
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
@@ -267,7 +303,7 @@ const AdminDashboard: React.FC = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* PACKAGE PERFORMANCE SECTION */}
       <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">

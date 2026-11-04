@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { userService, paymentService } from '../../services';
+import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
+import { staggerContainer, staggerItem } from '../../utils/animations';
 import {
   Briefcase,
   Calendar,
@@ -175,72 +178,111 @@ const TravelerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* OVERVIEW: 5 Key Metrics Display */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      {/* OVERVIEW: 5 Key Metrics Display with Animated Counters */}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4"
+      >
         {/* Total Trips */}
-        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md">
+        <motion.div
+          variants={staggerItem}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors shadow-md"
+        >
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Trips</span>
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
               <Briefcase className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-white">{overview.totalTrips || 0}</p>
+          <p className="text-2xl font-black text-white font-mono">
+            <AnimatedCounter value={overview.totalTrips || 0} />
+          </p>
           <span className="text-[10px] text-slate-400">All-time reservations</span>
-        </div>
+        </motion.div>
 
         {/* Upcoming Bookings */}
-        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md">
+        <motion.div
+          variants={staggerItem}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors shadow-md"
+        >
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider">Upcoming Bookings</span>
             <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-cyan-400">{overview.upcomingBookingsCount || 0}</p>
+          <p className="text-2xl font-black text-cyan-400 font-mono">
+            <AnimatedCounter value={overview.upcomingBookingsCount || 0} />
+          </p>
           <span className="text-[10px] text-cyan-300/80">Confirmed or Escrow Held</span>
-        </div>
+        </motion.div>
 
         {/* Completed Trips */}
-        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md">
+        <motion.div
+          variants={staggerItem}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors shadow-md"
+        >
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider">Completed Trips</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
               <CheckCircle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-emerald-400">{overview.completedTripsCount || 0}</p>
+          <p className="text-2xl font-black text-emerald-400 font-mono">
+            <AnimatedCounter value={overview.completedTripsCount || 0} />
+          </p>
           <span className="text-[10px] text-emerald-300/80">Safely concluded tours</span>
-        </div>
+        </motion.div>
 
         {/* Total Travel Expenditure */}
-        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md">
+        <motion.div
+          variants={staggerItem}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors shadow-md"
+        >
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider">Expenditure</span>
             <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-white">
-            ₹{Number(overview.totalExpenditure || 0).toLocaleString('en-IN')}
+          <p className="text-2xl font-black text-white font-mono flex items-center">
+            <span>₹</span>
+            <AnimatedCounter value={Number(overview.totalExpenditure || 0)} />
           </p>
           <span className="text-[10px] text-slate-400">Escrow & captured total</span>
-        </div>
+        </motion.div>
 
         {/* Pending Payments */}
-        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md col-span-2 sm:col-span-1">
+        <motion.div
+          variants={staggerItem}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors shadow-md col-span-2 sm:col-span-1"
+        >
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider">Pending Payments</span>
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
               <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-amber-400">{overview.pendingPaymentsCount || 0}</p>
+          <p className="text-2xl font-black text-amber-400 font-mono">
+            <AnimatedCounter value={overview.pendingPaymentsCount || 0} />
+          </p>
           <span className="text-[10px] text-amber-300/80">Awaiting PayPal checkout</span>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      {/* TAB NAVIGATION */}
+      {/* TAB NAVIGATION with Animated Active Indicator */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-800">
         {[
           { id: 'overview', label: 'Dashboard Overview', icon: Briefcase },
@@ -256,14 +298,19 @@ const TravelerDashboard: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
-                isActive
-                  ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-              }`}
+              className="relative px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap cursor-pointer transition-colors"
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
-              {tab.label}
+              {isActive && (
+                <motion.span
+                  layoutId="travelerTabIndicator"
+                  className="absolute inset-0 bg-cyan-500/15 border border-cyan-500/30 rounded-xl"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <Icon className={`relative z-10 w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+              <span className={`relative z-10 ${isActive ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'}`}>
+                {tab.label}
+              </span>
             </button>
           );
         })}

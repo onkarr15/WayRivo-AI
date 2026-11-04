@@ -34,8 +34,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ${rightIcon ? 'pr-11' : ''}
               ${
                 error
-                  ? 'border-red-500/70 focus:border-red-400 focus:ring-2 focus:ring-red-500/20'
-                  : 'border-border hover:border-border-light focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20'
+                  ? 'border-red-500/70 focus:border-red-400 focus:ring-2 focus:ring-red-500/20 focus:shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                  : 'border-border hover:border-border-light focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/25 focus:shadow-[0_0_15px_rgba(0,240,255,0.2)]'
               }
               ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-900/50' : ''}
               ${className}`}

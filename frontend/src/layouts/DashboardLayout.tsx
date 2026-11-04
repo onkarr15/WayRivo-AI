@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { pageVariants } from '../utils/animations';
 import {
   LayoutDashboard,
   MapPin,
@@ -165,7 +167,17 @@ const DashboardLayout: React.FC = () => {
         </header>
 
         <main className="p-4 sm:p-6 lg:p-8 flex-1">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
