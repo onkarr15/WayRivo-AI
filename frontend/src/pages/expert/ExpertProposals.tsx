@@ -16,11 +16,7 @@ const ExpertProposals: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProposals();
-  }, [page]);
-
-  const fetchProposals = async () => {
+  const fetchProposals = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await proposalService.getMy(page, 10);
@@ -29,7 +25,11 @@ const ExpertProposals: React.FC = () => {
       setTotalPages(data?.totalPages || 0);
     } catch {}
     setLoading(false);
-  };
+  }, [page]);
+
+  useEffect(() => {
+    fetchProposals();
+  }, [fetchProposals]);
 
   if (loading) {
     return (

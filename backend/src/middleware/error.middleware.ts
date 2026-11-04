@@ -10,7 +10,11 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  logger.error(`[${req.method}] ${req.originalUrl} - ${err.message}`, err.stack);
+  if (err instanceof AppError && err.statusCode === 404) {
+    logger.warn(`[${req.method}] ${req.originalUrl} - ${err.message}`);
+  } else {
+    logger.error(`[${req.method}] ${req.originalUrl} - ${err.message}`, err.stack);
+  }
 
   // 1. Handled App Errors
   if (err instanceof AppError) {

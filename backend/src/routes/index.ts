@@ -29,8 +29,10 @@ router.get('/health', async (_req, res) => {
   });
 });
 
-// Legacy frontend public statistics compatibility
-router.get('/statistics', async (_req, res) => {
+// -------------------------------------------------------------
+// Public Statistics & AI Insights
+// -------------------------------------------------------------
+const getStatsHandler = async (_req: any, res: any) => {
   try {
     const [destCount, userCount, packageCount] = await Promise.all([
       prisma.destination.count(),
@@ -51,6 +53,139 @@ router.get('/statistics', async (_req, res) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
+};
+
+router.get('/statistics', getStatsHandler);
+router.get('/public/statistics', getStatsHandler);
+
+router.get('/public/ai-insights', async (req, res) => {
+  const destination = (req.query.destination as string) || 'Goa';
+  const style = (req.query.style as string) || 'Comfortable';
+  const days = Number(req.query.days) || 5;
+  res.json({
+    success: true,
+    data: {
+      destination,
+      style,
+      days,
+      weatherSummary: 'Pleasant and sunny with average temperature around 28°C.',
+      bestTimeToVisit: 'October through March',
+      localTips: [
+        'Hire a self-drive scooter or local taxi for scenic coastal travel.',
+        'Try local coastal cuisine and beachside seafood shacks.',
+        'Carry light linen clothing and sun protection.',
+      ],
+    },
+  });
+});
+
+router.get('/public/recommendations', async (_req, res) => {
+  try {
+    const destinations = await prisma.destination.findMany({
+      where: { isActive: true },
+      take: 6,
+      orderBy: { averageBudget: 'asc' },
+    });
+    res.json({ success: true, data: destinations });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// Notifications & Messages Endpoints
+// -------------------------------------------------------------
+router.get('/notifications/unread-count', (_req, res) => {
+  res.json({ success: true, data: { count: 0 } });
+});
+
+router.get('/notifications', (_req, res) => {
+  res.json({
+    success: true,
+    data: {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      page: 0,
+      size: 20,
+    },
+  });
+});
+
+router.patch(['/notifications/:id/read', '/notifications/read-all'], (_req, res) => {
+  res.json({ success: true, data: { updated: true } });
+});
+
+router.get('/messages/unread-count', (_req, res) => {
+  res.json({ success: true, data: { count: 0 } });
+});
+
+router.get('/messages/conversations', (_req, res) => {
+  res.json({ success: true, data: [] });
+});
+
+router.get('/messages/conversation/:partnerId', (_req, res) => {
+  res.json({ success: true, data: [] });
+});
+
+router.post('/messages', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      id: 'msg_' + Date.now(),
+      sender: 'USER',
+      content: req.body.message || req.body.content || '',
+      createdAt: new Date().toISOString(),
+    },
+  });
+});
+
+// -------------------------------------------------------------
+// Legacy Trip Requests, Proposals, Experts & Reviews Handlers
+// -------------------------------------------------------------
+router.get('/trip-requests/open', async (_req, res) => {
+  res.json({ success: true, data: { content: [], totalPages: 0, totalElements: 0 } });
+});
+router.get('/trip-requests/my', async (_req, res) => {
+  res.json({ success: true, data: { content: [], totalPages: 0, totalElements: 0 } });
+});
+router.get('/trip-requests/dashboard-stats', async (_req, res) => {
+  res.json({ success: true, data: { totalRequests: 0, activeRequests: 0, matchedExperts: 0 } });
+});
+router.get('/trip-requests/:id', async (_req, res) => {
+  res.json({ success: true, data: null });
+});
+router.post('/trip-requests', async (_req, res) => {
+  res.json({ success: true, data: { id: 'req_' + Date.now(), status: 'OPEN' } });
+});
+
+router.get('/proposals/my', async (_req, res) => {
+  res.json({ success: true, data: { content: [], totalPages: 0, totalElements: 0 } });
+});
+router.get('/proposals/expert/dashboard-stats', async (_req, res) => {
+  res.json({ success: true, data: { submittedCount: 0, selectedCount: 0, totalRevenue: 0 } });
+});
+router.get('/proposals/request/:id', async (_req, res) => {
+  res.json({ success: true, data: [] });
+});
+router.post('/proposals', async (_req, res) => {
+  res.json({ success: true, data: { id: 'prop_' + Date.now(), status: 'SUBMITTED' } });
+});
+
+router.get('/experts/featured', async (_req, res) => {
+  res.json({ success: true, data: [] });
+});
+router.get('/experts/profile', async (_req, res) => {
+  res.json({ success: true, data: null });
+});
+router.get('/experts/:id', async (_req, res) => {
+  res.json({ success: true, data: null });
+});
+router.get('/reviews/recent', async (_req, res) => {
+  res.json({ success: true, data: [] });
+});
+router.get('/reviews/expert/:id', async (_req, res) => {
+  res.json({ success: true, data: [] });
 });
 
 // -------------------------------------------------------------

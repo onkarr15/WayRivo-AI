@@ -80,7 +80,7 @@ const Footer: React.FC = () => (
               ['Create Trip Request', '/traveler/create-trip'],
             ].map(([label, href]) => (
               <Link
-                key={href}
+                key={label}
                 to={href}
                 className="block text-xs font-medium text-slate-400 hover:text-cyan-400 transition-colors"
               >
@@ -100,10 +100,10 @@ const Footer: React.FC = () => (
               ['Join as Verified Expert', '/register'],
               ['Specialist Dashboard', '/expert/dashboard'],
               ['Browse Open Requests', '/expert/requests'],
-              ['Submit Proposals', '/expert/requests'],
+              ['Submit Proposals', '/expert/proposals'],
             ].map(([label, href]) => (
               <Link
-                key={href}
+                key={label}
                 to={href}
                 className="block text-xs font-medium text-slate-400 hover:text-cyan-400 transition-colors"
               >
