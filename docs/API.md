@@ -112,3 +112,4 @@
 | `/admin/cancellations` | `GET` | Admin | Traveler cancellation queue awaiting administrative refund review |
 | `/admin/audit-logs` | `GET` | Admin | Immutable security and moderation audit records from PostgreSQL |
 | `/admin/inventory` | `GET` | Admin | Total inventory counts and low availability alerts (rooms <= 5, slots <= 6) |
+

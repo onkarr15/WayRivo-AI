@@ -143,3 +143,4 @@ sequenceDiagram
     API->>DB: Atomically update Booking -> CONFIRMED, Escrow -> HELD, decrement inventory
     API-->>Frontend: Escrow Confirmation & Receipt
 ```
+

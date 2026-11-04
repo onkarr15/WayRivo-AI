@@ -83,3 +83,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Monorepo structure with decoupled `frontend` and `backend`.
   - Vite, React 19, Tailwind CSS, Lucide Icons, AG Grid, Recharts.
   - Express, TypeScript, Prisma, Zod, Helmet, Morgan, Winston.
+

@@ -129,3 +129,4 @@ The agent's system prompt enforces strict behavioral boundaries:
 - **Strict Currency Standard**: All prices are formatted in Indian Rupees (INR, ₹) for domestic travelers and converted to USD for PayPal checkout.
 - **Truthful Availability**: If inventory is zero or dates are sold out, the agent must inform the traveler and offer the next best available date.
 - **No Disparagement**: Maintains objective, helpful, and courteous tone at all times.
+

@@ -269,3 +269,4 @@ Content-Type: application/json
 | **Network Failure during Capture** | Transactional database rollbacks (`prisma.$transaction`) guarantee consistency. |
 | **Inventory Overselling** | Pre-order room/seat locks and atomic inventory decrements. |
 | **Unauthorized Refunds** | Role-Based Access Control (`requireAdmin`) and audit logging on all refund actions. |
+

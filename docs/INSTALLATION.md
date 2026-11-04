@@ -143,3 +143,4 @@ For rapid verification during hackathon judging:
 |---|---|---|---|
 | **Admin** | `admin@wayrivo.com` | `AdminPassword@123` | Full Access (`/admin/*`) |
 | **Traveler** | `traveler@wayrivo.com` | `TravelerPassword@123` | Traveler Portal (`/traveler/*`) |
+

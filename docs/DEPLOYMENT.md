@@ -153,3 +153,4 @@ npx prisma db seed
 - [ ] **AI Assistant**: Test conversational inquiry and verify structured tool response.
 - [ ] **PayPal Checkout**: Complete sandbox payment; verify order capture and booking status transition to `ESCROW_HOLD`.
 - [ ] **Admin Dashboard**: Log in with demo admin credentials (`admin@wayrivo.com` / `Admin@123456`) and inspect live analytics and AG Grid views.
+

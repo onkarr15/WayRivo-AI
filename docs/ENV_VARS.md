@@ -39,3 +39,4 @@
 1. **Secret Isolation**: `PAYPAL_CLIENT_SECRET`, `GEMINI_API_KEY`, and `DATABASE_URL` are strictly referenced in backend code and never bundled in client distributions.
 2. **Dynamic Configuration Endpoint**: The frontend calls `GET /api/v1/payments/config` to safely obtain the public `clientId`, transaction currency, and active exchange rate without receiving any secrets.
 3. **Environment Separation**: Distinct sandbox keys and production credentials prevent testing pollution in live payment processors.
+
