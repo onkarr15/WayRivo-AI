@@ -105,8 +105,9 @@ export const proposalService = {
 };
 
 export const bookingService = {
-  getTravelerBookings: (page = 0, size = 10) => api.get(`/bookings/traveler?page=${page}&size=${size}`),
-  getExpertBookings: (page = 0, size = 10) => api.get(`/bookings/expert?page=${page}&size=${size}`),
+  getMy: () => api.get('/bookings/my'),
+  getTravelerBookings: (page = 0, size = 10) => api.get(`/bookings/my?page=${page}&size=${size}`),
+  getExpertBookings: (page = 0, size = 10) => api.get(`/bookings/my?page=${page}&size=${size}`),
   getById: (id: number | string) => api.get(`/bookings/${id}`),
   create: (data: any) => api.post('/bookings', data),
   updateStatus: (id: number | string, status: string) => api.patch(`/bookings/${id}/status?status=${status}`),
@@ -114,8 +115,10 @@ export const bookingService = {
 
 export const paymentService = {
   getConfig: () => api.get('/payments/config'),
-  createOrder: (data: { bookingId?: string | number; amount?: number; currency?: string }) => api.post('/payments/create-order', data),
-  captureOrder: (data: { orderId: string; bookingId?: string | number }) => api.post('/payments/capture-order', data),
+  createOrder: (data: { bookingId: string | number; returnUrl?: string; cancelUrl?: string }) => api.post('/payments/create-order', data),
+  captureOrder: (data: { bookingId: string | number; paypalOrderId: string; idempotencyKey?: string }) => api.post('/payments/capture-order', data),
+  processRefund: (data: { bookingId?: string; paymentId?: string; amount?: number; reason?: string }) => api.post('/payments/refund', data),
+  requestCancellation: (bookingId: string | number, reason?: string) => api.post(`/payments/cancel-request/${bookingId}`, { reason }),
   verifyPayment: (data: { bookingId: number | string; transactionReference?: string; paymentMethod?: string; notes?: string }) => api.post('/payments/verify-payment', data),
   getBookingTransactions: (bookingId: number | string) => api.get(`/payments/booking/${bookingId}`),
 };

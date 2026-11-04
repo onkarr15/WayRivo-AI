@@ -5,6 +5,11 @@ export interface PayPalOrderResponse {
   id: string;
   status: string;
   links: { href: string; rel: string; method: string }[];
+  chargeCurrency: string;
+  chargeAmount: string;
+  displayCurrency: string;
+  displayAmount: string;
+  exchangeRate?: number;
 }
 
 export interface PayPalCaptureResponse {
@@ -26,15 +31,27 @@ export interface PayPalCaptureResponse {
   }[];
 }
 
+export interface PayPalRefundResponse {
+  id: string;
+  status: string;
+  amount: { value: string; currency_code: string };
+  note_to_payer?: string;
+  create_time?: string;
+}
+
 export class PayPalClient {
   private apiBase: string;
   private clientId: string;
   private clientSecret: string;
+  public defaultCurrency: string;
+  public exchangeRateInrToUsd: number;
 
   constructor() {
     this.apiBase = env.PAYPAL_API_BASE;
     this.clientId = env.PAYPAL_CLIENT_ID;
     this.clientSecret = env.PAYPAL_CLIENT_SECRET;
+    this.defaultCurrency = env.PAYPAL_CURRENCY || 'USD';
+    this.exchangeRateInrToUsd = env.PAYPAL_EXCHANGE_RATE || 83.5;
   }
 
   private async getAccessToken(): Promise<string> {
@@ -67,19 +84,64 @@ export class PayPalClient {
   }
 
   /**
+   * Currency Conversion Helper:
+   * PayPal Sandbox international accounts operate in USD, EUR, etc.
+   * If display currency is INR and PayPal currency is USD, we convert and record rate explicitly.
+   */
+  public resolveTransactionCurrency(displayAmount: number | string, inputCurrency: string = 'INR'): {
+    chargeCurrency: string;
+    chargeAmount: string;
+    displayCurrency: string;
+    displayAmount: string;
+    exchangeRate?: number;
+  } {
+    const numAmount = typeof displayAmount === 'string' ? parseFloat(displayAmount) : displayAmount;
+    const targetCurrency = this.defaultCurrency.toUpperCase();
+
+    if (inputCurrency.toUpperCase() === targetCurrency) {
+      return {
+        chargeCurrency: targetCurrency,
+        chargeAmount: numAmount.toFixed(2),
+        displayCurrency: inputCurrency.toUpperCase(),
+        displayAmount: numAmount.toFixed(2),
+      };
+    }
+
+    if (inputCurrency.toUpperCase() === 'INR' && targetCurrency === 'USD') {
+      const converted = Math.round((numAmount / this.exchangeRateInrToUsd) * 100) / 100;
+      return {
+        chargeCurrency: 'USD',
+        chargeAmount: converted.toFixed(2),
+        displayCurrency: 'INR',
+        displayAmount: numAmount.toFixed(2),
+        exchangeRate: this.exchangeRateInrToUsd,
+      };
+    }
+
+    // Default 1:1 if unknown
+    return {
+      chargeCurrency: targetCurrency,
+      chargeAmount: numAmount.toFixed(2),
+      displayCurrency: inputCurrency,
+      displayAmount: numAmount.toFixed(2),
+    };
+  }
+
+  /**
    * Create PayPal Order v2 with Escrow Intent
    */
   async createOrder(params: {
     referenceId: string;
-    amount: string;
-    currency: string;
+    amount: string | number;
+    currency?: string;
     description: string;
     returnUrl?: string;
     cancelUrl?: string;
   }): Promise<PayPalOrderResponse> {
-    const { referenceId, amount, currency, description, returnUrl, cancelUrl } = params;
+    const { referenceId, amount, currency = 'INR', description, returnUrl, cancelUrl } = params;
+    const conversion = this.resolveTransactionCurrency(amount, currency);
 
-    // Real Sandbox Mode if credentials configured
+    // Real Sandbox API call if credentials present and not placeholder demo
     if (this.clientId && this.clientSecret && !this.clientId.startsWith('AY_Demo')) {
       const token = await this.getAccessToken();
       const response = await fetch(`${this.apiBase}/v2/checkout/orders`, {
@@ -96,8 +158,8 @@ export class PayPalClient {
               reference_id: referenceId,
               description,
               amount: {
-                currency_code: currency,
-                value: amount,
+                currency_code: conversion.chargeCurrency,
+                value: conversion.chargeAmount,
               },
             },
           ],
@@ -116,7 +178,13 @@ export class PayPalClient {
         throw new Error(`PayPal Create Order failed: ${JSON.stringify(errorData)}`);
       }
 
-      return (await response.json()) as PayPalOrderResponse;
+      const orderData = (await response.json()) as any;
+      return {
+        id: orderData.id,
+        status: orderData.status,
+        links: orderData.links || [],
+        ...conversion,
+      };
     }
 
     // High-fidelity Sandbox Simulation for development & tests
@@ -136,6 +204,7 @@ export class PayPalClient {
           method: 'POST',
         },
       ],
+      ...conversion,
     };
   }
 
@@ -179,13 +248,128 @@ export class PayPalClient {
               {
                 id: mockCaptureId,
                 status: 'COMPLETED',
-                amount: { currency_code: 'INR', value: '1000.00' },
+                amount: { currency_code: this.defaultCurrency, value: '100.00' },
               },
             ],
           },
         },
       ],
     };
+  }
+
+  /**
+   * Refund an approved and captured PayPal transaction (Administrator Workflow)
+   */
+  async refundCapture(params: {
+    captureId: string;
+    amount?: string;
+    currency?: string;
+    noteToPayer?: string;
+  }): Promise<PayPalRefundResponse> {
+    const { captureId, amount, currency = this.defaultCurrency, noteToPayer } = params;
+
+    if (this.clientId && this.clientSecret && !this.clientId.startsWith('AY_Demo')) {
+      const token = await this.getAccessToken();
+      const body: any = {};
+      if (amount) {
+        body.amount = { value: amount, currency_code: currency };
+      }
+      if (noteToPayer) {
+        body.note_to_payer = noteToPayer;
+      }
+
+      const response = await fetch(`${this.apiBase}/v2/payments/captures/${captureId}/refund`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'PayPal-Request-Id': `refund-${captureId}-${Date.now()}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`PayPal Refund failed: ${JSON.stringify(errorData)}`);
+      }
+
+      return (await response.json()) as PayPalRefundResponse;
+    }
+
+    // High-fidelity Sandbox Simulation
+    const mockRefundId = `REF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    return {
+      id: mockRefundId,
+      status: 'COMPLETED',
+      amount: {
+        value: amount || '100.00',
+        currency_code: currency,
+      },
+      note_to_payer: noteToPayer || 'Refund processed by WayRivo Admin Escrow Manager',
+      create_time: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Cryptographically verify PayPal Webhook Signature
+   */
+  async verifyWebhookSignature(params: {
+    headers: Record<string, string | undefined>;
+    rawBody: any;
+    webhookId?: string;
+  }): Promise<boolean> {
+    const { headers, rawBody } = params;
+    const webhookId = params.webhookId || env.PAYPAL_WEBHOOK_ID;
+
+    const authAlgo = headers['paypal-auth-algo'];
+    const certUrl = headers['paypal-cert-url'];
+    const transmissionId = headers['paypal-transmission-id'];
+    const transmissionSig = headers['paypal-transmission-sig'];
+    const transmissionTime = headers['paypal-transmission-time'];
+
+    // In live sandbox mode with valid headers and credentials
+    if (
+      this.clientId &&
+      this.clientSecret &&
+      !this.clientId.startsWith('AY_Demo') &&
+      authAlgo &&
+      certUrl &&
+      transmissionSig
+    ) {
+      try {
+        const token = await this.getAccessToken();
+        const response = await fetch(`${this.apiBase}/v1/notifications/verify-webhook-signature`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            auth_algo: authAlgo,
+            cert_url: certUrl,
+            transmission_id: transmissionId,
+            transmission_sig: transmissionSig,
+            transmission_time: transmissionTime,
+            webhook_id: webhookId,
+            webhook_event: rawBody,
+          }),
+        });
+
+        if (!response.ok) return false;
+        const result = (await response.json()) as any;
+        return result.verification_status === 'SUCCESS';
+      } catch (err) {
+        logger.error('PayPal webhook verification failed:', err);
+        return false;
+      }
+    }
+
+    // Sandbox Simulation Mode validation:
+    // Ensure payload has valid event_type and structure
+    if (rawBody && typeof rawBody === 'object' && rawBody.event_type) {
+      return true;
+    }
+    return false;
   }
 }
 

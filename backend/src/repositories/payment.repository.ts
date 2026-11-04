@@ -123,6 +123,34 @@ export class PaymentRepository {
         },
       });
 
+      // Atomically decrement inventory availability for booked items
+      const bookingWithItems = await tx.booking.findUnique({
+        where: { id: payment.bookingId },
+        include: { items: true },
+      });
+      if (bookingWithItems?.items) {
+        for (const item of bookingWithItems.items) {
+          if (item.referenceId) {
+            if (item.itemType === 'HOTEL') {
+              await tx.hotel.update({
+                where: { id: item.referenceId },
+                data: { availableRooms: { decrement: item.quantity } },
+              }).catch(() => {});
+            } else if (item.itemType === 'ACTIVITY') {
+              await tx.activity.update({
+                where: { id: item.referenceId },
+                data: { availableSlots: { decrement: item.quantity } },
+              }).catch(() => {});
+            } else if (item.itemType === 'PACKAGE') {
+              await tx.travelPackage.update({
+                where: { id: item.referenceId },
+                data: { availableSeats: { decrement: item.quantity } },
+              }).catch(() => {});
+            }
+          }
+        }
+      }
+
       // Audit Log
       await tx.auditLog.create({
         data: {
@@ -140,6 +168,146 @@ export class PaymentRepository {
       });
 
       return updatedPayment;
+    });
+  }
+
+  /**
+   * Record Administrative Refund (Supported PayPal Refund Workflow)
+   */
+  async recordRefund(params: {
+    paymentId: string;
+    refundId: string;
+    refundAmount: Prisma.Decimal;
+    reason?: string;
+    adminUserId?: string;
+  }) {
+    const { paymentId, refundId, refundAmount, reason, adminUserId } = params;
+
+    return prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({
+        where: { id: paymentId },
+        include: { booking: { include: { items: true } } },
+      });
+
+      if (!payment) {
+        throw new NotFoundError(`Payment record not found with id: ${paymentId}`);
+      }
+
+      if (payment.status !== PaymentStatus.CAPTURED) {
+        throw new BadRequestError(
+          `Cannot refund payment in status: ${payment.status}. Only captured payments can be refunded.`
+        );
+      }
+
+      // Update Payment
+      const updatedPayment = await tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          status: PaymentStatus.REFUNDED,
+          escrowStatus: EscrowStatus.REFUNDED,
+          captureData: {
+            ...(typeof payment.captureData === 'object' && payment.captureData !== null ? payment.captureData : {}),
+            refund: {
+              refundId,
+              amount: refundAmount.toString(),
+              reason,
+              refundedAt: new Date().toISOString(),
+              adminUserId,
+            },
+          },
+        },
+      });
+
+      // Transition Booking status to REFUNDED
+      await tx.booking.update({
+        where: { id: payment.bookingId },
+        data: {
+          status: BookingStatus.REFUNDED,
+        },
+      });
+
+      // Restore inventory counts
+      for (const item of payment.booking.items) {
+        if (item.referenceId) {
+          if (item.itemType === 'HOTEL') {
+            await tx.hotel.update({
+              where: { id: item.referenceId },
+              data: { availableRooms: { increment: item.quantity } },
+            }).catch(() => {});
+          } else if (item.itemType === 'ACTIVITY') {
+            await tx.activity.update({
+              where: { id: item.referenceId },
+              data: { availableSlots: { increment: item.quantity } },
+            }).catch(() => {});
+          } else if (item.itemType === 'PACKAGE') {
+            await tx.travelPackage.update({
+              where: { id: item.referenceId },
+              data: { availableSeats: { increment: item.quantity } },
+            }).catch(() => {});
+          }
+        }
+      }
+
+      // Audit Log
+      await tx.auditLog.create({
+        data: {
+          userId: adminUserId || payment.booking.userId,
+          action: 'PAYMENT_REFUNDED_BY_ADMIN',
+          entityType: 'Payment',
+          entityId: payment.id,
+          details: {
+            bookingId: payment.bookingId,
+            bookingReference: payment.booking.bookingReference,
+            paypalCaptureId: payment.paypalCaptureId,
+            refundId,
+            refundAmount: refundAmount.toString(),
+            reason,
+            adminUserId,
+          },
+        },
+      });
+
+      return updatedPayment;
+    });
+  }
+
+  /**
+   * Record Failed Payment Capture
+   */
+  async recordFailedCapture(paypalOrderId: string, reason?: string) {
+    return prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({
+        where: { paypalOrderId },
+        include: { booking: true },
+      });
+
+      if (!payment) return null;
+
+      const updated = await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.FAILED,
+          captureData: {
+            failureReason: reason || 'Payment capture was denied by PayPal.',
+            failedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: payment.booking.userId,
+          action: 'PAYMENT_CAPTURE_FAILED',
+          entityType: 'Payment',
+          entityId: payment.id,
+          details: {
+            paypalOrderId,
+            reason,
+          },
+        },
+      });
+
+      return updated;
     });
   }
 }

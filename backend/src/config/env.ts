@@ -16,6 +16,8 @@ const envSchema = z.object({
   PAYPAL_CLIENT_SECRET: z.string().default(''),
   PAYPAL_API_BASE: z.string().default('https://api-m.sandbox.paypal.com'),
   PAYPAL_WEBHOOK_ID: z.string().default(''),
+  PAYPAL_CURRENCY: z.string().default('USD'),
+  PAYPAL_EXCHANGE_RATE: z.coerce.number().default(83.5),
   GEMINI_API_KEY: z.string().default(''),
   GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
 });

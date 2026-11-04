@@ -5,7 +5,7 @@ export class BookingService {
   async createBooking(params: {
     userId: string;
     itineraryId?: string;
-    items: CreateBookingItemInput[];
+    items?: CreateBookingItemInput[];
     specialRequests?: string;
     currency?: string;
   }) {

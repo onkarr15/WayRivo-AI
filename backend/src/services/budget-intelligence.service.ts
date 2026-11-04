@@ -786,3 +786,4 @@ export class BudgetIntelligenceService {
 }
 
 export const budgetIntelligenceService = new BudgetIntelligenceService();
+

@@ -1,6 +1,6 @@
 # WayRivo AI 2.0 — Intelligent Travel Commerce Platform
 **Event**: PayPal AI Hackathon 2026  
-**Status**: Phase 7 Verified & Tested (AI Itinerary Generator, Budget Intelligence & Optimization Engine Operational)
+**Status**: Phase 8 Verified & Tested (Booking Engine, PayPal Sandbox Smart Checkout, Escrow Engine, Webhooks & Admin Refunds Operational)
 
 ---
 
@@ -155,25 +155,71 @@ Every generated itinerary day contains:
 
 ---
 
-## 8. Phase Verification Checkpoint
+## 8. Booking Engine & PayPal Sandbox Integration (`/api/v1/bookings`, `/api/v1/payments`)
+
+Phase 8 implements the complete travel booking lifecycle and payment gateway integration using PayPal Developer Sandbox Orders v2 API.
+
+### Part A: Server-Verified Booking Engine
+- **Atomic Pricing**: All item prices are retrieved and summed server-side from PostgreSQL; frontend prices are never trusted.
+- **Inventory & Capacity Validation**: Verifies `availableRooms` on hotels, `availableSlots` on activities, and `availableSeats` on travel packages before accepting a booking.
+- **Duplicate Booking Guard**: Prevents duplicate reservations by rejecting repeated submissions with `409 Conflict`.
+- **Unique Booking Reference**: Formats unique, human-readable reference tokens (`WR-2026-XXXX`).
+- **Pending Booking Creation**: Saves booking items and establishes an initial `PENDING_PAYMENT` state.
+
+### Part B: PayPal Developer Sandbox Orders API v2
+- **Configurable Transaction Currency**: Operates with configurable `PAYPAL_CURRENCY` (default `USD`) and `PAYPAL_EXCHANGE_RATE` (`83.5` INR/USD).
+- **Transparent Currency Presentation**: Displays both INR catalog price and final USD transaction charge with explicit exchange rates on the checkout UI.
+- **Server-Side Order Creation**: Backend invokes `POST /v2/checkout/orders` with verified amounts and returns approval URLs and order tokens.
+- **Server-Side Capture**: Backend verifies and executes `POST /v2/checkout/orders/{id}/capture`.
+- **Double-Capture Guard & Idempotency**: Inspects previous payment status and supports `Idempotency-Key` headers to ensure identical requests cannot double-charge travelers.
+- **Escrow State Machine**: On successful capture, transitions payment status to `CAPTURED`, sets escrow to `HELD`, decrements real inventory, and marks booking as `CONFIRMED`.
+
+### Part C: Cryptographic Webhooks & Idempotency
+- **Signature Verification**: Validates PayPal webhook events using `/v1/notifications/verify-webhook-signature` with transmission ID, timestamp, webhook ID, and cert URL.
+- **Supported Events**: Handled `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.DENIED`, and `PAYMENT.CAPTURE.REFUNDED`.
+- **Deduplication**: In-memory and database transaction check prevents replay attacks or duplicate processing of webhook notifications.
+
+### Part D: Administrator-Controlled Refunds
+- **Anti-Auto-Refund Guard**: Traveler cancellation requests (`POST /api/v1/payments/cancel-request/:id`) log a cancellation audit record without automatically initiating a refund.
+- **Admin Refund Authorization**: Only authenticated administrators (`ADMIN` role) can execute refunds (`POST /api/v1/payments/refund`).
+- **PayPal Refund API**: Directly triggers `POST /v2/payments/captures/{capture_id}/refund` on PayPal Developer Sandbox.
+- **Inventory Restoration**: Atomically increments available hotel rooms, activity slots, or package seats upon confirmed refund.
+
+| Endpoint | Method | Description | Auth Required |
+|---|---|---|---|
+| `/api/v1/payments/config` | GET | Retrieve PayPal Client ID, currency code, and exchange rate | Public |
+| `/api/v1/bookings` | POST | Create server-verified booking with inventory checks and duplicate guard | Bearer / Cookie |
+| `/api/v1/bookings/my` | GET | Retrieve authenticated traveler's bookings with payment status | Bearer / Cookie |
+| `/api/v1/bookings/:id` | GET | Detailed booking breakdown with line items and escrow status | Bearer / Cookie |
+| `/api/v1/payments/create-order` | POST | Initiate PayPal Orders API v2 transaction server-side | Bearer / Cookie |
+| `/api/v1/payments/capture-order` | POST | Capture authorized PayPal order server-side & hold escrow | Bearer / Cookie |
+| `/api/v1/payments/cancel-request/:id` | POST | Submit cancellation request for administrator review | Bearer / Cookie |
+| `/api/v1/payments/refund` | POST | Admin-controlled PayPal refund execution & inventory restore | `ADMIN` Role Required |
+| `/api/v1/payments/webhook` | POST | PayPal webhook receiver with cryptographic signature verification | Public (PayPal Signed) |
+
+---
+
+## 9. Phase Verification Checkpoint
 
 | Check | Result | Details |
 |---|---|---|
 | **Database Migrations** | ✅ Passed | Prisma schema with 16 models: User, Destination, Hotel, Activity, TravelPackage, Conversation, Message, Itinerary, ItineraryDay, Booking, BookingItem, Payment, GroupTrip, GroupExpense, AgentAction, AuditLog |
 | **Backend TypeScript Build** | ✅ Passed | `tsc` compiled 100% cleanly into `backend/dist` with 0 errors |
-| **Frontend Production Build** | ✅ Passed | `tsc -b && vite build` compiled with 0 errors (2,355 modules in 375ms) |
+| **Frontend Production Build** | ✅ Passed | `tsc -b && vite build` compiled with 0 errors (2,355 modules in 879ms) |
 | **Frontend Code Quality** | ✅ Passed | `oxlint` ran across 80 files with 0 errors |
 | **Test Suite 1 (API Auth & RBAC)** | ✅ Passed | 20/20 automated tests passed (`backend/test-api.ts`) |
 | **Test Suite 2 (Comprehensive CUD)** | ✅ Passed | 17/17 comprehensive tests passed (`backend/verify-comprehensive.ts`) |
 | **Test Suite 3 (AI Agent Workflow)** | ✅ Passed | 7/7 automated tests passed (`backend/test-agent-workflow.ts`) |
 | **Test Suite 4 (Phase 7 Budget Intelligence)** | ✅ Passed | 8/8 automated tests passed (`backend/test-budget-intelligence.ts`) |
-| **Total Automated Tests** | ✅ Passed | **52 / 52 tests passing** with 0 regressions across all phases |
-| **AI Modification Lock** | ✅ Verified | Enforces `403 Forbidden` when attempting to mutate confirmed bookings without user approval |
-| **Interactive Dashboard** | ✅ Verified | `/itinerary-planner` with day timeline, hotel card, activity editor, live budget breakdown, and 1-click AI optimization |
+| **Test Suite 5 (Phase 8 Booking & PayPal)** | ✅ Passed | 14/14 automated tests passed (`backend/test-booking-paypal.ts`) |
+| **Total Automated Tests** | ✅ Passed | **66 / 66 tests passing** with 0 regressions across all phases |
+| **Double-Capture Guard** | ✅ Verified | Idempotency key & status machine prevent redundant captures |
+| **Admin-Controlled Refund** | ✅ Verified | Travelers restricted; Admins execute real PayPal Sandbox refunds and restore inventory |
+| **Booking & Escrow Checkout UI** | ✅ Verified | `/booking/:id` complete checkout engine with traveler details, currency conversion, PayPal sandbox button, and escrow receipt |
 
 ---
 
-## 9. Development Roadmap
+## 10. Development Roadmap
 
 - [x] **Phase 0**: Project Audit & Architectural Inspection
 - [x] **Phase 1**: WayRivo AI 2.0 Design System & Visual Foundation
@@ -183,5 +229,5 @@ Every generated itinerary day contains:
 - [x] **Phase 5**: Travel Discovery & Booking Marketplace (Destinations, Hotels, Activities, Packages & Admin Inventory)
 - [x] **Phase 6**: Google Gemini AI Engine with Autonomous Travel Agent & Tool Calling
 - [x] **Phase 7**: AI Itinerary & Budget Intelligence Engine (Day Timeline, Budget Optimization & Modification Guard)
-- [ ] **Phase 8**: PayPal Developer Sandbox Smart Checkout & Escrow Engine
+- [x] **Phase 8**: PayPal Developer Sandbox Smart Checkout & Escrow Engine
 - [ ] **Phase 9**: End-to-End Validation, Security Hardening & Deployment
