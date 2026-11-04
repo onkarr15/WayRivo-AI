@@ -1,84 +1,230 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { adminService } from '../../services';
-import { Search, UserCheck, UserX } from 'lucide-react';
+import {
+  Search,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Filter,
+} from 'lucide-react';
+import { AgGridReact } from 'ag-grid-react';
+import type { ColDef } from 'ag-grid-community';
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { useToast } from '../../components/ui/Toast';
+
+// Register AG Grid Community Modules
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 const AdminUsers: React.FC = () => {
+  const { toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
-  const [role, setRole] = useState('');
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [quickFilterText, setQuickFilterText] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState<string>('');
 
-  // Fallback demo users if backend has just starter seed
-  const fallbackUsers = [
-    { id: 1, name: 'Arjun Sharma', email: 'arjun@example.com', role: 'TRAVELER', phone: '+91 98765 11111', active: true, createdAt: '2026-08-10' },
-    { id: 2, name: 'Vikram Mehta', email: 'vikram@example.com', role: 'EXPERT', phone: '+91 98765 22222', active: true, createdAt: '2026-08-11' },
-    { id: 3, name: 'Ananya Iyer', email: 'ananya@example.com', role: 'EXPERT', phone: '+91 98765 33333', active: true, createdAt: '2026-08-12' },
-    { id: 4, name: 'Rahul Verma', email: 'rahul@example.com', role: 'TRAVELER', phone: '+91 98765 44444', active: true, createdAt: '2026-08-14' },
-    { id: 5, name: 'WayRivo Admin', email: 'admin@wayrivo.com', role: 'ADMIN', phone: '+91 90000 00000', active: true, createdAt: '2026-08-01' },
-  ];
-
-  const fetchUsers = React.useCallback(async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminService.getUsers(page, 10, search, role);
+      const res = await adminService.getUsers(0, 100, '', roleFilter);
       const data = res.data?.data;
-      if (data?.content && data.content.length > 0) {
-        setUsers(data.content);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        setUsers(fallbackUsers);
-      }
-    } catch {
-      setUsers(fallbackUsers);
+      const list = data?.content || (Array.isArray(data) ? data : []);
+      setUsers(list);
+    } catch (err) {
+      console.error('Failed to load users for AG Grid:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [page, search, role]);
+  }, [roleFilter]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleToggleStatus = async (id: number, currentStatus: boolean) => {
-    const nextStatus = currentStatus ? 'INACTIVE' : 'ACTIVE';
+  const handleToggleVerified = async (id: string, currentStatus: boolean) => {
     try {
-      await adminService.updateUserStatus(id, nextStatus);
+      await adminService.updateUserStatus(id, currentStatus ? 'UNVERIFIED' : 'VERIFIED');
+      toast.success('User verification status updated.');
       fetchUsers();
-    } catch {
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, active: !currentStatus } : u));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to update user status.');
     }
   };
 
+  const handleRoleChange = async (id: string, newRole: string) => {
+    try {
+      await adminService.updateUserRole(id, newRole);
+      toast.success(`User role updated to ${newRole}`);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to update user role.');
+    }
+  };
+
+  // AG Grid Column Definitions
+  const columnDefs = useMemo<ColDef[]>(() => [
+    {
+      field: 'name',
+      headerName: 'Traveler / User',
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      minWidth: 200,
+      flex: 1.2,
+      cellRenderer: (params: any) => {
+        const data = params.data;
+        if (!data) return null;
+        return (
+          <div className="flex items-center gap-2.5 py-1">
+            <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center shrink-0">
+              {data.name?.charAt(0) || 'U'}
+            </div>
+            <div className="leading-tight truncate">
+              <span className="font-semibold text-white block truncate">{data.name}</span>
+              <span className="text-[11px] text-slate-400 block truncate">{data.email}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      field: 'role',
+      headerName: 'Role',
+      filter: 'agTextColumnFilter',
+      sortable: true,
+      width: 140,
+      cellRenderer: (params: any) => {
+        const data = params.data;
+        if (!data) return null;
+        const isAdmin = data.role === 'ADMIN';
+        return (
+          <select
+            value={data.role}
+            onChange={(e) => handleRoleChange(data.id, e.target.value)}
+            className={`text-xs font-bold px-2 py-1 rounded-lg border focus:outline-none cursor-pointer ${
+              isAdmin
+                ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                : 'bg-slate-800 text-slate-300 border-slate-700'
+            }`}
+          >
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+        );
+      },
+    },
+    {
+      field: 'isEmailVerified',
+      headerName: 'Verified',
+      sortable: true,
+      width: 130,
+      cellRenderer: (params: any) => {
+        const data = params.data;
+        if (!data) return null;
+        return (
+          <button
+            onClick={() => handleToggleVerified(data.id, data.isEmailVerified)}
+            className={`px-2 py-1 rounded-md text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors ${
+              data.isEmailVerified
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+            }`}
+          >
+            {data.isEmailVerified ? (
+              <>
+                <CheckCircle className="w-3 h-3" /> Verified
+              </>
+            ) : (
+              <>
+                <XCircle className="w-3 h-3" /> Unverified
+              </>
+            )}
+          </button>
+        );
+      },
+    },
+    {
+      field: 'totalBookings',
+      headerName: 'Bookings',
+      filter: 'agNumberColumnFilter',
+      sortable: true,
+      width: 110,
+      cellClass: 'font-mono text-cyan-300 font-bold',
+    },
+    {
+      field: 'totalSpent',
+      headerName: 'Total Spent',
+      filter: 'agNumberColumnFilter',
+      sortable: true,
+      width: 140,
+      valueFormatter: (params: any) => `₹${Number(params.value || 0).toLocaleString('en-IN')}`,
+      cellClass: 'font-mono font-bold text-emerald-400',
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Joined Date',
+      filter: 'agDateColumnFilter',
+      sortable: true,
+      width: 130,
+      valueFormatter: (params: any) =>
+        params.value ? new Date(params.value).toLocaleDateString('en-IN') : 'N/A',
+      cellClass: 'text-slate-400 text-xs',
+    },
+  ], []);
+
+  const defaultColDef = useMemo<ColDef>(() => ({
+    resizable: true,
+    sortable: true,
+    filter: true,
+  }), []);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy">User Management</h1>
-          <p className="text-sm text-text-light mt-1">View, search, and manage registered travelers, experts, and administrators</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            User Management & <span className="text-gradient-cyan">AG Grid Control</span>
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Sort, filter, and manage registered travelers, administrators, and verification status using high-performance AG Grid.
+          </p>
         </div>
+
+        <button
+          onClick={fetchUsers}
+          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+          Refresh Data
+        </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
+      {/* Filter and Quick Search Toolbar */}
+      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            className="input pl-10"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            value={quickFilterText}
+            onChange={(e) => setQuickFilterText(e.target.value)}
+            placeholder="Quick search across all columns..."
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
           />
         </div>
 
-        <div className="flex gap-2">
-          {['', 'TRAVELER', 'EXPERT', 'ADMIN'].map(r => (
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+            <Filter className="w-3.5 h-3.5 text-cyan-400" /> Role:
+          </span>
+          {['', 'USER', 'ADMIN'].map((r) => (
             <button
               key={r}
-              onClick={() => { setRole(r); setPage(0); }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                role === r ? 'bg-orange text-white shadow' : 'bg-white border border-border text-text-light hover:bg-gray-50'
+              onClick={() => setRoleFilter(r)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                roleFilter === r
+                  ? 'bg-cyan-500 text-slate-950 shadow-md'
+                  : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
               }`}
             >
               {r || 'All Roles'}
@@ -87,85 +233,22 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="card overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b border-border text-text-light text-xs uppercase font-semibold">
-                <tr>
-                  <th className="p-4">User</th>
-                  <th className="p-4">Role</th>
-                  <th className="p-4">Phone</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {users.map(u => (
-                  <tr key={u.id} className="hover:bg-gray-50/50">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-navy to-navy-light text-white font-bold flex items-center justify-center text-xs">
-                          {u.name?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                          <p className="font-bold text-navy">{u.name}</p>
-                          <p className="text-xs text-text-light">{u.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`badge ${
-                        u.role === 'ADMIN' ? 'badge-danger' : u.role === 'EXPERT' ? 'badge-info' : 'badge-neutral'
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="p-4 text-text-light">{u.phone || 'N/A'}</td>
-                    <td className="p-4">
-                      <span className={`badge ${u.active !== false ? 'badge-success' : 'badge-danger'}`}>
-                        {u.active !== false ? 'ACTIVE' : 'SUSPENDED'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      {u.role !== 'ADMIN' && (
-                        <button
-                          onClick={() => handleToggleStatus(u.id, u.active !== false)}
-                          className={`btn-ghost text-xs px-3 py-1.5 ${
-                            u.active !== false ? 'text-danger hover:bg-red-50' : 'text-success hover:bg-emerald-50'
-                          }`}
-                        >
-                          {u.active !== false ? (
-                            <><UserX className="w-3.5 h-3.5 mr-1 inline" /> Suspend</>
-                          ) : (
-                            <><UserCheck className="w-3.5 h-3.5 mr-1 inline" /> Activate</>
-                          )}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 p-4 border-t border-border">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="btn-ghost text-xs">
-              Previous
-            </button>
-            <span className="btn-ghost text-xs">Page {page + 1} of {totalPages}</span>
-            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="btn-ghost text-xs">
-              Next
-            </button>
-          </div>
-        )}
+      {/* AG GRID CONTAINER */}
+      <div className="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-900">
+        <div className="ag-theme-quartz-dark" style={{ height: 500, width: '100%' }}>
+          <AgGridReact
+            rowData={users}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            quickFilterText={quickFilterText}
+            pagination={true}
+            paginationPageSize={10}
+            paginationPageSizeSelector={[10, 20, 50]}
+            animateRows={true}
+            rowHeight={48}
+            headerHeight={44}
+          />
+        </div>
       </div>
     </div>
   );

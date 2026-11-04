@@ -172,17 +172,30 @@ export const aiAgentService = {
   getSuggestedPrompts: () => api.get('/agent/suggested-prompts'),
 };
 
+export const userService = {
+  getDashboard: () => api.get('/users/dashboard'),
+  getProfile: () => api.get('/users/profile'),
+  updateProfile: (data: any) => api.patch('/users/profile', data),
+  changePassword: (data: any) => api.put('/users/change-password', data),
+};
+
 export const adminService = {
   getDashboardStats: () => api.get('/admin/stats'),
-  getAnalytics: () => api.get('/admin/stats'),
+  getAnalytics: () => api.get('/admin/analytics'),
   getInventoryOverview: () => api.get('/admin/inventory'),
-  getAuditLogs: (page = 0, size = 20) => api.get(`/admin/audit-logs?page=${page}&size=${size}`),
-  getUsers: (page = 0, size = 10, search = '', role = '') => api.get(`/admin/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}&role=${role}`),
+  getAuditLogs: (limit = 50) => api.get(`/admin/audit-logs?limit=${limit}`),
+  getUsers: (page = 0, size = 10, search = '', role = '') =>
+    api.get(`/admin/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}&role=${role}`),
+  updateUserRole: (id: string, role: string) => api.patch(`/admin/users/${id}/role`, { role }),
   updateUserStatus: (id: number | string, status: string) => api.patch(`/admin/users/${id}/status?status=${status}`),
+  getBookings: (page = 0, size = 10, search = '', status = '') =>
+    api.get(`/admin/bookings?page=${page}&size=${size}&search=${encodeURIComponent(search)}&status=${status}`),
+  getPayments: (page = 0, size = 10, escrowStatus = '') =>
+    api.get(`/admin/payments?page=${page}&size=${size}&escrowStatus=${escrowStatus}`),
+  getCancellations: () => api.get('/admin/cancellations'),
   getExperts: (status = '', page = 0, size = 10) => api.get(`/admin/experts?status=${status}&page=${page}&size=${size}`),
   updateExpertVerification: (id: number | string, status: string) => api.patch(`/admin/experts/${id}/verification?status=${status}`),
   getTripRequests: (page = 0, size = 10) => api.get(`/admin/trip-requests?page=${page}&size=${size}`),
-  getBookings: (page = 0, size = 10) => api.get(`/admin/bookings?page=${page}&size=${size}`),
   getReviews: (page = 0, size = 10) => api.get(`/admin/reviews?page=${page}&size=${size}`),
 };
 
