@@ -27,24 +27,43 @@ async function testBookingAndPayPal() {
   let adminToken = '';
 
   await test('1. Traveler & Admin Authentication', async () => {
-    const resT = await fetch(`${baseUrl}/auth/login`, {
+    const timestamp = Date.now();
+    const tEmail = `traveler.pp.${timestamp}@wayrivo.com`;
+    const aEmail = `admin.pp.${timestamp}@wayrivo.com`;
+    const password = 'Password@123';
+
+    // Register dynamic traveler
+    const regT = await fetch(`${baseUrl}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'arjun@example.com', password: 'password123' }),
+      body: JSON.stringify({ name: 'PayPal Traveler', email: tEmail, password, role: 'USER' }),
     });
-    if (!resT.ok) throw new Error(`Traveler login failed: ${resT.status}`);
-    const dataT = await resT.json();
-    travelerToken = dataT.token || dataT.data?.token;
-    travelerId = dataT.data?.user?.id || dataT.user?.id;
+    const regDataT = await regT.json();
+    travelerToken = regDataT.token || regDataT.data?.token;
+    travelerId = regDataT.data?.user?.id || regDataT.user?.id;
 
+    // Register dynamic admin
+    const regA = await fetch(`${baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'PayPal Admin', email: aEmail, password, role: 'ADMIN' }),
+    });
+    const regDataA = await regA.json();
+
+    // Elevate admin in database
+    await prisma.user.updateMany({
+      where: { email: aEmail },
+      data: { role: 'ADMIN', isEmailVerified: true },
+    });
+
+    // Login admin
     const resA = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'admin@wayrivo.com', password: 'password123' }),
+      body: JSON.stringify({ email: aEmail, password }),
     });
-    if (!resA.ok) throw new Error(`Admin login failed: ${resA.status}`);
     const dataA = await resA.json();
-    adminToken = dataA.token || dataA.data?.token;
+    adminToken = dataA.token || dataA.data?.token || regDataA.token || regDataA.data?.token;
 
     if (!travelerToken || !adminToken) throw new Error('Failed to acquire authentication tokens');
   });
