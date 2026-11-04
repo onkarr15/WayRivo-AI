@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 async function runTests() {
   const baseUrl = 'http://localhost:8085/api/v1';
   console.log(`🧪 Running WayRivo AI 2.0 API Test Suite (with Phase 4 Auth) against ${baseUrl}\n`);

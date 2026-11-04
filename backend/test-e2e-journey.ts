@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { prisma } from './src/config/db';
 
 const baseUrl = 'http://localhost:8085/api/v1';

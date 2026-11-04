@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { prisma } from './src/config/db';
 
 async function testBookingAndPayPal() {

@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 async function testAgentWorkflow() {
   const baseUrl = 'http://localhost:8085/api/v1';
   console.log('====================================================');
