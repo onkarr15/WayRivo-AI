@@ -191,4 +191,21 @@
   .gold-glow {
     box-shadow: 0 0 25px -3px rgba(212, 175, 55, 0.3);
   }
+
+  /* High-contrast visibility for text-navy headings & labels across dark midnight theme */
+  .text-navy {
+    color: #F8FAFC !important;
+  }
+  .text-navy\/70 {
+    color: rgba(248, 250, 252, 0.7) !important;
+  }
+  .text-navy\/80 {
+    color: rgba(248, 250, 252, 0.8) !important;
+  }
+  .text-navy\/90 {
+    color: rgba(248, 250, 252, 0.9) !important;
+  }
+  .hover\:text-navy:hover {
+    color: #FFFFFF !important;
+  }
 }

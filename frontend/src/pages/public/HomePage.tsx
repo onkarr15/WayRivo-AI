@@ -336,7 +336,7 @@ const HomePage: React.FC = () => {
           {/* Hackathon Badge Pill */}
           <motion.div
             variants={fadeUp}
-            initial="hidden"
+            initial={shouldReduceMotion ? false : 'hidden'}
             animate="visible"
             custom={0}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 text-xs font-black uppercase tracking-widest mb-6 shadow-[0_0_20px_rgba(0,240,255,0.25)]"
@@ -348,7 +348,7 @@ const HomePage: React.FC = () => {
           {/* Heading with Word Stagger Entrance */}
           <motion.h1
             variants={wordStaggerContainer}
-            initial="hidden"
+            initial={shouldReduceMotion ? false : 'hidden'}
             animate="visible"
             className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.08] max-w-5xl mx-auto font-heading flex flex-wrap justify-center gap-x-3 gap-y-1"
           >
@@ -356,6 +356,8 @@ const HomePage: React.FC = () => {
               <motion.span
                 key={i}
                 variants={wordStaggerItem}
+                initial={shouldReduceMotion ? false : 'hidden'}
+                animate="visible"
                 className={word.gradient ? 'text-gradient-cyan inline-block' : 'inline-block text-white'}
               >
                 {word.text}
@@ -366,7 +368,7 @@ const HomePage: React.FC = () => {
           {/* Supporting text */}
           <motion.p
             variants={fadeUp}
-            initial="hidden"
+            initial={shouldReduceMotion ? false : 'hidden'}
             animate="visible"
             custom={3}
             className="text-base sm:text-xl text-slate-300 mt-6 max-w-2xl mx-auto font-normal leading-relaxed"
@@ -377,7 +379,7 @@ const HomePage: React.FC = () => {
           {/* CTA Buttons with Micro-interactions */}
           <motion.div
             variants={fadeUp}
-            initial="hidden"
+            initial={shouldReduceMotion ? false : 'hidden'}
             animate="visible"
             custom={4}
             className="flex flex-wrap items-center justify-center gap-4 mt-8"
@@ -402,7 +404,7 @@ const HomePage: React.FC = () => {
           {/* 3. AI TRAVEL SEARCH FLOATING PANEL */}
           <motion.div
             variants={fadeUp}
-            initial="hidden"
+            initial={shouldReduceMotion ? false : 'hidden'}
             animate="visible"
             custom={5}
             className="mt-12 sm:mt-16"

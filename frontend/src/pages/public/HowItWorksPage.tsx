@@ -47,8 +47,8 @@ const HowItWorksPage: React.FC = () => {
         {activeTab === 'traveler' ? (
           <div className="space-y-12">
             <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold text-navy">Plan Your Trip in 4 Simple Steps</h2>
-              <p className="text-text-light mt-2">Get personalized quotes without paying booking broker fees.</p>
+              <h2 className="text-3xl font-bold text-white">Plan Your Trip in 4 Simple Steps</h2>
+              <p className="text-slate-300 mt-2">Get personalized quotes without paying booking broker fees.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -83,22 +83,22 @@ const HowItWorksPage: React.FC = () => {
                   <div key={item.step} className="card p-6 relative flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-orange/10 flex items-center justify-center text-orange font-bold">
+                        <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 font-bold">
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className="text-3xl font-extrabold text-border">{item.step}</span>
+                        <span className="text-3xl font-extrabold text-slate-600">{item.step}</span>
                       </div>
-                      <h3 className="text-lg font-bold text-navy mb-2">{item.title}</h3>
-                      <p className="text-sm text-text-light leading-relaxed">{item.desc}</p>
+                      <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
+                      <p className="text-sm text-slate-300 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="card p-8 bg-gradient-to-r from-orange/10 via-amber-50 to-orange/5 border-orange/20 text-center">
-              <h3 className="text-2xl font-bold text-navy mb-2">Ready to try WayRivo?</h3>
-              <p className="text-text-light max-w-lg mx-auto mb-6">
+            <div className="card p-8 bg-gradient-to-r from-cyan-500/10 via-surface to-teal-500/10 border-cyan-500/30 text-center">
+              <h3 className="text-2xl font-bold text-white mb-2">Ready to try WayRivo?</h3>
+              <p className="text-slate-300 max-w-lg mx-auto mb-6">
                 Tell us your travel dream today and receive hand-tailored proposals within 24 hours.
               </p>
               <Link to="/traveler/create-trip" className="btn-primary px-8 py-3 text-base">
@@ -109,8 +109,8 @@ const HowItWorksPage: React.FC = () => {
         ) : (
           <div className="space-y-12">
             <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold text-navy">Grow Your Travel Business with Qualified Leads</h2>
-              <p className="text-text-light mt-2">Connect with verified travelers seeking custom tours in your specialty areas.</p>
+              <h2 className="text-3xl font-bold text-white">Grow Your Travel Business with Qualified Leads</h2>
+              <p className="text-slate-300 mt-2">Connect with verified travelers seeking custom tours in your specialty areas.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -145,22 +145,22 @@ const HowItWorksPage: React.FC = () => {
                   <div key={item.step} className="card p-6 relative flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-navy/10 flex items-center justify-center text-navy font-bold">
+                        <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 font-bold">
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className="text-3xl font-extrabold text-border">{item.step}</span>
+                        <span className="text-3xl font-extrabold text-slate-600">{item.step}</span>
                       </div>
-                      <h3 className="text-lg font-bold text-navy mb-2">{item.title}</h3>
-                      <p className="text-sm text-text-light leading-relaxed">{item.desc}</p>
+                      <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
+                      <p className="text-sm text-slate-300 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="card p-8 bg-gradient-to-r from-navy/5 to-navy/10 border-navy/20 text-center">
-              <h3 className="text-2xl font-bold text-navy mb-2">Join as a Verified Travel Partner</h3>
-              <p className="text-text-light max-w-lg mx-auto mb-6">
+            <div className="card p-8 bg-gradient-to-r from-cyan-500/10 via-surface to-teal-500/10 border-cyan-500/30 text-center">
+              <h3 className="text-2xl font-bold text-white mb-2">Join as a Verified Travel Partner</h3>
+              <p className="text-slate-300 max-w-lg mx-auto mb-6">
                 Expand your clientele and respond to travelers looking for your exact geographic expertise.
               </p>
               <Link to="/register" className="btn-secondary px-8 py-3 text-base">

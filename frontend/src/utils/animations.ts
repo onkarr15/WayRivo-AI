@@ -15,100 +15,104 @@ export const transitions = {
   quick: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
 };
 
+export const isReducedMotion =
+  typeof window !== 'undefined' &&
+  window.matchMedia &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export const viewportTrigger = {
   once: true,
-  margin: '-40px',
-  amount: 0.15,
+  margin: '0px',
+  amount: 0.02,
 };
 
-// 1. GLOBAL SCROLL REVEALS
+// 1. GLOBAL SCROLL REVEALS (Always safe, high-contrast & guaranteed visible)
 export const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
   visible: (custom = 0) => ({
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
-      delay: custom * 0.08,
+      duration: 0.4,
+      delay: custom * 0.05,
       ease: [0.16, 1, 0.3, 1],
     },
   }),
 };
 
 export const fadeDown: Variants = {
-  hidden: { opacity: 0, y: -20 },
+  hidden: isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -16 },
   visible: (custom = 0) => ({
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.45,
-      delay: custom * 0.08,
+      duration: 0.4,
+      delay: custom * 0.05,
       ease: [0.16, 1, 0.3, 1],
     },
   }),
 };
 
 export const fadeLeft: Variants = {
-  hidden: { opacity: 0, x: -24 },
+  hidden: isReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 },
   visible: (custom = 0) => ({
     opacity: 1,
     x: 0,
     transition: {
-      duration: 0.45,
-      delay: custom * 0.08,
+      duration: 0.4,
+      delay: custom * 0.05,
       ease: [0.16, 1, 0.3, 1],
     },
   }),
 };
 
 export const fadeRight: Variants = {
-  hidden: { opacity: 0, x: 24 },
+  hidden: isReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 },
   visible: (custom = 0) => ({
     opacity: 1,
     x: 0,
     transition: {
-      duration: 0.45,
-      delay: custom * 0.08,
+      duration: 0.4,
+      delay: custom * 0.05,
       ease: [0.16, 1, 0.3, 1],
     },
   }),
 };
 
 export const scaleReveal: Variants = {
-  hidden: { opacity: 0, scale: 0.94 },
+  hidden: isReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.96 },
   visible: (custom = 0) => ({
     opacity: 1,
     scale: 1,
     transition: {
-      duration: 0.4,
-      delay: custom * 0.06,
+      duration: 0.35,
+      delay: custom * 0.05,
       ease: [0.16, 1, 0.3, 1],
     },
   }),
   exit: {
-    opacity: 0,
-    scale: 0.96,
-    transition: { duration: 0.2, ease: 'easeIn' },
+    opacity: 1,
+    scale: 1,
   },
 };
 
 export const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: (customDelay = 0.05) => ({
+  hidden: isReducedMotion ? { opacity: 1 } : { opacity: 0 },
+  visible: (customDelay = 0.02) => ({
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
+      staggerChildren: 0.06,
       delayChildren: customDelay,
     },
   }),
 };
 
 export const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
@@ -117,21 +121,20 @@ export const fadeInUp = fadeUp;
 export const fadeInDown = fadeDown;
 export const scaleIn = scaleReveal;
 export const fadeIn: Variants = {
-  hidden: { opacity: 0 },
+  hidden: isReducedMotion ? { opacity: 1 } : { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { duration: 0.35, ease: 'easeOut' },
+    transition: { duration: 0.3, ease: 'easeOut' },
   },
   exit: {
-    opacity: 0,
-    transition: { duration: 0.2, ease: 'easeIn' },
+    opacity: 1,
   },
 };
 
 // 2. HERO & FLOATING ANIMATIONS
 export const floatingElement: Variants = {
   animate: (duration = 4) => ({
-    y: [-5, 5, -5],
+    y: [-4, 4, -4],
     transition: {
       duration,
       repeat: Infinity,
@@ -141,22 +144,22 @@ export const floatingElement: Variants = {
 };
 
 export const wordStaggerContainer: Variants = {
-  hidden: { opacity: 0 },
+  hidden: isReducedMotion ? { opacity: 1 } : { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
+      staggerChildren: 0.04,
+      delayChildren: 0.05,
     },
   },
 };
 
 export const wordStaggerItem: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
@@ -245,18 +248,15 @@ export const typingDot: Variants = {
   },
 };
 
-// 6. PAGE TRANSITIONS
+// 6. PAGE TRANSITIONS (Guaranteed 100% visible on mount)
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 8 },
+  initial: { opacity: 1 },
   animate: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
   },
   exit: {
-    opacity: 0,
-    y: -8,
-    transition: { duration: 0.15, ease: 'easeIn' },
+    opacity: 1,
   },
 };
 

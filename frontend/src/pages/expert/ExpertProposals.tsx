@@ -43,8 +43,8 @@ const ExpertProposals: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy">My Proposals</h1>
-          <p className="text-sm text-text-light mt-1">Track the status of all travel proposals you've submitted</p>
+          <h1 className="text-2xl font-bold text-white">My Proposals</h1>
+          <p className="text-sm text-slate-400 mt-1">Track the status of all travel proposals you've submitted</p>
         </div>
         <Link to="/expert/requests" className="btn-primary">
           Browse Open Requests
@@ -53,9 +53,9 @@ const ExpertProposals: React.FC = () => {
 
       {proposals.length === 0 ? (
         <div className="card p-12 text-center">
-          <ClipboardList className="w-12 h-12 text-text-lighter mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-navy mb-1">No proposals yet</h3>
-          <p className="text-sm text-text-light mb-6">Browse traveler requests and submit custom proposals to start winning bookings.</p>
+          <ClipboardList className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+          <h3 className="text-lg font-bold text-white mb-1">No proposals yet</h3>
+          <p className="text-sm text-slate-400 mb-6">Browse traveler requests and submit custom proposals to start winning bookings.</p>
           <Link to="/expert/requests" className="btn-primary">
             Explore Trip Requests
           </Link>
@@ -67,15 +67,15 @@ const ExpertProposals: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-navy">{p.title}</h3>
+                    <h3 className="text-lg font-bold text-white">{p.title}</h3>
                     <span className={statusColors[p.status] || 'badge-neutral'}>
                       {p.status}
                     </span>
                   </div>
-                  <p className="text-sm text-text-light line-clamp-2">{p.description}</p>
-                  <div className="flex flex-wrap gap-4 text-xs text-text-light">
-                    <span className="flex items-center gap-1 font-semibold text-navy">
-                      <DollarSign className="w-3.5 h-3.5 text-orange" />
+                  <p className="text-sm text-slate-300 line-clamp-2">{p.description}</p>
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+                    <span className="flex items-center gap-1 font-semibold text-white">
+                      <DollarSign className="w-3.5 h-3.5 text-cyan-400" />
                       ₹{Number(p.totalPrice).toLocaleString()}
                     </span>
                     {p.validityDate && (

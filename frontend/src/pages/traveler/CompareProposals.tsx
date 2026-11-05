@@ -103,21 +103,21 @@ const CompareProposals: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <Link to={`/traveler/requests/${id}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-light hover:text-navy mb-2">
+          <Link to={`/traveler/requests/${id}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white mb-2">
             <ArrowLeft className="w-4 h-4" /> Back to Request Details
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-navy">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
             Compare Proposals: {request.destination}
           </h1>
-          <p className="text-xs text-text-light mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Target Budget: ₹{Number(request.budget).toLocaleString()} • {request.travelersCount} Travelers ({request.travelType}) • {proposals.length} Verified Proposals
           </p>
         </div>
       </div>
 
       {proposals.length === 0 ? (
-        <div className="card p-12 text-center border border-dashed border-gray-300">
-          <p className="text-text-light text-sm">No proposals have been submitted for this request yet.</p>
+        <div className="card p-12 text-center border border-dashed border-slate-700">
+          <p className="text-slate-400 text-sm">No proposals have been submitted for this request yet.</p>
           <Link to="/traveler/requests" className="btn-primary mt-4 inline-flex text-xs">View All Requests</Link>
         </div>
       ) : (
@@ -137,7 +137,7 @@ const CompareProposals: React.FC = () => {
                 BadgeIcon = CheckCircle;
               } else if (p.id === bestValueId) {
                 badgeLabel = 'BEST VALUE CHOICE';
-                badgeColor = 'bg-orange text-white';
+                badgeColor = 'bg-cyan-500 text-slate-950';
                 BadgeIcon = Zap;
               } else if (p.id === lowestPriceId) {
                 badgeLabel = 'LOWEST PRICE';
@@ -156,7 +156,7 @@ const CompareProposals: React.FC = () => {
                     isSelected
                       ? 'border-emerald-500 shadow-lg ring-2 ring-emerald-500/20'
                       : badgeLabel
-                      ? 'border-orange shadow-md'
+                      ? 'border-cyan-500/50 shadow-md'
                       : 'border-border'
                   }`}
                 >
@@ -170,35 +170,35 @@ const CompareProposals: React.FC = () => {
                   <div className="p-6 space-y-5 flex-1">
                     {/* Expert Header */}
                     <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-navy text-white font-bold flex items-center justify-center text-lg flex-shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-lg flex-shrink-0">
                         {p.expertName?.charAt(0) || 'E'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <Link to={`/experts/${p.expertId || 1}`} className="font-bold text-navy text-sm hover:text-orange truncate">
+                          <Link to={`/experts/${p.expertId || 1}`} className="font-bold text-white text-sm hover:text-cyan-400 truncate">
                             {p.expertName}
                           </Link>
                           {p.verificationStatus === 'VERIFIED' && (
-                            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-text-light truncate">{p.organizationName}</p>
+                        <p className="text-xs text-slate-400 truncate">{p.organizationName}</p>
                         <div className="flex items-center gap-1 mt-1 text-xs">
-                          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                          <span className="font-bold text-navy">{p.expertRating || '5.0'}</span>
-                          <span className="text-text-light">({p.expertReviews || 0} reviews)</span>
+                          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                          <span className="font-bold text-white">{p.expertRating || '5.0'}</span>
+                          <span className="text-slate-400">({p.expertReviews || 0} reviews)</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Pricing */}
-                    <div className="p-4 bg-bg rounded-xl text-center border border-border">
-                      <p className="text-[11px] text-text-light uppercase tracking-wider font-bold">Total Bespoke Quote</p>
-                      <p className="text-3xl font-extrabold text-navy mt-1">
+                    <div className="p-4 bg-surface-dark rounded-xl text-center border border-border">
+                      <p className="text-[11px] text-slate-400 uppercase tracking-wider font-bold">Total Bespoke Quote</p>
+                      <p className="text-3xl font-extrabold text-white mt-1">
                         ₹{Number(p.totalPrice).toLocaleString()}
                       </p>
                       {p.pricePerPerson && (
-                        <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+                        <p className="text-xs text-emerald-400 font-semibold mt-0.5">
                           ₹{Number(p.pricePerPerson).toLocaleString()} per traveler
                         </p>
                       )}
@@ -206,8 +206,8 @@ const CompareProposals: React.FC = () => {
 
                     {/* Proposal Title & Description */}
                     <div>
-                      <h4 className="font-bold text-navy text-sm">{p.title}</h4>
-                      <p className="text-xs text-text-light mt-1 line-clamp-3 leading-relaxed">
+                      <h4 className="font-bold text-white text-sm">{p.title}</h4>
+                      <p className="text-xs text-slate-300 mt-1 line-clamp-3 leading-relaxed">
                         {p.description || 'Custom planned itinerary curated for your comfort and budget.'}
                       </p>
                     </div>
@@ -215,31 +215,31 @@ const CompareProposals: React.FC = () => {
                     {/* Matrix Inclusions Breakdown */}
                     <div className="space-y-3 text-xs pt-4 border-t border-border">
                       <div>
-                        <span className="font-bold text-navy flex items-center gap-1.5 mb-1">
-                          <Hotel className="w-3.5 h-3.5 text-orange" /> Accommodation Tier:
+                        <span className="font-bold text-white flex items-center gap-1.5 mb-1">
+                          <Hotel className="w-3.5 h-3.5 text-cyan-400" /> Accommodation Tier:
                         </span>
-                        <p className="text-text-light bg-bg p-2 rounded-lg">{p.accommodationDetails || 'Standard / 4-Star Resort'}</p>
+                        <p className="text-slate-300 bg-surface-dark p-2 rounded-lg border border-border/80">{p.accommodationDetails || 'Standard / 4-Star Resort'}</p>
                       </div>
 
                       <div>
-                        <span className="font-bold text-navy flex items-center gap-1.5 mb-1">
-                          <Car className="w-3.5 h-3.5 text-orange" /> Transportation:
+                        <span className="font-bold text-white flex items-center gap-1.5 mb-1">
+                          <Car className="w-3.5 h-3.5 text-cyan-400" /> Transportation:
                         </span>
-                        <p className="text-text-light bg-bg p-2 rounded-lg">{p.transportationDetails || 'Dedicated AC Cab for full tour'}</p>
+                        <p className="text-slate-300 bg-surface-dark p-2 rounded-lg border border-border/80">{p.transportationDetails || 'Dedicated AC Cab for full tour'}</p>
                       </div>
 
                       <div>
-                        <span className="font-bold text-navy flex items-center gap-1.5 mb-1">
-                          <Compass className="w-3.5 h-3.5 text-orange" /> Sightseeing & Activities:
+                        <span className="font-bold text-white flex items-center gap-1.5 mb-1">
+                          <Compass className="w-3.5 h-3.5 text-cyan-400" /> Sightseeing & Activities:
                         </span>
-                        <p className="text-text-light bg-bg p-2 rounded-lg">{p.activities || 'All entry tickets & guided tours'}</p>
+                        <p className="text-slate-300 bg-surface-dark p-2 rounded-lg border border-border/80">{p.activities || 'All entry tickets & guided tours'}</p>
                       </div>
 
                       <div>
-                        <span className="font-bold text-navy flex items-center gap-1.5 mb-1">
-                          <FileText className="w-3.5 h-3.5 text-emerald-600" /> Cancellation Policy:
+                        <span className="font-bold text-white flex items-center gap-1.5 mb-1">
+                          <FileText className="w-3.5 h-3.5 text-emerald-400" /> Cancellation Policy:
                         </span>
-                        <p className="text-text-light bg-bg p-2 rounded-lg">{p.cancellationPolicy || 'Flexible 85% refund up to 7 days prior'}</p>
+                        <p className="text-slate-300 bg-surface-dark p-2 rounded-lg border border-border/80">{p.cancellationPolicy || 'Flexible 85% refund up to 7 days prior'}</p>
                       </div>
 
                       {p.inclusions && (
@@ -281,7 +281,7 @@ const CompareProposals: React.FC = () => {
 
                     <Link
                       to={`/traveler/messages?recipientId=${p.expertId || ''}`}
-                      className="btn-ghost w-full py-2 text-xs flex items-center justify-center gap-1.5 text-text-light hover:text-navy"
+                      className="btn-ghost w-full py-2 text-xs flex items-center justify-center gap-1.5 text-slate-400 hover:text-white"
                     >
                       <MessageSquare className="w-3.5 h-3.5" /> Chat with {p.expertName?.split(' ')[0]}
                     </Link>

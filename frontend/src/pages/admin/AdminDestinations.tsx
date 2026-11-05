@@ -46,15 +46,15 @@ const AdminDestinations: React.FC = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-navy">Destinations</h1>
+        <h1 className="text-2xl font-bold text-white">Destinations</h1>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-primary"><Plus className="w-4 h-4" />Add Destination</button>
       </div>
 
       {showForm && (
         <div className="card p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-navy">{editing ? 'Edit' : 'Add'} Destination</h2>
-            <button onClick={resetForm} className="text-text-light hover:text-text"><X className="w-5 h-5" /></button>
+            <h2 className="font-semibold text-white">{editing ? 'Edit' : 'Add'} Destination</h2>
+            <button onClick={resetForm} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -73,15 +73,15 @@ const AdminDestinations: React.FC = () => {
         </div>
       )}
 
-      {loading ? <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin" /></div> : (
+      {loading ? <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" /></div> : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {destinations.map((d: any) => (
             <div key={d.id} className="card overflow-hidden">
               {d.imageUrl && <img src={d.imageUrl} alt={d.name} className="w-full h-40 object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />}
               <div className="p-4">
-                <h3 className="font-semibold text-navy">{d.name}</h3>
-                <p className="text-sm text-text-light">{d.state}, {d.country}</p>
-                {d.averageBudget && <p className="text-sm text-orange font-medium mt-1">From ₹{Number(d.averageBudget).toLocaleString()}</p>}
+                <h3 className="font-semibold text-white">{d.name}</h3>
+                <p className="text-sm text-slate-400">{d.state}, {d.country}</p>
+                {d.averageBudget && <p className="text-sm text-cyan-400 font-medium mt-1">From ₹{Number(d.averageBudget).toLocaleString()}</p>}
                 <div className="flex gap-2 mt-3">
                   <button onClick={() => openEdit(d)} className="btn-ghost text-sm"><Edit className="w-3.5 h-3.5" />Edit</button>
                   <button onClick={() => handleDelete(d.id)} className="btn-ghost text-sm text-danger"><Trash2 className="w-3.5 h-3.5" />Delete</button>

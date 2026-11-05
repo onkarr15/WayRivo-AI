@@ -27,7 +27,7 @@ const ExpertDashboard: React.FC = () => {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-navy">Expert Dashboard</h1>
+          <h1 className="text-2xl font-bold text-white">Expert Dashboard</h1>
           <div className="flex items-center gap-2 mt-1">
             <span className={`badge ${stats.verificationStatus === 'VERIFIED' ? 'badge-success' : 'badge-warning'}`}>
               <Shield className="w-3 h-3 mr-1" />{stats.verificationStatus || 'PENDING'}
@@ -42,9 +42,9 @@ const ExpertDashboard: React.FC = () => {
           <div key={label} className="card p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-text-light">{label}</p>
-                <p className="text-3xl font-bold text-navy mt-1">{value}</p>
-                {sub && <p className="text-xs text-text-light mt-0.5">{sub}</p>}
+                <p className="text-sm text-slate-400">{label}</p>
+                <p className="text-3xl font-bold text-white mt-1">{value}</p>
+                {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
               </div>
               <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center text-white`}><Icon className="w-6 h-6" /></div>
             </div>
@@ -53,9 +53,9 @@ const ExpertDashboard: React.FC = () => {
       </div>
 
       {stats.verificationStatus !== 'VERIFIED' && (
-        <div className="card p-6 border-amber-200 bg-amber-50">
-          <h3 className="font-semibold text-amber-800 mb-2">⏳ Verification Pending</h3>
-          <p className="text-sm text-amber-700">Your profile is being reviewed. Once verified, you'll be able to submit proposals to travelers. This usually takes 24-48 hours.</p>
+        <div className="card p-6 border-amber-500/30 bg-amber-500/10">
+          <h3 className="font-semibold text-amber-300 mb-2">⏳ Verification Pending</h3>
+          <p className="text-sm text-amber-200/80">Your profile is being reviewed. Once verified, you'll be able to submit proposals to travelers. This usually takes 24-48 hours.</p>
         </div>
       )}
     </div>

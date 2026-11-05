@@ -48,22 +48,22 @@ const ExpertRequestDetail: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy mb-6">Trip to {request.destination}</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">Trip to {request.destination}</h1>
       <div className="card p-6 mb-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[['From', request.fromLocation], ['To', request.destination], ['Dates', request.startDate ? `${request.startDate} – ${request.endDate}` : 'Flexible'],
             ['Travelers', `${request.travelersCount} (${request.travelType || '-'})`], ['Budget', `₹${Number(request.budget).toLocaleString()}`], ['Style', request.travelStyle || '-']
-          ].map(([l, v]) => <div key={l} className="p-3 bg-bg rounded-xl"><p className="text-xs text-text-light">{l}</p><p className="text-sm font-medium">{v}</p></div>)}
+          ].map(([l, v]) => <div key={l} className="p-3 bg-surface-dark rounded-xl border border-border/80"><p className="text-xs text-slate-400">{l}</p><p className="text-sm font-medium text-white">{v}</p></div>)}
         </div>
         {request.interests && <div className="flex flex-wrap gap-2 mt-3">{request.interests.split(',').map((i: string) => <span key={i} className="badge-info">{i.trim()}</span>)}</div>}
-        {request.specialRequirements && <p className="text-sm text-text-light mt-3 p-3 bg-bg rounded-xl">{request.specialRequirements}</p>}
+        {request.specialRequirements && <p className="text-sm text-slate-300 mt-3 p-3 bg-surface-dark rounded-xl border border-border/80">{request.specialRequirements}</p>}
       </div>
 
       {!showForm ? (
         <button onClick={() => setShowForm(true)} className="btn-primary"><Send className="w-4 h-4" />Submit Proposal</button>
       ) : (
         <div className="card p-6">
-          <h2 className="text-lg font-semibold text-navy mb-4">Your Proposal</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Your Proposal</h2>
           {error && <div className="bg-red-50 text-danger text-sm px-4 py-3 rounded-xl mb-4 border border-red-200">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><label className="label">Title *</label><input className="input" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required /></div>

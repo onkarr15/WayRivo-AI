@@ -173,28 +173,28 @@ const CreateTrip: React.FC = () => {
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-orange/10 text-orange mb-3">
           <Sparkles className="w-3.5 h-3.5" /> LIVE IN MARKETPLACE
         </span>
-        <h1 className="text-3xl font-bold text-navy mb-3">Your trip request is live! ✈️</h1>
-        <p className="text-lg text-text-light max-w-lg mx-auto mb-8">
-          WayRivo is currently matching verified travel specialists for <span className="font-semibold text-navy">{form.destination}</span>. You will receive customized competitive proposals directly in your inbox.
+        <h1 className="text-3xl font-bold text-white mb-3">Your trip request is live! ✈️</h1>
+        <p className="text-lg text-slate-300 max-w-lg mx-auto mb-8">
+          WayRivo is currently matching verified travel specialists for <span className="font-semibold text-cyan-400">{form.destination}</span>. You will receive customized competitive proposals directly in your inbox.
         </p>
 
-        <div className="bg-white border border-border rounded-2xl p-6 shadow-sm mb-8 text-left space-y-4">
+        <div className="card p-6 shadow-sm mb-8 text-left space-y-4 border border-border">
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <span className="text-sm text-text-light">Destination</span>
-            <span className="text-sm font-bold text-navy">{form.destination}</span>
+            <span className="text-sm text-slate-400">Destination</span>
+            <span className="text-sm font-bold text-white">{form.destination}</span>
           </div>
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <span className="text-sm text-text-light">Duration & Group</span>
-            <span className="text-sm font-medium text-text">{form.numberOfDays} Days • {form.travelersCount} Travelers ({form.travelType})</span>
+            <span className="text-sm text-slate-400">Duration & Group</span>
+            <span className="text-sm font-medium text-slate-200">{form.numberOfDays} Days • {form.travelersCount} Travelers ({form.travelType})</span>
           </div>
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <span className="text-sm text-text-light">Target Budget</span>
-            <span className="text-sm font-bold text-emerald-600">₹{Number(form.budget).toLocaleString()}</span>
+            <span className="text-sm text-slate-400">Target Budget</span>
+            <span className="text-sm font-bold text-emerald-400">₹{Number(form.budget).toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-text-light">Matching Status</span>
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" /> Dispatching to Verified Agents
+            <span className="text-sm text-slate-400">Matching Status</span>
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-2.5 py-1 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" /> Dispatching to Verified Agents
             </span>
           </div>
         </div>
@@ -218,14 +218,14 @@ const CreateTrip: React.FC = () => {
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-orange/10 text-orange mb-2">
           <Compass className="w-3.5 h-3.5" /> BESPOKE TRIP PLANNER
         </span>
-        <h1 className="text-3xl font-bold text-navy mb-1">Create Your Custom Trip</h1>
-        <p className="text-text-light text-sm max-w-lg mx-auto">
+        <h1 className="text-3xl font-bold text-white mb-1">Create Your Custom Trip</h1>
+        <p className="text-slate-300 text-sm max-w-lg mx-auto">
           Tell us what you want, your budget, and what you love. Verified specialists will craft tailored itineraries for you.
         </p>
       </div>
 
       {/* 8-Step Wizard Bar */}
-      <div className="bg-white border border-border rounded-2xl p-3 sm:p-4 mb-8 shadow-xs overflow-x-auto">
+      <div className="bg-surface border border-border rounded-2xl p-3 sm:p-4 mb-8 shadow-xs overflow-x-auto">
         <div className="flex items-center justify-between min-w-[620px] gap-2">
           {wizardSteps.map((ws, i) => (
             <React.Fragment key={ws.id}>
@@ -234,23 +234,23 @@ const CreateTrip: React.FC = () => {
                 onClick={() => i < step && setStep(i)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   i === step
-                    ? 'bg-orange text-white shadow-xs'
+                    ? 'bg-cyan-500 text-slate-950 font-bold shadow-xs'
                     : i < step
-                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer'
-                    : 'text-text-light opacity-60 cursor-not-allowed'
+                    ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 cursor-pointer'
+                    : 'text-slate-500 opacity-60 cursor-not-allowed'
                 }`}
               >
                 {i < step ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
                 ) : (
-                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${i === step ? 'bg-white text-orange font-bold' : 'border border-gray-300'}`}>
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${i === step ? 'bg-slate-950 text-cyan-400 font-bold' : 'border border-slate-600'}`}>
                     {i + 1}
                   </span>
                 )}
                 <span>{ws.title}</span>
               </button>
               {i < wizardSteps.length - 1 && (
-                <div className={`flex-1 h-0.5 min-w-[12px] ${i < step ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+                <div className={`flex-1 h-0.5 min-w-[12px] ${i < step ? 'bg-emerald-500/50' : 'bg-slate-700'}`} />
               )}
             </React.Fragment>
           ))}
@@ -269,10 +269,10 @@ const CreateTrip: React.FC = () => {
         {step === 0 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">1</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">1</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">Where are you going?</h2>
-                <p className="text-xs text-text-light">Select your dream destination and departure location</p>
+                <h2 className="text-xl font-bold text-white">Where are you going?</h2>
+                <p className="text-xs text-slate-400">Select your dream destination and departure location</p>
               </div>
             </div>
 
@@ -280,7 +280,7 @@ const CreateTrip: React.FC = () => {
               <div>
                 <label className="label">Destination *</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-orange" />
+                  <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-cyan-400" />
                   <input
                     className="input pl-10"
                     value={form.destination}
@@ -301,17 +301,17 @@ const CreateTrip: React.FC = () => {
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-text-light mb-2">Popular Trending Destinations:</p>
+              <p className="text-xs font-semibold text-slate-400 mb-2">Popular Trending Destinations:</p>
               <div className="flex flex-wrap gap-2">
                 {popularDestinations.map(dest => (
                   <button
                     key={dest}
                     type="button"
                     onClick={() => update('destination', dest)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                       form.destination === dest
-                        ? 'bg-navy text-white shadow-xs'
-                        : 'bg-bg text-text hover:bg-gray-200'
+                        ? 'bg-cyan-500 text-slate-950 font-bold shadow-xs'
+                        : 'bg-surface text-slate-300 hover:bg-surface-elevated'
                     }`}
                   >
                     📍 {dest}
@@ -326,10 +326,10 @@ const CreateTrip: React.FC = () => {
         {step === 1 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">2</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">2</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">When are you traveling?</h2>
-                <p className="text-xs text-text-light">Pick tentative dates or specify trip length</p>
+                <h2 className="text-xl font-bold text-white">When are you traveling?</h2>
+                <p className="text-xs text-slate-400">Pick tentative dates or specify trip length</p>
               </div>
             </div>
 
@@ -337,7 +337,7 @@ const CreateTrip: React.FC = () => {
               <div>
                 <label className="label">Start Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-orange" />
+                  <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-cyan-400" />
                   <input
                     type="date"
                     className="input pl-10"
@@ -349,7 +349,7 @@ const CreateTrip: React.FC = () => {
               <div>
                 <label className="label">End Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-orange" />
+                  <Calendar className="absolute left-3.5 top-3.5 w-4 h-4 text-cyan-400" />
                   <input
                     type="date"
                     className="input pl-10"
@@ -360,24 +360,24 @@ const CreateTrip: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-orange/5 border border-orange/15 rounded-xl flex items-center justify-between">
+            <div className="p-4 bg-cyan-500/5 border border-cyan-500/20 rounded-xl flex items-center justify-between">
               <div>
-                <span className="text-xs text-text-light">Estimated Trip Duration</span>
-                <p className="text-lg font-bold text-navy">{form.numberOfDays} Days / {Math.max(1, form.numberOfDays - 1)} Nights</p>
+                <span className="text-xs text-slate-400">Estimated Trip Duration</span>
+                <p className="text-lg font-bold text-white">{form.numberOfDays} Days / {Math.max(1, form.numberOfDays - 1)} Nights</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => update('numberOfDays', Math.max(1, form.numberOfDays - 1))}
-                  className="w-8 h-8 rounded-lg bg-white border border-border font-bold text-navy hover:bg-gray-100"
+                  className="w-8 h-8 rounded-lg bg-surface border border-border font-bold text-white hover:bg-surface-elevated cursor-pointer"
                 >
                   -
                 </button>
-                <span className="font-bold text-navy px-2">{form.numberOfDays}</span>
+                <span className="font-bold text-white px-2">{form.numberOfDays}</span>
                 <button
                   type="button"
                   onClick={() => update('numberOfDays', form.numberOfDays + 1)}
-                  className="w-8 h-8 rounded-lg bg-white border border-border font-bold text-navy hover:bg-gray-100"
+                  className="w-8 h-8 rounded-lg bg-surface border border-border font-bold text-white hover:bg-surface-elevated cursor-pointer"
                 >
                   +
                 </button>
@@ -390,10 +390,10 @@ const CreateTrip: React.FC = () => {
         {step === 2 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">3</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">3</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">Who is traveling?</h2>
-                <p className="text-xs text-text-light">Group composition helps experts tailor hotel rooms and vehicles</p>
+                <h2 className="text-xl font-bold text-white">Who is traveling?</h2>
+                <p className="text-xs text-slate-400">Group composition helps experts tailor hotel rooms and vehicles</p>
               </div>
             </div>
 
@@ -401,7 +401,7 @@ const CreateTrip: React.FC = () => {
               <div>
                 <label className="label">Total Travelers Count</label>
                 <div className="relative">
-                  <Users className="absolute left-3.5 top-3.5 w-4 h-4 text-orange" />
+                  <Users className="absolute left-3.5 top-3.5 w-4 h-4 text-cyan-400" />
                   <input
                     type="number"
                     min="1"
@@ -419,7 +419,7 @@ const CreateTrip: React.FC = () => {
                   onChange={e => update('travelType', e.target.value)}
                 >
                   {['Family', 'Couple', 'Friends / Group', 'Solo Traveler', 'Corporate / Business'].map(t => (
-                    <option key={t} value={t}>{t}</option>
+                    <option key={t} value={t} className="bg-navy-dark text-white">{t}</option>
                   ))}
                 </select>
               </div>
@@ -431,10 +431,10 @@ const CreateTrip: React.FC = () => {
         {step === 3 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">4</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">4</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">What is your total budget?</h2>
-                <p className="text-xs text-text-light">Total expected spend for all travelers (excluding international flights if applicable)</p>
+                <h2 className="text-xl font-bold text-white">What is your total budget?</h2>
+                <p className="text-xs text-slate-400">Total expected spend for all travelers (excluding international flights if applicable)</p>
               </div>
             </div>
 
@@ -442,17 +442,17 @@ const CreateTrip: React.FC = () => {
               <div className="sm:col-span-2">
                 <label className="label">Total Budget Amount (₹) *</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3.5 top-3.5 w-4 h-4 text-orange" />
+                  <DollarSign className="absolute left-3.5 top-3.5 w-4 h-4 text-cyan-400" />
                   <input
                     type="number"
-                    className="input pl-10 text-lg font-bold text-navy"
+                    className="input pl-10 text-lg font-bold text-white"
                     value={form.budget}
                     onChange={e => update('budget', e.target.value)}
                     placeholder="60000"
                   />
                 </div>
                 {Number(form.budget) > 0 && form.travelersCount > 1 && (
-                  <p className="text-xs text-emerald-600 mt-1 font-medium">
+                  <p className="text-xs text-emerald-400 mt-1 font-medium">
                     ≈ ₹{Math.round(Number(form.budget) / form.travelersCount).toLocaleString()} per person
                   </p>
                 )}
@@ -460,29 +460,29 @@ const CreateTrip: React.FC = () => {
               <div>
                 <label className="label">Currency</label>
                 <select className="input" value={form.currency} onChange={e => update('currency', e.target.value)}>
-                  <option value="INR">INR (₹)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
+                  <option value="INR" className="bg-navy-dark text-white">INR (₹)</option>
+                  <option value="USD" className="bg-navy-dark text-white">USD ($)</option>
+                  <option value="EUR" className="bg-navy-dark text-white">EUR (€)</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-text-light mb-2">Budget Presets:</p>
+              <p className="text-xs font-semibold text-slate-400 mb-2">Budget Presets:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {budgetPresets.map(b => (
                   <button
                     key={b.label}
                     type="button"
                     onClick={() => update('budget', b.value.toString())}
-                    className={`p-3 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       Number(form.budget) === b.value
-                        ? 'border-orange bg-orange/5 ring-2 ring-orange/20'
-                        : 'border-border bg-white hover:border-gray-300'
+                        ? 'border-cyan-400 bg-cyan-500/15 ring-2 ring-cyan-500/20'
+                        : 'border-border bg-surface hover:border-cyan-500/40'
                     }`}
                   >
-                    <span className="text-xs font-bold text-navy block">{b.label}</span>
-                    <span className="text-[11px] text-text-light block mt-0.5">{b.desc}</span>
+                    <span className="text-xs font-bold text-white block">{b.label}</span>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">{b.desc}</span>
                   </button>
                 ))}
               </div>
@@ -494,10 +494,10 @@ const CreateTrip: React.FC = () => {
         {step === 4 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">5</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">5</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">What kind of trip do you want?</h2>
-                <p className="text-xs text-text-light">Select the overall vibe and pace of your journey</p>
+                <h2 className="text-xl font-bold text-white">What kind of trip do you want?</h2>
+                <p className="text-xs text-slate-400">Select the overall vibe and pace of your journey</p>
               </div>
             </div>
 
@@ -507,16 +507,16 @@ const CreateTrip: React.FC = () => {
                   key={st.name}
                   type="button"
                   onClick={() => update('travelStyle', st.name)}
-                  className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                  className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
                     form.travelStyle === st.name
-                      ? 'border-orange bg-orange/5 ring-2 ring-orange/20 shadow-xs'
-                      : 'border-border bg-white hover:border-gray-300'
+                      ? 'border-cyan-400 bg-cyan-500/15 ring-2 ring-cyan-500/20 shadow-xs'
+                      : 'border-border bg-surface hover:border-cyan-500/40'
                   }`}
                 >
                   <span className="text-2xl">{st.icon}</span>
                   <div>
-                    <h3 className="text-sm font-bold text-navy">{st.name}</h3>
-                    <p className="text-xs text-text-light mt-0.5">{st.desc}</p>
+                    <h3 className="text-sm font-bold text-white">{st.name}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">{st.desc}</p>
                   </div>
                 </button>
               ))}
@@ -528,10 +528,10 @@ const CreateTrip: React.FC = () => {
         {step === 5 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">6</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">6</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">What do you love?</h2>
-                <p className="text-xs text-text-light">Select all activities and experiences that excite you</p>
+                <h2 className="text-xl font-bold text-white">What do you love?</h2>
+                <p className="text-xs text-slate-400">Select all activities and experiences that excite you</p>
               </div>
             </div>
 
@@ -543,15 +543,15 @@ const CreateTrip: React.FC = () => {
                     key={int.label}
                     type="button"
                     onClick={() => toggleInterest(int.label)}
-                    className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                    className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-orange bg-orange/10 text-navy font-bold shadow-xs'
-                        : 'border-border bg-white text-text hover:border-gray-300'
+                        ? 'border-cyan-400 bg-cyan-500/15 text-cyan-300 font-bold shadow-xs'
+                        : 'border-border bg-surface text-slate-300 hover:border-cyan-500/40'
                     }`}
                   >
                     <span>{int.icon}</span>
                     <span className="text-xs">{int.label}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-orange ml-auto" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-cyan-400 ml-auto" />}
                   </button>
                 );
               })}
@@ -563,26 +563,26 @@ const CreateTrip: React.FC = () => {
         {step === 6 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">7</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">7</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">Special requirements & preferences</h2>
-                <p className="text-xs text-text-light">Help specialists cater to your exact comfort needs</p>
+                <h2 className="text-xl font-bold text-white">Special requirements & preferences</h2>
+                <p className="text-xs text-slate-400">Help specialists cater to your exact comfort needs</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="label flex items-center gap-2"><Hotel className="w-4 h-4 text-orange" /> Accommodation Preference</label>
+                <label className="label flex items-center gap-2"><Hotel className="w-4 h-4 text-cyan-400" /> Accommodation Preference</label>
                 <div className="flex flex-wrap gap-2">
                   {accommodations.map(a => (
                     <button
                       key={a}
                       type="button"
                       onClick={() => update('accommodationPreference', a)}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                         form.accommodationPreference === a
-                          ? 'bg-navy text-white shadow-xs'
-                          : 'bg-bg text-text hover:bg-gray-200'
+                          ? 'bg-cyan-500 text-slate-950 font-bold shadow-xs'
+                          : 'bg-surface text-slate-300 hover:bg-surface-elevated'
                       }`}
                     >
                       {a}
@@ -592,17 +592,17 @@ const CreateTrip: React.FC = () => {
               </div>
 
               <div>
-                <label className="label flex items-center gap-2"><Car className="w-4 h-4 text-orange" /> Transport Preference</label>
+                <label className="label flex items-center gap-2"><Car className="w-4 h-4 text-cyan-400" /> Transport Preference</label>
                 <div className="flex flex-wrap gap-2">
                   {transports.map(t => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => update('transportPreference', t)}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                         form.transportPreference === t
-                          ? 'bg-navy text-white shadow-xs'
-                          : 'bg-bg text-text hover:bg-gray-200'
+                          ? 'bg-cyan-500 text-slate-950 font-bold shadow-xs'
+                          : 'bg-surface text-slate-300 hover:bg-surface-elevated'
                       }`}
                     >
                       {t}
@@ -628,32 +628,32 @@ const CreateTrip: React.FC = () => {
         {step === 7 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-10 h-10 rounded-xl bg-orange/10 text-orange flex items-center justify-center font-bold">8</div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">8</div>
               <div>
-                <h2 className="text-xl font-bold text-navy">Review your trip request</h2>
-                <p className="text-xs text-text-light">Check details before dispatching to verified specialists</p>
+                <h2 className="text-xl font-bold text-white">Review your trip request</h2>
+                <p className="text-xs text-slate-400">Check details before dispatching to verified specialists</p>
               </div>
             </div>
 
             {/* AI Insights Card */}
             {aiInsights && (
-              <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4.5">
-                <div className="flex items-center gap-2 text-blue-900 font-bold text-xs mb-2">
-                  <Lightbulb className="w-4 h-4 text-blue-600" />
+              <div className="bg-cyan-950/40 border border-cyan-500/30 rounded-2xl p-4.5">
+                <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs mb-2">
+                  <Lightbulb className="w-4 h-4 text-cyan-400" />
                   <span>WAYRIVO SMART ADVICE FOR {form.destination.toUpperCase()}</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-blue-950">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300">
                   <div>
-                    <span className="font-bold block mb-1">Recommended Highlights:</span>
-                    <ul className="list-disc list-inside space-y-0.5 text-blue-900">
+                    <span className="font-bold text-white block mb-1">Recommended Highlights:</span>
+                    <ul className="list-disc list-inside space-y-0.5 text-slate-300">
                       {aiInsights.highlights?.slice(0, 3).map((h: string) => (
                         <li key={h}>{h}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <span className="font-bold block mb-1">Recommended Packing:</span>
-                    <ul className="list-disc list-inside space-y-0.5 text-blue-900">
+                    <span className="font-bold text-white block mb-1">Recommended Packing:</span>
+                    <ul className="list-disc list-inside space-y-0.5 text-slate-300">
                       {aiInsights.packingTips?.slice(0, 3).map((p: string) => (
                         <li key={p}>{p}</li>
                       ))}
@@ -676,19 +676,19 @@ const CreateTrip: React.FC = () => {
                 ['Accommodation', form.accommodationPreference],
                 ['Transport', form.transportPreference],
               ].map(([lbl, val]) => (
-                <div key={lbl} className="p-3 bg-bg rounded-xl">
-                  <span className="text-[11px] text-text-light uppercase font-semibold block">{lbl}</span>
-                  <span className="text-xs font-bold text-navy mt-0.5 block">{val}</span>
+                <div key={lbl} className="p-3 bg-surface-dark rounded-xl border border-border/80">
+                  <span className="text-[11px] text-slate-400 uppercase font-semibold block">{lbl}</span>
+                  <span className="text-xs font-bold text-white mt-0.5 block">{val}</span>
                 </div>
               ))}
             </div>
 
             {form.interests.length > 0 && (
-              <div className="p-3 bg-bg rounded-xl">
-                <span className="text-[11px] text-text-light uppercase font-semibold block mb-1">Selected Passions</span>
+              <div className="p-3 bg-surface-dark rounded-xl border border-border/80">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold block mb-1">Selected Passions</span>
                 <div className="flex flex-wrap gap-1.5">
                   {form.interests.map(i => (
-                    <span key={i} className="text-xs bg-white border border-border px-2.5 py-0.5 rounded-md font-medium text-navy">
+                    <span key={i} className="text-xs bg-surface border border-border px-2.5 py-0.5 rounded-md font-medium text-white">
                       {i}
                     </span>
                   ))}
@@ -697,15 +697,15 @@ const CreateTrip: React.FC = () => {
             )}
 
             {form.specialRequirements && (
-              <div className="p-3 bg-bg rounded-xl">
-                <span className="text-[11px] text-text-light uppercase font-semibold block">Special Requests</span>
-                <p className="text-xs text-text mt-0.5">{form.specialRequirements}</p>
+              <div className="p-3 bg-surface-dark rounded-xl border border-border/80">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold block">Special Requests</span>
+                <p className="text-xs text-slate-200 mt-0.5">{form.specialRequirements}</p>
               </div>
             )}
 
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <p className="text-xs text-emerald-900">
+            <div className="p-3.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <p className="text-xs text-emerald-200">
                 <span className="font-bold">100% Free & Zero Obligation:</span> You will receive multiple detailed proposals with day-by-day itineraries, transparent hotel tiers, and pricing.
               </p>
             </div>

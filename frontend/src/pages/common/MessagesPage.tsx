@@ -163,18 +163,18 @@ const MessagesPage: React.FC = () => {
       {/* Sidebar List */}
       <div className="w-full md:w-80 lg:w-96 border-r border-border flex flex-col bg-surface">
         <div className="p-4 border-b border-border">
-          <h2 className="text-xl font-bold text-navy flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-orange" /> Messages
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-cyan-400" /> Messages
           </h2>
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-border/60">
           {loadingConv ? (
             <div className="flex items-center justify-center p-8">
-              <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : conversations.length === 0 ? (
-            <div className="p-8 text-center text-text-light text-sm">
+            <div className="p-8 text-center text-slate-400 text-sm">
               No conversations yet.
             </div>
           ) : (
@@ -184,22 +184,22 @@ const MessagesPage: React.FC = () => {
                 <button
                   key={c.partnerId}
                   onClick={() => setActivePartnerId(c.partnerId)}
-                  className={`w-full text-left p-4 flex items-start gap-3 transition-colors ${
-                    isActive ? 'bg-orange/10 border-l-4 border-orange' : 'hover:bg-gray-50'
+                  className={`w-full text-left p-4 flex items-start gap-3 transition-colors cursor-pointer ${
+                    isActive ? 'bg-cyan-500/15 border-l-4 border-cyan-400' : 'hover:bg-white/5'
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-navy to-navy-light text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-sm flex-shrink-0">
                     {c.partnerName?.charAt(0) || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-sm text-navy truncate">{c.partnerName}</h4>
-                      <span className="text-[10px] text-text-light">{c.lastMessageTime}</span>
+                      <h4 className="font-semibold text-sm text-white truncate">{c.partnerName}</h4>
+                      <span className="text-[10px] text-slate-400">{c.lastMessageTime}</span>
                     </div>
-                    <p className="text-xs text-text-light truncate mt-1">{c.lastMessage}</p>
+                    <p className="text-xs text-slate-400 truncate mt-1">{c.lastMessage}</p>
                   </div>
                   {c.unreadCount > 0 && (
-                    <span className="w-5 h-5 bg-orange text-white rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                    <span className="w-5 h-5 bg-cyan-500 text-slate-950 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                       {c.unreadCount}
                     </span>
                   )}
@@ -211,19 +211,19 @@ const MessagesPage: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="hidden md:flex flex-1 flex-col bg-bg">
+      <div className="hidden md:flex flex-1 flex-col bg-surface-dark">
         {activePartnerId ? (
           <>
             {/* Top Chat Header */}
-            <div className="px-6 py-4 bg-white border-b border-border flex items-center justify-between">
+            <div className="px-6 py-4 bg-surface border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange to-orange-dark text-white font-bold flex items-center justify-center text-sm">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-sm">
                   {activeConv.partnerName?.charAt(0) || 'P'}
                 </div>
                 <div>
-                  <h3 className="font-bold text-navy text-sm">{activeConv.partnerName}</h3>
-                  <p className="text-xs text-success flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-success" /> Active Now
+                  <h3 className="font-bold text-white text-sm">{activeConv.partnerName}</h3>
+                  <p className="text-xs text-emerald-400 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" /> Active Now
                   </p>
                 </div>
               </div>
@@ -232,8 +232,8 @@ const MessagesPage: React.FC = () => {
             {/* Message Bubble Feed */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {messages.length === 0 ? (
-                <div className="text-center py-16 text-text-light text-sm">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-text-lighter" />
+                <div className="text-center py-16 text-slate-400 text-sm">
+                  <Clock className="w-8 h-8 mx-auto mb-2 text-slate-500" />
                   No messages yet. Send a note to begin discussing your travel plans!
                 </div>
               ) : (
@@ -244,15 +244,15 @@ const MessagesPage: React.FC = () => {
                       <div
                         className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
                           isMe
-                            ? 'bg-orange text-white rounded-br-none'
-                            : 'bg-white text-text border border-border rounded-bl-none'
+                            ? 'bg-cyan-500 text-slate-950 font-medium rounded-br-none'
+                            : 'bg-surface-elevated text-slate-100 border border-border rounded-bl-none'
                         }`}
                       >
                         {!isMe && (
-                          <p className="text-[10px] font-bold text-navy/70 mb-1">{m.senderName}</p>
+                          <p className="text-[10px] font-bold text-cyan-400 mb-1">{m.senderName}</p>
                         )}
                         <p className="text-sm leading-relaxed">{m.content}</p>
-                        <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/80' : 'text-text-light'}`}>
+                        <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-slate-950/70 font-semibold' : 'text-slate-400'}`}>
                           {m.sentAt}
                         </p>
                       </div>
@@ -264,7 +264,7 @@ const MessagesPage: React.FC = () => {
             </div>
 
             {/* Input Bar */}
-            <div className="p-4 bg-white border-t border-border">
+            <div className="p-4 bg-surface border-t border-border">
               <form onSubmit={handleSendMessage} className="flex gap-2">
                 <input
                   type="text"

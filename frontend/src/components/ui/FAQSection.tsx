@@ -61,10 +61,10 @@ export const FAQSection: React.FC = () => {
           return (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.35, delay: idx * 0.05 }}
+              initial={{ opacity: 1 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, amount: 0.02 }}
+              transition={{ duration: 0.25 }}
               className={`rounded-2xl transition-all duration-200 border ${
                 isOpen
                   ? 'bg-surface/95 border-cyan-500/40 shadow-lg shadow-cyan-500/5'

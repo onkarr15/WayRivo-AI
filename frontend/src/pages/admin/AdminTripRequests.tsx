@@ -48,13 +48,13 @@ const AdminTripRequests: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy">Trip Requests Monitor</h1>
-        <p className="text-sm text-text-light mt-1">Platform-wide overview of all submitted traveler requests and proposal activity</p>
+        <h1 className="text-2xl font-bold text-white">Trip Requests Monitor</h1>
+        <p className="text-sm text-slate-400 mt-1">Platform-wide overview of all submitted traveler requests and proposal activity</p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center p-12">
-          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="space-y-4">
@@ -63,7 +63,7 @@ const AdminTripRequests: React.FC = () => {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-navy">
+                    <h3 className="text-lg font-bold text-white">
                       #{r.id} • {r.destination}
                     </h3>
                     <span className={statusColors[r.status] || 'badge-neutral'}>
@@ -71,11 +71,11 @@ const AdminTripRequests: React.FC = () => {
                     </span>
                   </div>
 
-                  <p className="text-xs text-text-light">
-                    Requested by: <span className="font-semibold text-navy">{r.travelerName || 'Traveler'}</span>
+                  <p className="text-xs text-slate-400">
+                    Requested by: <span className="font-semibold text-white">{r.travelerName || 'Traveler'}</span>
                   </p>
 
-                  <div className="flex flex-wrap gap-4 text-xs text-text-light">
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-400">
                     {r.fromLocation && (
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5" /> From {r.fromLocation}
@@ -89,8 +89,8 @@ const AdminTripRequests: React.FC = () => {
                     <span className="flex items-center gap-1">
                       <Users className="w-3.5 h-3.5" /> {r.travelersCount} travelers ({r.travelType || 'General'})
                     </span>
-                    <span className="flex items-center gap-1 font-bold text-navy">
-                      <DollarSign className="w-3.5 h-3.5 text-orange" /> ₹{Number(r.budget).toLocaleString()}
+                    <span className="flex items-center gap-1 font-bold text-white">
+                      <DollarSign className="w-3.5 h-3.5 text-cyan-400" /> ₹{Number(r.budget).toLocaleString()}
                     </span>
                   </div>
                 </div>

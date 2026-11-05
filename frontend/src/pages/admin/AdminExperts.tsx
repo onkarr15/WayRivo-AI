@@ -35,17 +35,17 @@ const AdminExperts: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy mb-6">Expert Verification</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">Expert Verification</h1>
       <div className="flex gap-2 mb-6 overflow-x-auto">
         {['', 'PENDING', 'VERIFIED', 'REJECTED', 'SUSPENDED'].map(s => (
-          <button key={s} onClick={() => { setStatus(s); setPage(0); }} className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${status === s ? 'bg-orange text-white' : 'bg-gray-100 text-text-light hover:bg-gray-200'}`}>
+          <button key={s} onClick={() => { setStatus(s); setPage(0); }} className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer ${status === s ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-surface text-slate-300 hover:bg-surface-elevated'}`}>
             {s || 'All'}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" /></div>
       ) : (
         <div className="space-y-4">
           {experts.map((e: any) => (
@@ -53,12 +53,12 @@ const AdminExperts: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-navy">{e.user?.name || 'Unknown'}</h3>
+                    <h3 className="font-semibold text-white">{e.user?.name || 'Unknown'}</h3>
                     <span className={statusColor[e.verificationStatus] || 'badge-neutral'}>{e.verificationStatus}</span>
                   </div>
-                  <p className="text-sm text-text-light">{e.organizationName}</p>
-                  <p className="text-xs text-text-light mt-1">{e.city}, {e.state} • {e.yearsOfExperience} yrs exp</p>
-                  {e.specializations && <p className="text-xs text-text-lighter mt-1">{e.specializations}</p>}
+                  <p className="text-sm text-slate-400">{e.organizationName}</p>
+                  <p className="text-xs text-slate-400 mt-1">{e.city}, {e.state} • {e.yearsOfExperience} yrs exp</p>
+                  {e.specializations && <p className="text-xs text-slate-500 mt-1">{e.specializations}</p>}
                 </div>
                 <div className="flex gap-2">
                   {e.verificationStatus !== 'VERIFIED' && <button onClick={() => handleVerify(e.id, 'VERIFIED')} className="btn-success text-sm"><CheckCircle className="w-4 h-4" />Verify</button>}

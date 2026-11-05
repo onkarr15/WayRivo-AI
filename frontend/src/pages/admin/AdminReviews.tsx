@@ -39,13 +39,13 @@ const AdminReviews: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy">Review Moderation</h1>
-        <p className="text-sm text-text-light mt-1">Platform feedback, traveler ratings, and testimonial monitoring</p>
+        <h1 className="text-2xl font-bold text-white">Review Moderation</h1>
+        <p className="text-sm text-slate-400 mt-1">Platform feedback, traveler ratings, and testimonial monitoring</p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center p-12">
-          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="space-y-4">
@@ -58,23 +58,23 @@ const AdminReviews: React.FC = () => {
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${i < r.rating ? 'text-amber-500 fill-amber-500' : 'text-gray-200'}`}
+                          className={`w-4 h-4 ${i < r.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`}
                         />
                       ))}
                     </div>
-                    <span className="text-xs font-bold text-navy">{r.rating}.0 / 5.0</span>
-                    <span className="text-xs text-text-light">• {r.createdAt || 'Recent'}</span>
+                    <span className="text-xs font-bold text-white">{r.rating}.0 / 5.0</span>
+                    <span className="text-xs text-slate-400">• {r.createdAt || 'Recent'}</span>
                   </div>
 
-                  <p className="text-sm text-text leading-relaxed">{r.comment}</p>
+                  <p className="text-sm text-slate-200 leading-relaxed">{r.comment}</p>
 
-                  <div className="flex items-center gap-4 text-xs text-text-light pt-2 border-t border-border">
+                  <div className="flex items-center gap-4 text-xs text-slate-400 pt-2 border-t border-border">
                     <span className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-orange" />
-                      Traveler: <strong className="text-navy">{r.travelerName}</strong>
+                      <User className="w-3.5 h-3.5 text-cyan-400" />
+                      Traveler: <strong className="text-white">{r.travelerName}</strong>
                     </span>
                     <span>
-                      Reviewed Expert: <strong className="text-navy">{r.expertName} ({r.organizationName})</strong>
+                      Reviewed Expert: <strong className="text-white">{r.expertName} ({r.organizationName})</strong>
                     </span>
                   </div>
                 </div>

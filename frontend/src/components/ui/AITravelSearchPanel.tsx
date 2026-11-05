@@ -79,10 +79,8 @@ export const AITravelSearchPanel: React.FC<AITravelSearchPanelProps> = ({
     <div className={`w-full max-w-5xl mx-auto ${className}`}>
       <motion.form
         onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         className="glass-card p-4 sm:p-7 rounded-3xl border border-cyan-500/25 shadow-2xl shadow-cyan-950/40 relative overflow-hidden"
       >
         {/* Subtle Ambient Header Pill */}

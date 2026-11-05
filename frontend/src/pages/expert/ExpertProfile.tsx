@@ -97,25 +97,25 @@ const ExpertProfile: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-navy">Expert Profile & Credentials</h1>
-        <p className="text-sm text-text-light mt-1">Manage your agency credentials, coverage regions, and verified badges</p>
+        <h1 className="text-2xl font-bold text-white">Expert Profile & Credentials</h1>
+        <p className="text-sm text-slate-400 mt-1">Manage your agency credentials, coverage regions, and verified badges</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Verification Status & Rating Card */}
         <div className="card p-6 space-y-5 text-center flex flex-col justify-center items-center">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-navy to-navy-light text-white font-extrabold flex items-center justify-center text-3xl shadow-lg">
+          <div className="w-20 h-20 rounded-2xl bg-cyan-500/20 text-cyan-300 font-extrabold flex items-center justify-center text-3xl shadow-lg">
             {form.organizationName?.charAt(0) || user?.name?.charAt(0) || 'E'}
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-navy">{form.organizationName || user?.name}</h2>
-            <p className="text-xs text-text-light">{user?.email}</p>
+            <h2 className="text-lg font-bold text-white">{form.organizationName || user?.name}</h2>
+            <p className="text-xs text-slate-400">{user?.email}</p>
           </div>
 
           <div className="w-full pt-4 border-t border-border space-y-2 text-xs">
             <div className="flex justify-between items-center">
-              <span className="text-text-light">Verification</span>
+              <span className="text-slate-400">Verification</span>
               <span className={`badge ${form.verificationStatus === 'VERIFIED' ? 'badge-success' : 'badge-warning'}`}>
                 {form.verificationStatus === 'VERIFIED' && <ShieldCheck className="w-3 h-3 mr-1" />}
                 {form.verificationStatus}
@@ -123,16 +123,16 @@ const ExpertProfile: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-text-light">Rating</span>
-              <span className="font-bold text-navy flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span className="text-slate-400">Rating</span>
+              <span className="font-bold text-white flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 {profile?.rating || '5.0'} ({profile?.totalReviews || 0} reviews)
               </span>
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-text-light">Experience</span>
-              <span className="font-bold text-navy">{form.yearsOfExperience} Years</span>
+              <span className="text-slate-400">Experience</span>
+              <span className="font-bold text-white">{form.yearsOfExperience} Years</span>
             </div>
           </div>
         </div>
@@ -140,8 +140,8 @@ const ExpertProfile: React.FC = () => {
         {/* Profile Details Form */}
         <div className="md:col-span-2">
           <div className="card p-6">
-            <h3 className="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-              <Building className="w-5 h-5 text-orange" /> Agency Profile
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Building className="w-5 h-5 text-cyan-400" /> Agency Profile
             </h3>
 
             {msg && (
