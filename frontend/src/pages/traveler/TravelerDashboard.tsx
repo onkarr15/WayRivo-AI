@@ -349,7 +349,7 @@ const TravelerDashboard: React.FC = () => {
                           statusBadgeStyles[trip.status] || 'bg-slate-800 text-slate-400'
                         }`}
                       >
-                        {trip.status.replace('_', ' ')}
+                        {(trip.status || 'PLANNING').replace('_', ' ')}
                       </span>
                       {trip.payment?.escrowStatus && (
                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -582,7 +582,7 @@ const TravelerDashboard: React.FC = () => {
                               statusBadgeStyles[b.status] || 'bg-slate-800 text-slate-400'
                             }`}
                           >
-                            {b.status.replace('_', ' ')}
+                            {(b.status || 'CONFIRMED').replace('_', ' ')}
                           </span>
 
                           {b.payment?.escrowStatus && (

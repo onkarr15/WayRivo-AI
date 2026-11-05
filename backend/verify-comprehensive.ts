@@ -23,7 +23,7 @@ async function runComprehensiveVerification() {
   await test('1. GET /api/v1/health (System and DB Check)', async () => {
     const res = await fetch(`${baseUrl}/health`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.status !== 'UP' || data.database !== 'CONNECTED') {
       throw new Error(`Health status invalid: ${JSON.stringify(data)}`);
     }
@@ -48,7 +48,7 @@ async function runComprehensiveVerification() {
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data?.token) throw new Error('Token missing from registration');
     travelerToken = data.data.token;
     verificationToken = data.data.verificationToken;
@@ -65,7 +65,7 @@ async function runComprehensiveVerification() {
       body: JSON.stringify({ token: verificationToken }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data?.user?.isEmailVerified) throw new Error('isEmailVerified was not true');
   });
 
@@ -74,7 +74,7 @@ async function runComprehensiveVerification() {
       headers: { Authorization: `Bearer ${travelerToken}` },
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.data?.email !== testEmail) throw new Error(`Email mismatch in profile: ${data.data?.email}`);
   });
 
@@ -93,7 +93,7 @@ async function runComprehensiveVerification() {
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.data?.budgetPreference !== 'Moderate' || data.data?.preferredDestinations?.length !== 2) {
       throw new Error(`Profile preferences not updated correctly: ${JSON.stringify(data)}`);
     }
@@ -110,7 +110,7 @@ async function runComprehensiveVerification() {
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     adminToken = data.token || data.data?.token;
     if (!adminToken) throw new Error('Admin token not returned');
   });
@@ -149,7 +149,7 @@ async function runComprehensiveVerification() {
   await test('8. GET /api/v1/destinations (Marketplace Listings & State Filter)', async () => {
     const res = await fetch(`${baseUrl}/destinations?state=Kerala`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No Kerala destinations found');
     const kerala = data.data.find((d: any) => d.slug === 'kerala');
     if (!kerala) throw new Error('Kerala not found in destinations');
@@ -159,7 +159,7 @@ async function runComprehensiveVerification() {
   await test('9. GET /api/v1/destinations/slug/kerala (Slug-based deep-dive)', async () => {
     const res = await fetch(`${baseUrl}/destinations/slug/kerala`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     const dest = data.data;
     if (dest.name !== 'Kerala') throw new Error('Destination name mismatch');
     if (!Array.isArray(dest.popularAttractions) || dest.popularAttractions.length === 0) {
@@ -179,14 +179,14 @@ async function runComprehensiveVerification() {
   await test('10. GET /api/v1/destinations/:id (ID-based deep-dive with slug fallback)', async () => {
     const res = await fetch(`${baseUrl}/destinations/${keralaId}`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.data?.name !== 'Kerala') throw new Error('Failed to resolve by ID');
   });
 
   await test('11. GET /api/v1/hotels (Hotels Filter by Stars & Destination)', async () => {
     const res = await fetch(`${baseUrl}/hotels?destinationId=${keralaId}&minStars=4&sortBy=price_asc`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No hotels found');
     for (const h of data.data) {
       if (h.stars < 4) throw new Error(`Hotel ${h.name} has stars ${h.stars} < 4`);
@@ -197,7 +197,7 @@ async function runComprehensiveVerification() {
   await test('12. GET /api/v1/activities (Activities Filter by Category)', async () => {
     const res = await fetch(`${baseUrl}/activities?category=Water%20sports`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No water sports activities found');
     for (const a of data.data) {
       if (a.category !== 'Water sports') throw new Error(`Activity ${a.title} category mismatch: ${a.category}`);
@@ -207,7 +207,7 @@ async function runComprehensiveVerification() {
   await test('13. GET /api/v1/packages (Packages Filter by isRecommended)', async () => {
     const res = await fetch(`${baseUrl}/packages?isRecommended=true`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No recommended packages found');
     for (const p of data.data) {
       if (!p.isRecommended) throw new Error(`Package ${p.title} is not recommended`);
@@ -237,13 +237,13 @@ async function runComprehensiveVerification() {
       }),
     });
     if (!createRes.ok) throw new Error(`Create hotel failed: ${createRes.status}`);
-    const created = await createRes.json();
+    const created: any = await createRes.json();
     testHotelId = created.data.id;
 
     // 2. Read
     const getRes = await fetch(`${baseUrl}/hotels/${testHotelId}`);
     if (!getRes.ok) throw new Error(`Get hotel failed: ${getRes.status}`);
-    const fetched = await getRes.json();
+    const fetched: any = await getRes.json();
     if (fetched.data?.name !== `Emerald Cloud Boutique Resort ${userTimestamp}`) {
       throw new Error('Hotel name mismatch');
     }
@@ -290,7 +290,7 @@ async function runComprehensiveVerification() {
       }),
     });
     if (!createRes.ok) throw new Error(`Create activity failed: ${createRes.status}`);
-    const created = await createRes.json();
+    const created: any = await createRes.json();
     testActivityId = created.data.id;
 
     // 2. Read
@@ -344,7 +344,7 @@ async function runComprehensiveVerification() {
       }),
     });
     if (!createRes.ok) throw new Error(`Create package failed: ${createRes.status}`);
-    const created = await createRes.json();
+    const created: any = await createRes.json();
     testPackageId = created.data.id;
 
     // 2. Read
@@ -375,7 +375,7 @@ async function runComprehensiveVerification() {
     const adminHeaders = { Authorization: `Bearer ${adminToken}` };
     const res = await fetch(`${baseUrl}/admin/inventory`, { headers: adminHeaders });
     if (!res.ok) throw new Error(`Inventory overview failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     const inv = data.data;
     if (typeof inv.destinations !== 'number' || inv.destinations < 8) {
       throw new Error(`Expected at least 8 destinations, got ${inv.destinations}`);

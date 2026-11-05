@@ -41,7 +41,7 @@ async function runSecurityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: testEmail, password: testPassword }),
   });
-  travelerToken = (await tLogin.json()).data.token;
+  travelerToken = ((await tLogin.json()) as any).data.token;
 
   await fetch(`${baseUrl}/auth/register`, {
     method: 'POST',
@@ -57,7 +57,7 @@ async function runSecurityTests() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: adminEmail, password: testPassword }),
   });
-  adminToken = (await aLogin.json()).data.token;
+  adminToken = ((await aLogin.json()) as any).data.token;
 
   // 1. Authentication: Reject forged/tampered JWT tokens
   await secTest('1. Reject Tampered or Invalid JWT Token (401 Unauthorized)', async () => {
@@ -107,7 +107,7 @@ async function runSecurityTests() {
   await secTest('5. SQL Injection Protection: Immune to Malicious Payload Injections', async () => {
     const sqlInjectionPayload = "' OR '1'='1' --";
     const res = await fetch(`${baseUrl}/hotels?search=${encodeURIComponent(sqlInjectionPayload)}`);
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || !json.success) {
       throw new Error(`SQL injection attempt disrupted server response: ${JSON.stringify(json)}`);
     }
@@ -156,7 +156,7 @@ async function runSecurityTests() {
         ],
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok) throw new Error(`Booking failed: ${JSON.stringify(json)}`);
 
     const expectedTotal = Number(hotel.pricePerNight);
@@ -199,7 +199,7 @@ async function runSecurityTests() {
         items: [{ itemType: 'HOTEL', referenceId: hotel!.id, quantity: 1 }],
       }),
     });
-    const bJson = await bRes.json();
+    const bJson: any = await bRes.json();
     const bId = bJson.data.id;
 
     const ordRes = await fetch(`${baseUrl}/payments/create-order`, {
@@ -207,7 +207,7 @@ async function runSecurityTests() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${travelerToken}` },
       body: JSON.stringify({ bookingId: bId }),
     });
-    const ordJson = await ordRes.json();
+    const ordJson: any = await ordRes.json();
     const orderId = ordJson.data.orderId;
 
     const idempKey = `sec-idemp-${Date.now()}`;
@@ -222,7 +222,7 @@ async function runSecurityTests() {
       },
       body: JSON.stringify({ bookingId: bId, paypalOrderId: orderId }),
     });
-    const cap1Json = await cap1.json();
+    const cap1Json: any = await cap1.json();
     if (!cap1.ok) throw new Error('First capture failed');
 
     // Second capture attempt with same order and booking
@@ -235,7 +235,7 @@ async function runSecurityTests() {
       },
       body: JSON.stringify({ bookingId: bId, paypalOrderId: orderId }),
     });
-    const cap2Json = await cap2.json();
+    const cap2Json: any = await cap2.json();
 
     // Verify it returned idempotent success or existing record, NOT a double capture charge
     if (cap2Json.data?.isDuplicate !== true && cap2Json.data?.payment?.id !== cap1Json.data?.payment?.id) {
@@ -246,7 +246,7 @@ async function runSecurityTests() {
   // 10. Sensitive Credentials Redaction: Never expose client secret or raw DB passwords
   await secTest('10. Sensitive Data Isolation: Secrets & Keys Never Exposed via Public Endpoints', async () => {
     const configRes = await fetch(`${baseUrl}/payments/config`);
-    const configJson = await configRes.json();
+    const configJson: any = await configRes.json();
     const config = configJson.data;
 
     if (config.clientSecret || config.secret || config.databaseUrl) {

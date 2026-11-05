@@ -16,7 +16,7 @@ export class UserRepository {
 
   async create(data: {
     email: string;
-    passwordHash: string;
+    passwordHash?: string | null;
     name: string;
     phone?: string;
     role?: UserRole;

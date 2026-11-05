@@ -25,7 +25,7 @@ async function testAgentWorkflow() {
   await test('1. GET /api/v1/agent/suggested-prompts', async () => {
     const res = await fetch(`${baseUrl}/agent/suggested-prompts`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length < 3) {
       throw new Error(`Expected at least 3 suggested prompts, got: ${data.data?.length}`);
     }
@@ -43,7 +43,7 @@ async function testAgentWorkflow() {
       }),
     });
     if (!res.ok) throw new Error(`Login failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     token = data.token || data.data?.token;
     if (!token) throw new Error('Token not returned');
   });
@@ -68,7 +68,7 @@ async function testAgentWorkflow() {
       throw new Error(`Chat error ${res.status}: ${err}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     const result = data.data;
 
     if (!result?.conversationId) throw new Error('Missing conversationId in reply');
@@ -142,7 +142,7 @@ async function testAgentWorkflow() {
     });
 
     if (!res.ok) throw new Error(`Save itinerary failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data?.itineraryId) throw new Error('itineraryId not returned');
     savedItineraryId = data.data.itineraryId;
   });
@@ -170,7 +170,7 @@ async function testAgentWorkflow() {
     });
 
     if (!res.ok) throw new Error(`Create proposal failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     const prop = data.data;
 
     if (!prop.bookingReference || !prop.bookingReference.startsWith('WR-2026-')) {
@@ -191,7 +191,7 @@ async function testAgentWorkflow() {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error(`Fetch conversations failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) {
       throw new Error('No user conversations returned');
     }
@@ -205,7 +205,7 @@ async function testAgentWorkflow() {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error(`Fetch conversation detail failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     const conv = data.data;
 
     if (!Array.isArray(conv.messages) || conv.messages.length < 2) {

@@ -21,6 +21,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<any>;
+  loginWithToken: (token: string) => Promise<User>;
   register: (data: any) => Promise<any>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -77,6 +78,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('wayrivo_user', JSON.stringify(userData));
     }
     return payload;
+  };
+
+  const loginWithToken = async (authToken: string): Promise<User> => {
+    localStorage.setItem('wayrivo_token', authToken);
+    setToken(authToken);
+
+    try {
+      const res = await authService.getProfile();
+      if (res.data?.success && res.data.data) {
+        const u = res.data.data;
+        const userData: User = {
+          id: u.id,
+          userId: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          phone: u.phone,
+          avatarUrl: u.avatarUrl,
+          isEmailVerified: u.isEmailVerified,
+          preferredDestinations: u.preferredDestinations || [],
+          travelInterests: u.travelInterests || [],
+          budgetPreference: u.budgetPreference || 'Moderate',
+          preferredCurrency: u.preferredCurrency || 'INR',
+        };
+        setUser(userData);
+        localStorage.setItem('wayrivo_user', JSON.stringify(userData));
+        return userData;
+      }
+      throw new Error('Failed to retrieve user profile.');
+    } catch (err) {
+      localStorage.removeItem('wayrivo_token');
+      localStorage.removeItem('wayrivo_user');
+      setToken(null);
+      setUser(null);
+      throw err;
+    }
   };
 
   const register = async (formData: any) => {
@@ -161,6 +198,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         isLoading,
         login,
+        loginWithToken,
         register,
         logout,
         updateUser,

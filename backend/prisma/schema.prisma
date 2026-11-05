@@ -107,7 +107,7 @@ enum AgentActionStatus {
 model User {
   id            String       @id @default(cuid())
   email         String       @unique
-  passwordHash  String
+  passwordHash  String?
   name          String
   role          UserRole     @default(TRAVELER)
   phone         String?
@@ -117,6 +117,7 @@ model User {
   emailVerificationToken String?
   passwordResetToken     String?
   passwordResetExpires   DateTime?
+  tokenVersion           Int          @default(0)
 
   // Extended Profile Preferences
   preferredDestinations  String[]     @default([])
@@ -134,9 +135,28 @@ model User {
   groupTrips    GroupTrip[]    @relation("OrganizerTrips")
   paidExpenses  GroupExpense[]
   auditLogs     AuditLog[]
+  passwordResetTokens PasswordResetToken[]
+  oauthAccounts OAuthAccount[]
 
   @@index([email])
   @@index([role])
+}
+
+// -------------------------------------------------------------
+// 1b. OAUTH ACCOUNT
+// -------------------------------------------------------------
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String   // e.g. "google"
+  providerAccountId String   // Google stable subject identifier (sub)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 // -------------------------------------------------------------
@@ -521,4 +541,22 @@ model AuditLog {
   @@index([userId])
   @@index([entityType, entityId])
   @@index([action])
+}
+
+// -------------------------------------------------------------
+// 17. PASSWORD RESET TOKEN
+// -------------------------------------------------------------
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
 }

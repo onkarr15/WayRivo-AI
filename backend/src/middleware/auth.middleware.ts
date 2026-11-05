@@ -8,6 +8,7 @@ import { UnauthorizedError, ForbiddenError } from '../utils/errors';
 interface JwtPayload {
   userId: string;
   role: UserRole;
+  tokenVersion?: number;
 }
 
 export const authenticate = async (
@@ -53,6 +54,7 @@ export const authenticate = async (
         status: true,
         isEmailVerified: true,
         avatarUrl: true,
+        tokenVersion: true,
       },
     });
 
@@ -62,6 +64,11 @@ export const authenticate = async (
 
     if (user.status === 'SUSPENDED') {
       throw new ForbiddenError('Account is suspended. Please contact WayRivo security support.');
+    }
+
+    // Session revocation check: reject if tokenVersion is older than current database tokenVersion
+    if (decoded.tokenVersion !== undefined && decoded.tokenVersion < user.tokenVersion) {
+      throw new UnauthorizedError('Your session has been invalidated due to a password reset. Please sign in again.');
     }
 
     req.user = user as AuthenticatedUser;
@@ -106,11 +113,14 @@ export const optionalAuthenticate = async (
           status: true,
           isEmailVerified: true,
           avatarUrl: true,
+          tokenVersion: true,
         },
       });
 
       if (user && user.status !== 'SUSPENDED') {
-        req.user = user as AuthenticatedUser;
+        if (decoded.tokenVersion === undefined || decoded.tokenVersion >= user.tokenVersion) {
+          req.user = user as AuthenticatedUser;
+        }
       }
     } catch {
       // Ignore token verification errors for optional authentication

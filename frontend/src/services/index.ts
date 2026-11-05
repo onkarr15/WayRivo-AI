@@ -7,6 +7,7 @@ export const authService = {
   getMe: () => api.get('/auth/me'),
   verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  verifyResetToken: (token: string) => api.post('/auth/verify-reset-token', { token }),
   resetPassword: (data: { token: string; newPassword: string }) => api.post('/auth/reset-password', data),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: any) => api.patch('/users/profile', data),

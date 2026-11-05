@@ -39,7 +39,7 @@ async function testBookingAndPayPal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'PayPal Traveler', email: tEmail, password, role: 'USER' }),
     });
-    const regDataT = await regT.json();
+    const regDataT: any = await regT.json();
     travelerToken = regDataT.token || regDataT.data?.token;
     travelerId = regDataT.data?.user?.id || regDataT.user?.id;
 
@@ -49,7 +49,7 @@ async function testBookingAndPayPal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'PayPal Admin', email: aEmail, password, role: 'ADMIN' }),
     });
-    const regDataA = await regA.json();
+    const regDataA: any = await regA.json();
 
     // Elevate admin in database
     await prisma.user.updateMany({
@@ -63,7 +63,7 @@ async function testBookingAndPayPal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: aEmail, password }),
     });
-    const dataA = await resA.json();
+    const dataA: any = await resA.json();
     adminToken = dataA.token || dataA.data?.token || regDataA.token || regDataA.data?.token;
 
     if (!travelerToken || !adminToken) throw new Error('Failed to acquire authentication tokens');
@@ -74,13 +74,13 @@ async function testBookingAndPayPal() {
   let activity: any = null;
   await test('2. Retrieve Real Database Inventory & Capacities', async () => {
     const hRes = await fetch(`${baseUrl}/hotels`);
-    const hData = await hRes.json();
+    const hData: any = await hRes.json();
     const hotels = hData.data?.hotels || hData.data || [];
     hotel = hotels.find((h: any) => h.availableRooms > 0) || hotels[0];
     if (!hotel) throw new Error('No hotel available in database');
 
     const aRes = await fetch(`${baseUrl}/activities`);
-    const aData = await aRes.json();
+    const aData: any = await aRes.json();
     const activities = aData.data?.activities || aData.data || [];
     activity = activities.find((a: any) => a.availableSlots > 0) || activities[0];
     if (!activity) throw new Error('No activity available in database');
@@ -111,7 +111,7 @@ async function testBookingAndPayPal() {
       }),
     });
     if (!res.ok) throw new Error(`Failed to create test itinerary: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     itineraryId = data.data?.id;
     if (!itineraryId) throw new Error('Itinerary ID not returned');
   });
@@ -138,7 +138,7 @@ async function testBookingAndPayPal() {
     if (res.status !== 400) {
       throw new Error(`Expected 400 Bad Request for unavailable inventory, got ${res.status}`);
     }
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.error.includes('Insufficient room availability')) {
       throw new Error(`Expected 'Insufficient room availability' error, got: ${data.error}`);
     }
@@ -178,7 +178,7 @@ async function testBookingAndPayPal() {
       throw new Error(`Booking creation failed: ${res.status} - ${err}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     booking = data.data;
 
     // Check unique booking reference
@@ -217,7 +217,7 @@ async function testBookingAndPayPal() {
     if (res.status !== 409) {
       throw new Error(`Expected 409 Conflict for duplicate booking on same itinerary, got ${res.status}`);
     }
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.error.includes('A booking already exists for this itinerary')) {
       throw new Error(`Expected duplicate booking error, got: ${data.error}`);
     }
@@ -228,7 +228,7 @@ async function testBookingAndPayPal() {
   await test('7. GET /api/v1/payments/config (PayPal Configuration & Currency Verification)', async () => {
     const res = await fetch(`${baseUrl}/payments/config`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     payPalConfig = data.data;
 
     if (!payPalConfig.clientId) throw new Error('PayPal clientId missing');
@@ -260,7 +260,7 @@ async function testBookingAndPayPal() {
       throw new Error(`Create order failed: ${res.status} - ${err}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     payPalOrder = data.data;
 
     if (!payPalOrder.orderId) throw new Error('PayPal order ID not returned');
@@ -292,7 +292,7 @@ async function testBookingAndPayPal() {
       throw new Error(`Capture failed: ${res.status} - ${err}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     captureResult = data.data;
 
     if (captureResult.bookingStatus !== 'ESCROW_HOLD') {
@@ -330,7 +330,7 @@ async function testBookingAndPayPal() {
     });
 
     if (!res.ok) throw new Error(`Double capture check failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data.isDuplicate) {
       throw new Error('Expected isDuplicate flag on duplicate capture attempt');
     }
@@ -363,7 +363,7 @@ async function testBookingAndPayPal() {
     });
 
     if (!res1.ok) throw new Error(`Webhook failed: ${res1.status}`);
-    const data1 = await res1.json();
+    const data1: any = await res1.json();
     if (!data1.received) throw new Error('Expected { received: true }');
 
     // Second attempt with exact same event -> returns idempotent alreadyProcessed
@@ -374,7 +374,7 @@ async function testBookingAndPayPal() {
     });
 
     if (!res2.ok) throw new Error(`Webhook retry failed: ${res2.status}`);
-    const data2 = await res2.json();
+    const data2: any = await res2.json();
     if (!data2.alreadyProcessed) {
       throw new Error('Expected alreadyProcessed: true on duplicate webhook event');
     }
@@ -394,7 +394,7 @@ async function testBookingAndPayPal() {
     });
 
     if (!res.ok) throw new Error(`Cancel request failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data.message.includes('In accordance with WayRivo escrow policies')) {
       throw new Error(`Unexpected cancel request response: ${data.data.message}`);
     }
@@ -444,7 +444,7 @@ async function testBookingAndPayPal() {
       throw new Error(`Admin refund failed: ${res.status} - ${err}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data.success || !data.data.refundId) {
       throw new Error('Refund failed or refundId missing');
     }

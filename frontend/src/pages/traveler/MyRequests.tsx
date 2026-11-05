@@ -53,17 +53,17 @@ const MyRequests: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="font-semibold text-white text-lg group-hover:text-cyan-400 transition-colors">{r.destination}</h3>
-                    <span className={statusColors[r.status] || 'badge-neutral'}>{r.status.replace(/_/g, ' ')}</span>
+                    <span className={statusColors[r.status] || 'badge-neutral'}>{(r.status || 'OPEN').replace(/_/g, ' ')}</span>
                   </div>
                   <div className="flex flex-wrap gap-4 text-sm text-slate-400">
                     {r.fromLocation && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />From {r.fromLocation}</span>}
                     {r.startDate && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{r.startDate}</span>}
-                    <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{r.travelersCount} travelers</span>
-                    <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" />₹{Number(r.budget).toLocaleString()}</span>
+                    <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{r.travelersCount || 1} travelers</span>
+                    <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" />₹{Number(r.budget || 0).toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-1 text-sm"><FileText className="w-4 h-4 text-cyan-400" /><span className="font-semibold text-white">{r.proposalCount}</span><span className="text-slate-400">proposals</span></div>
+                  <div className="flex items-center gap-1 text-sm"><FileText className="w-4 h-4 text-cyan-400" /><span className="font-semibold text-white">{r.proposalCount ?? r.proposals?.length ?? 0}</span><span className="text-slate-400">proposals</span></div>
                 </div>
               </div>
             </Link>

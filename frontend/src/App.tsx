@@ -19,6 +19,7 @@ import LoginPage from './pages/public/LoginPage';
 import RegisterPage from './pages/public/RegisterPage';
 import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
 import ResetPasswordPage from './pages/public/ResetPasswordPage';
+import AuthCallbackPage from './pages/public/AuthCallbackPage';
 
 // Traveler & User pages
 import TravelerDashboard from './pages/traveler/TravelerDashboard';
@@ -77,6 +78,7 @@ function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
               </Route>
 
               {/* Traveler Protected Routes */}

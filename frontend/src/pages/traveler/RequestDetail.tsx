@@ -109,7 +109,7 @@ const RequestDetail: React.FC = () => {
             <span className="text-xs font-bold text-orange uppercase tracking-wider">REQUEST #{request.id}</span>
             <span className="text-xs text-slate-400">•</span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-              {request.status.replace(/_/g, ' ')}
+              {(request.status || 'OPEN').replace(/_/g, ' ')}
             </span>
           </div>
           <h1 className="text-3xl font-bold text-white">Trip to {request.destination}</h1>

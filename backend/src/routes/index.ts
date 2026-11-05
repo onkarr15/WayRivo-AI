@@ -143,43 +143,262 @@ router.post('/messages', (req, res) => {
 // -------------------------------------------------------------
 // Legacy Trip Requests, Proposals, Experts & Reviews Handlers
 // -------------------------------------------------------------
+const sampleOpenTripRequests = [
+  {
+    id: 'req_101',
+    destination: 'Kerala Backwaters & Munnar Tea Trails',
+    fromLocation: 'Mumbai',
+    startDate: '2026-12-10',
+    endDate: '2026-12-16',
+    travelersCount: 2,
+    budget: 145000,
+    travelStyle: 'Luxury Heritage & Wellness',
+    travelType: 'Couple / Honeymoon',
+    durationDays: 6,
+    matchScore: 98,
+    travelerName: 'Arjun K. Sharma',
+    notes: 'Prefer private traditional houseboat with dedicated chef, and an organic spice plantation estate retreat.',
+    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: 'req_102',
+    destination: 'Golden Triangle & Desert Haveli Expedition',
+    fromLocation: 'New Delhi',
+    startDate: '2026-11-28',
+    endDate: '2026-12-05',
+    travelersCount: 4,
+    budget: 180000,
+    travelStyle: 'Cultural Experience',
+    travelType: 'Family Vacation',
+    durationDays: 7,
+    matchScore: 96,
+    travelerName: 'Pooja Iyer & Family',
+    notes: 'Need family-friendly stays in Jaipur and Jodhpur with private heritage walks and camel safari for kids.',
+    createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: 'req_103',
+    destination: 'Ladakh High Mountain Passes & Pangong Lake',
+    fromLocation: 'Bangalore',
+    startDate: '2026-12-15',
+    endDate: '2026-12-24',
+    travelersCount: 3,
+    budget: 220000,
+    travelStyle: 'Adventure Photography',
+    travelType: 'Friends Expedition',
+    durationDays: 9,
+    matchScore: 93,
+    travelerName: 'Rohan Deshmukh',
+    notes: 'Stargazing camps at Nubra and Pangong, professional 4x4 vehicle, oxygen support equipment verified.',
+    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: 'req_104',
+    destination: 'Goa Coastal Luxury & Heritage Fontainhas',
+    fromLocation: 'Hyderabad',
+    startDate: '2026-11-20',
+    endDate: '2026-11-24',
+    travelersCount: 2,
+    budget: 95000,
+    travelStyle: 'Culinary & Relaxation',
+    travelType: 'Couple Getaway',
+    durationDays: 4,
+    matchScore: 89,
+    travelerName: 'Devendra Patel',
+    notes: 'Boutique heritage Portuguese villa in Latin Quarter and sunset catamaran private cruise.',
+    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+  },
+];
+
+const sampleExpertProposals = [
+  {
+    id: 'prop_201',
+    title: 'Royal Udaipur & Jodhpur Heritage Palaces Retreat',
+    tripRequestId: 'req_102',
+    destination: 'Rajasthan',
+    travelerName: 'Pooja Iyer',
+    totalPrice: 175000,
+    status: 'SELECTED',
+    validityDate: '2026-11-30',
+    description: 'Exclusive 5-star palace accommodations with private royal vintage car transfers, stepwell dinner, and folk cultural evenings.',
+    escrowStatus: 'HELD',
+    submittedAt: '2 days ago',
+  },
+  {
+    id: 'prop_202',
+    title: 'Private Kumarakom Houseboat & Marari Beach Eco-Resort',
+    tripRequestId: 'req_101',
+    destination: 'Kerala',
+    travelerName: 'Arjun K. Sharma',
+    totalPrice: 142000,
+    status: 'SUBMITTED',
+    validityDate: '2026-12-05',
+    description: 'Handcrafted luxury voyage through Vembanad Lake with private chef, authentic Ayurveda session, and organic estate tour.',
+    escrowStatus: 'PENDING_APPROVAL',
+    submittedAt: 'Yesterday',
+  },
+  {
+    id: 'prop_203',
+    title: 'Pangong Stargazing & Geodesic Glamping Overland',
+    tripRequestId: 'req_103',
+    destination: 'Ladakh',
+    travelerName: 'Rohan Deshmukh',
+    totalPrice: 215000,
+    status: 'SELECTED',
+    validityDate: '2026-12-12',
+    description: 'High altitude acclimation itinerary with 24/7 medical escort, heated dome glamping, and private 4x4 overland guide.',
+    escrowStatus: 'HELD',
+    submittedAt: '4 days ago',
+  },
+  {
+    id: 'prop_204',
+    title: 'Sacred Varanasi Dawn Aarti & Sarnath Scholar Tour',
+    tripRequestId: 'req_105',
+    destination: 'Varanasi',
+    travelerName: 'Meera Swaminathan',
+    totalPrice: 82000,
+    status: 'SUBMITTED',
+    validityDate: '2026-12-01',
+    description: 'Private dawn boat rides along ancient ghats, classical sitar performance evening, and scholar-guided Buddhist archaeological sites.',
+    escrowStatus: 'PENDING_APPROVAL',
+    submittedAt: '3 days ago',
+  },
+];
+
 router.get('/trip-requests/open', async (_req, res) => {
-  res.json({ success: true, data: { content: [], totalPages: 0, totalElements: 0 } });
+  res.json({
+    success: true,
+    data: {
+      content: sampleOpenTripRequests,
+      totalPages: 1,
+      totalElements: sampleOpenTripRequests.length,
+    },
+  });
 });
+
 router.get('/trip-requests/my', async (_req, res) => {
-  res.json({ success: true, data: { content: [], totalPages: 0, totalElements: 0 } });
+  res.json({
+    success: true,
+    data: {
+      content: sampleOpenTripRequests.slice(0, 2),
+      totalPages: 1,
+      totalElements: 2,
+    },
+  });
 });
+
 router.get('/trip-requests/dashboard-stats', async (_req, res) => {
-  res.json({ success: true, data: { totalRequests: 0, activeRequests: 0, matchedExperts: 0 } });
+  res.json({
+    success: true,
+    data: {
+      totalRequests: sampleOpenTripRequests.length,
+      activeRequests: 4,
+      matchedExperts: 18,
+    },
+  });
 });
-router.get('/trip-requests/:id', async (_req, res) => {
-  res.json({ success: true, data: null });
+
+router.get('/trip-requests/:id', async (req, res) => {
+  const item = sampleOpenTripRequests.find(r => r.id === req.params.id) || sampleOpenTripRequests[0];
+  res.json({ success: true, data: item });
 });
+
 router.post('/trip-requests', async (_req, res) => {
   res.json({ success: true, data: { id: 'req_' + Date.now(), status: 'OPEN' } });
 });
 
 router.get('/proposals/my', async (_req, res) => {
-  res.json({ success: true, data: { content: [], totalPages: 0, totalElements: 0 } });
+  res.json({
+    success: true,
+    data: {
+      content: sampleExpertProposals,
+      totalPages: 1,
+      totalElements: sampleExpertProposals.length,
+    },
+  });
 });
+
 router.get('/proposals/expert/dashboard-stats', async (_req, res) => {
-  res.json({ success: true, data: { submittedCount: 0, selectedCount: 0, totalRevenue: 0 } });
+  res.json({
+    success: true,
+    data: {
+      totalProposals: 18,
+      acceptedProposals: 12,
+      activeBookings: 6,
+      rating: '4.9',
+      totalReviews: 52,
+      verificationStatus: 'VERIFIED',
+      totalRevenue: 1420000,
+      escrowBalance: 485000,
+      agencyName: 'Royal Rajasthan & Kerala Journeys',
+      specialistName: 'Vikram Singh Rathore',
+      memberSince: '2024',
+      recentProposals: sampleExpertProposals,
+      openRequests: sampleOpenTripRequests,
+    },
+  });
 });
+
 router.get('/proposals/request/:id', async (_req, res) => {
-  res.json({ success: true, data: [] });
+  res.json({ success: true, data: sampleExpertProposals.slice(0, 2) });
 });
-router.post('/proposals', async (_req, res) => {
-  res.json({ success: true, data: { id: 'prop_' + Date.now(), status: 'SUBMITTED' } });
+
+router.post('/proposals', async (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      id: 'prop_' + Date.now(),
+      status: 'SUBMITTED',
+      ...req.body,
+    },
+  });
 });
 
 router.get('/experts/featured', async (_req, res) => {
-  res.json({ success: true, data: [] });
+  res.json({
+    success: true,
+    data: [
+      {
+        id: 'exp_01',
+        name: 'Vikram Singh Rathore',
+        agencyName: 'Royal Rajasthan & Kerala Journeys',
+        rating: 4.9,
+        reviewsCount: 52,
+        verified: true,
+      },
+    ],
+  });
 });
+
 router.get('/experts/profile', async (_req, res) => {
-  res.json({ success: true, data: null });
+  res.json({
+    success: true,
+    data: {
+      id: 'exp_01',
+      name: 'Vikram Singh Rathore',
+      agencyName: 'Royal Rajasthan & Kerala Journeys',
+      licenseNumber: 'IN-TOUR-EXP-2024-8902',
+      experienceYears: 14,
+      verificationStatus: 'VERIFIED',
+      rating: 4.9,
+      reviewsCount: 52,
+      completedTrips: 184,
+      destinations: ['Rajasthan', 'Kerala', 'Ladakh', 'Goa', 'Varanasi'],
+    },
+  });
 });
+
 router.get('/experts/:id', async (_req, res) => {
-  res.json({ success: true, data: null });
+  res.json({
+    success: true,
+    data: {
+      id: 'exp_01',
+      name: 'Vikram Singh Rathore',
+      agencyName: 'Royal Rajasthan & Kerala Journeys',
+      rating: 4.9,
+      reviewsCount: 52,
+    },
+  });
 });
 router.get('/reviews/recent', async (_req, res) => {
   res.json({ success: true, data: [] });

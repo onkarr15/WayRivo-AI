@@ -22,7 +22,7 @@ async function runTests() {
   await test('GET /api/v1/health', async () => {
     const res = await fetch(`${baseUrl}/health`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.status !== 'UP' || data.database !== 'CONNECTED') {
       throw new Error(`Unexpected body: ${JSON.stringify(data)}`);
     }
@@ -45,10 +45,10 @@ async function runTests() {
       }),
     });
     if (!res.ok) {
-      const err = await res.json();
+      const err: any = await res.json();
       throw new Error(`Status ${res.status}: ${JSON.stringify(err)}`);
     }
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data?.token) throw new Error('Token missing in registration response');
     registeredToken = data.data.token;
     verificationToken = data.data.verificationToken;
@@ -68,7 +68,7 @@ async function runTests() {
       body: JSON.stringify({ token: verificationToken }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data?.user?.isEmailVerified) {
       throw new Error('Email was not marked as verified');
     }
@@ -86,7 +86,7 @@ async function runTests() {
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.token && !data.data?.token) throw new Error('Token not returned');
     travelerToken = data.token || data.data.token;
 
@@ -102,7 +102,7 @@ async function runTests() {
       headers: { Authorization: `Bearer ${travelerToken}` },
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.data?.email || data.data.email !== 'arjun@example.com') {
       throw new Error(`Invalid profile data: ${JSON.stringify(data)}`);
     }
@@ -126,7 +126,7 @@ async function runTests() {
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.data?.budgetPreference !== 'Luxury' || data.data?.preferredDestinations?.length !== 2) {
       throw new Error(`Profile preferences not updated: ${JSON.stringify(data)}`);
     }
@@ -141,9 +141,37 @@ async function runTests() {
       body: JSON.stringify({ email: testEmail }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
-    if (!data.data?.resetToken) throw new Error('Reset token missing');
-    resetToken = data.data.resetToken;
+    const data: any = await res.json();
+    if (!data.success) throw new Error('Forgot password request failed');
+
+    // Secure design: reset token is NEVER returned in response.
+    // For automated test verification, generate test token in database:
+    const { prisma } = await import('./src/config/db.js');
+    const crypto = await import('crypto');
+    const user = await prisma.user.findUnique({ where: { email: testEmail } });
+    if (!user) throw new Error('Test user not found in database');
+
+    resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    });
+  });
+
+  // 7b. Verify Reset Token
+  await test('POST /api/v1/auth/verify-reset-token', async () => {
+    const res = await fetch(`${baseUrl}/auth/verify-reset-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: resetToken }),
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data: any = await res.json();
+    if (!data.data?.valid) throw new Error('Token verification returned invalid');
   });
 
   // 8. Password Reset Confirmation
@@ -153,11 +181,11 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         token: resetToken,
-        newPassword: 'newpassword2026!',
+        newPassword: 'newsecurepassword2026!',
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!data.success) throw new Error('Reset password was not successful');
   });
 
@@ -168,7 +196,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: testEmail,
-        password: 'newpassword2026!',
+        password: 'newsecurepassword2026!',
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -182,10 +210,10 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: testEmail,
-        password: 'newpassword2026!',
+        password: 'newsecurepassword2026!',
       }),
     });
-    const loginData = await loginRes.json();
+    const loginData: any = await loginRes.json();
     const token = loginData.token || loginData.data?.token;
 
     const res = await fetch(`${baseUrl}/users/change-password`, {
@@ -195,7 +223,7 @@ async function runTests() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        currentPassword: 'newpassword2026!',
+        currentPassword: 'newsecurepassword2026!',
         newPassword: 'brandNewPassword999!',
       }),
     });
@@ -226,7 +254,7 @@ async function runTests() {
       }),
     });
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     adminToken = data.token || data.data.token;
   });
 
@@ -250,7 +278,7 @@ async function runTests() {
   await test('GET /api/v1/destinations (Marketplace Listings)', async () => {
     const res = await fetch(`${baseUrl}/destinations?page=1&limit=5`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) {
       throw new Error('No destinations returned');
     }
@@ -263,7 +291,7 @@ async function runTests() {
   await test('GET /api/v1/destinations/slug/kerala (Destination Details & Related Inventory)', async () => {
     const res = await fetch(`${baseUrl}/destinations/slug/kerala`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     const dest = data.data;
     if (!dest || dest.name !== 'Kerala') throw new Error('Kerala destination record not found');
     if (!Array.isArray(dest.popularAttractions) || dest.popularAttractions.length === 0) {
@@ -281,7 +309,7 @@ async function runTests() {
   await test('GET /api/v1/hotels (Filter by minStars & availability check)', async () => {
     const res = await fetch(`${baseUrl}/hotels?minStars=4&sortBy=price_asc`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No hotels returned');
     const hotel = data.data[0];
     if (hotel.stars < 4) throw new Error(`Filter violated: expected stars >= 4, got ${hotel.stars}`);
@@ -292,7 +320,7 @@ async function runTests() {
   await test('GET /api/v1/activities (Filter by category)', async () => {
     const res = await fetch(`${baseUrl}/activities?category=Adventure%20activities`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No adventure activities returned');
     const act = data.data[0];
     if (act.category !== 'Adventure activities') throw new Error(`Category mismatch: ${act.category}`);
@@ -303,7 +331,7 @@ async function runTests() {
   await test('GET /api/v1/packages (Filter by isRecommended)', async () => {
     const res = await fetch(`${baseUrl}/packages?isRecommended=true`);
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     if (!Array.isArray(data.data) || data.data.length === 0) throw new Error('No packages returned');
     const pkg = data.data[0];
     if (!pkg.isRecommended) throw new Error('Non-recommended package returned');
@@ -325,7 +353,7 @@ async function runTests() {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     if (!adminRes.ok) throw new Error(`Admin failed with status ${adminRes.status}`);
-    const inv = await adminRes.json();
+    const inv: any = await adminRes.json();
     if (!inv.data?.destinations || inv.data.destinations < 1) {
       throw new Error('Invalid inventory statistics received');
     }
@@ -353,10 +381,10 @@ async function runTests() {
       }),
     });
     if (!createRes.ok) {
-      const err = await createRes.json();
+      const err: any = await createRes.json();
       throw new Error(`Create failed: ${JSON.stringify(err)}`);
     }
-    const created = await createRes.json();
+    const created: any = await createRes.json();
     const createdId = created.data.id;
 
     // Delete created destination

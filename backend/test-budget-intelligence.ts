@@ -36,7 +36,7 @@ async function testBudgetIntelligence() {
       }),
     });
     if (!res.ok) throw new Error(`Auth failed with status ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     token = data.token || data.data?.token;
     userId = data.data?.user?.id || data.user?.id;
     if (!token) throw new Error('Token was not returned');
@@ -48,18 +48,18 @@ async function testBudgetIntelligence() {
   let activities: any[] = [];
   await test('2. Verify Database Inventory for Goa', async () => {
     const destRes = await fetch(`${baseUrl}/destinations?search=Goa`);
-    const destData = await destRes.json();
+    const destData: any = await destRes.json();
     const dests = destData.data?.destinations || destData.data || [];
     destination = dests.find((d: any) => d.name.toLowerCase().includes('goa')) || dests[0];
     if (!destination) throw new Error('Goa destination not found in database');
 
     const hotelRes = await fetch(`${baseUrl}/hotels?destinationId=${destination.id}`);
-    const hotelData = await hotelRes.json();
+    const hotelData: any = await hotelRes.json();
     hotels = hotelData.data?.hotels || hotelData.data || [];
     if (hotels.length < 2) throw new Error(`Expected at least 2 hotels for Goa, got: ${hotels.length}`);
 
     const actRes = await fetch(`${baseUrl}/activities?destinationId=${destination.id}`);
-    const actData = await actRes.json();
+    const actData: any = await actRes.json();
     activities = actData.data?.activities || actData.data || [];
     if (activities.length === 0) throw new Error('No activities found for destination');
   });
@@ -89,7 +89,7 @@ async function testBudgetIntelligence() {
       throw new Error(`Itinerary generation failed: ${res.status} - ${errText}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     generatedItinerary = data.data;
 
     // Verify day-wise structure
@@ -151,7 +151,7 @@ async function testBudgetIntelligence() {
     });
 
     if (!res.ok) throw new Error(`Budget calculation failed: ${res.status}`);
-    const data = await res.json();
+    const data: any = await res.json();
     calculatedBudget = data.data;
 
     // Independent manual math checks
@@ -219,7 +219,7 @@ async function testBudgetIntelligence() {
       throw new Error(`Optimization failed: ${res.status} - ${errText}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     optimizationResult = data.data;
 
     // Check Phase 7 Requirements
@@ -294,7 +294,7 @@ async function testBudgetIntelligence() {
       throw new Error(`Save itinerary failed: ${res.status} - ${err}`);
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     savedItineraryId = data.data?.id;
     if (!savedItineraryId) throw new Error('Itinerary ID not returned after save');
   });
@@ -318,7 +318,7 @@ async function testBudgetIntelligence() {
       const err = await res.text();
       throw new Error(`Update itinerary failed: ${res.status} - ${err}`);
     }
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.data?.title !== '5-Day Goa Relaxed Beach Vacation (Customized)') {
       throw new Error('Title was not updated');
     }
@@ -355,7 +355,7 @@ async function testBudgetIntelligence() {
       if (res.status !== 403) {
         throw new Error(`Expected 403 Forbidden for confirmed booking modification, got ${res.status}`);
       }
-      const data = await res.json();
+      const data: any = await res.json();
       const errMsg = data.error || data.message || '';
       if (!errMsg.includes('Modification Blocked')) {
         throw new Error(`Expected 'Modification Blocked' error message, got: ${errMsg}`);

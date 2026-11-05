@@ -16,6 +16,7 @@ import {
   Building,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 
 const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -160,6 +161,20 @@ const RegisterPage: React.FC = () => {
               <span>{error}</span>
             </motion.div>
           )}
+
+          {/* Google Sign-Up Button */}
+          <div className="mb-6 space-y-4">
+            <GoogleSignInButton role={role === 'EXPERT' ? 'EXPERT' : 'TRAVELER'} />
+
+            {/* Separator */}
+            <div className="relative flex items-center justify-center">
+              <div className="border-t border-border w-full" />
+              <span className="bg-surface px-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest shrink-0">
+                OR CONTINUE WITH EMAIL
+              </span>
+              <div className="border-t border-border w-full" />
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

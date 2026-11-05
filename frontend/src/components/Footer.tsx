@@ -138,7 +138,7 @@ const Footer: React.FC = () => (
               <span>+91 98765 43210</span>
             </a>
             <p className="text-[11px] text-slate-500 pt-2 border-t border-border/80">
-              PayPal AI Hackathon 2026 Edition
+              Autonomous Travel Orchestration & Escrow Platform
             </p>
           </div>
         </div>

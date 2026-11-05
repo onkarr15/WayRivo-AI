@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Bot, Sparkles, Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -19,6 +20,28 @@ const LoginPage: React.FC = () => {
 
   // Return to previous route or default dashboard
   const from = (location.state as any)?.from?.pathname;
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errParam = params.get('error');
+    const emailParam = params.get('email');
+
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+
+    if (errParam) {
+      if (errParam === 'account_exists_with_password') {
+        setError(
+          'An account with this email address already exists with a password. Please sign in below using your password, or use Forgot Password to reset it.'
+        );
+      } else if (errParam === 'google_cancelled') {
+        setError('Google authentication was cancelled.');
+      } else {
+        setError(decodeURIComponent(errParam).replace(/\+/g, ' '));
+      }
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,6 +220,20 @@ const LoginPage: React.FC = () => {
               <span>{error}</span>
             </motion.div>
           )}
+
+          {/* Google Sign-In */}
+          <div className="mb-5 space-y-4">
+            <GoogleSignInButton role="TRAVELER" />
+
+            {/* Separator */}
+            <div className="relative flex items-center justify-center">
+              <div className="border-t border-border w-full" />
+              <span className="bg-navy-dark px-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest shrink-0">
+                OR CONTINUE WITH EMAIL
+              </span>
+              <div className="border-t border-border w-full" />
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

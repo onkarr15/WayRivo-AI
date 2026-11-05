@@ -9,12 +9,15 @@ import {
   Search,
   Table,
   LayoutGrid,
+  CreditCard,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { wayrivoAgGridTheme } from '../../utils/agGridTheme';
 import { useToast } from '../../components/ui/Toast';
 
 // Register AG Grid Community Modules
@@ -34,7 +37,7 @@ const AdminBookings: React.FC = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'cards'>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'cards'>('table');
   const [quickFilterText, setQuickFilterText] = useState('');
 
   // Refund Modal State
@@ -81,6 +84,28 @@ const AdminBookings: React.FC = () => {
       setIsProcessingRefund(false);
     }
   };
+
+  // Filtered bookings for Table view
+  const filteredBookings = useMemo(() => {
+    if (!quickFilterText) return bookings;
+    const q = quickFilterText.toLowerCase();
+    return bookings.filter((b) => {
+      const ref = (b.bookingReference || '').toLowerCase();
+      const userName = (b.user?.name || '').toLowerCase();
+      const userEmail = (b.user?.email || '').toLowerCase();
+      const destination = (b.itinerary?.title || b.itinerary?.destination?.name || '').toLowerCase();
+      const captureId = (b.payment?.paypalCaptureId || '').toLowerCase();
+      const status = (b.status || '').toLowerCase();
+      return (
+        ref.includes(q) ||
+        userName.includes(q) ||
+        userEmail.includes(q) ||
+        destination.includes(q) ||
+        captureId.includes(q) ||
+        status.includes(q)
+      );
+    });
+  }, [bookings, quickFilterText]);
 
   // AG Grid Column Definitions
   const columnDefs = useMemo<ColDef[]>(() => [
@@ -136,14 +161,15 @@ const AdminBookings: React.FC = () => {
       filter: 'agTextColumnFilter',
       width: 140,
       cellRenderer: (params: any) => {
-        const status = params.value || 'PENDING';
+        const rawStatus = params.value || 'PENDING';
+        const display = rawStatus === 'ESCROW_HOLD' ? 'Escrow Held' : rawStatus.replace(/_/g, ' ');
         return (
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-              statusBadgeStyles[status] || 'bg-slate-800 text-slate-400 border-slate-700'
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+              statusBadgeStyles[rawStatus] || 'bg-slate-800 text-slate-400 border-slate-700'
             }`}
           >
-            {status.replace('_', ' ')}
+            {display}
           </span>
         );
       },
@@ -153,7 +179,7 @@ const AdminBookings: React.FC = () => {
       headerName: 'Escrow Status',
       sortable: true,
       filter: 'agTextColumnFilter',
-      width: 130,
+      width: 140,
       cellRenderer: (params: any) => {
         const escrow = params.data?.payment?.escrowStatus || 'NONE';
         return (
@@ -197,7 +223,7 @@ const AdminBookings: React.FC = () => {
         }
         if (b.status === 'REFUNDED') {
           return (
-            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
               Refunded
             </span>
           );
@@ -215,99 +241,254 @@ const AdminBookings: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 mb-1">
+            <CreditCard className="w-3.5 h-3.5 text-cyan-400" /> Financial Records & Escrow Settlements
+          </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
             All Bookings & <span className="text-gradient-cyan">Escrow Transactions</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Audit active reservations, escrow deposits, and execute administrator-controlled PayPal refunds via AG Grid
+            Audit active reservations, escrow deposits, and execute administrator-controlled PayPal refunds.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* 3 View Mode Toggle */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-1 flex items-center gap-1">
             <button
-              onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1 ${
-                viewMode === 'grid'
-                  ? 'bg-cyan-500 text-slate-950'
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+                viewMode === 'table'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Table className="w-3.5 h-3.5" /> AG Grid
+              <Table className="w-3.5 h-3.5" /> Table View
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> AG Grid Pro
             </button>
             <button
               onClick={() => setViewMode('cards')}
-              className={`p-1.5 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
                 viewMode === 'cards'
-                  ? 'bg-cyan-500 text-slate-950'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <LayoutGrid className="w-3.5 h-3.5" /> Cards
+              <Layers className="w-3.5 h-3.5" /> Cards
             </button>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-            <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> PayPal Developer Sandbox Active
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+            <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> PayPal Sandbox Active
           </span>
         </div>
       </div>
 
-      {/* AG Grid View */}
-      {viewMode === 'grid' && (
-        <div className="space-y-4">
-          <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4">
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={quickFilterText}
-                onChange={(e) => setQuickFilterText(e.target.value)}
-                placeholder="Search references, travelers, captures..."
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-            <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
-              {bookings.length} reservations loaded
-            </span>
-          </div>
+      {/* Filter and Quick Search Toolbar */}
+      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={quickFilterText}
+            onChange={(e) => setQuickFilterText(e.target.value)}
+            placeholder="Search references, travelers, captures..."
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+          />
+        </div>
+        <span className="text-xs text-slate-400 font-semibold">
+          {filteredBookings.length} reservations loaded
+        </span>
+      </div>
 
-          <div className="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-900">
-            <div className="ag-theme-quartz-dark" style={{ height: 520, width: '100%' }}>
-              <AgGridReact
-                rowData={bookings}
-                columnDefs={columnDefs}
-                defaultColDef={defaultColDef}
-                quickFilterText={quickFilterText}
-                pagination={true}
-                paginationPageSize={10}
-                paginationPageSizeSelector={[10, 20, 50]}
-                animateRows={true}
-                rowHeight={48}
-                headerHeight={44}
-              />
+      {/* VIEW 1: TABLE VIEW */}
+      {viewMode === 'table' && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
+          {loading ? (
+            <div className="flex items-center justify-center p-12">
+              <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
             </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="p-12 text-center text-xs text-slate-400">
+              No reservations found matching your search.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-950 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-800">
+                  <tr>
+                    <th className="p-3.5">Reference</th>
+                    <th className="p-3.5">Traveler</th>
+                    <th className="p-3.5">Itinerary / Destination</th>
+                    <th className="p-3.5 text-right">Amount</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 text-center">Escrow</th>
+                    <th className="p-3.5">Capture ID</th>
+                    <th className="p-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80">
+                  {filteredBookings.map((b) => {
+                    const rawStatus = b.status || 'PENDING';
+                    const canRefund = (rawStatus === 'CONFIRMED' || rawStatus === 'ESCROW_HOLD') && !!b.payment;
+                    const displayStatus = rawStatus === 'ESCROW_HOLD' ? 'Escrow Held' : rawStatus.replace(/_/g, ' ');
+
+                    return (
+                      <tr key={b.id} className="hover:bg-slate-800/40 transition-colors">
+                        {/* Reference */}
+                        <td className="p-3.5 font-mono font-bold text-cyan-400 whitespace-nowrap">
+                          {b.bookingReference}
+                        </td>
+
+                        {/* Traveler */}
+                        <td className="p-3.5">
+                          <div className="leading-tight truncate max-w-[180px]">
+                            <span className="font-semibold text-white block truncate">
+                              {b.user?.name || 'Guest Traveler'}
+                            </span>
+                            <span className="text-[11px] text-slate-400 block truncate font-mono">
+                              {b.user?.email || 'N/A'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Itinerary */}
+                        <td className="p-3.5 text-slate-300 max-w-[200px] truncate">
+                          {b.itinerary?.title || b.itinerary?.destination?.name || 'Custom Reservation'}
+                        </td>
+
+                        {/* Amount */}
+                        <td className="p-3.5 text-right font-mono font-bold text-white whitespace-nowrap">
+                          ₹{Number(b.totalAmount || 0).toLocaleString('en-IN')}
+                        </td>
+
+                        {/* Status */}
+                        <td className="p-3.5 text-center">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border whitespace-nowrap ${
+                              statusBadgeStyles[rawStatus] || 'bg-slate-800 text-slate-400 border-slate-700'
+                            }`}
+                          >
+                            {displayStatus}
+                          </span>
+                        </td>
+
+                        {/* Escrow */}
+                        <td className="p-3.5 text-center whitespace-nowrap">
+                          <span className="font-mono text-[10px] font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                            {b.payment?.escrowStatus || 'NONE'}
+                          </span>
+                        </td>
+
+                        {/* Capture ID */}
+                        <td className="p-3.5 font-mono text-[11px] text-emerald-400 whitespace-nowrap">
+                          {b.payment?.paypalCaptureId || '—'}
+                        </td>
+
+                        {/* Action */}
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          {canRefund ? (
+                            <button
+                              onClick={() => {
+                                setSelectedBookingForRefund(b);
+                                setRefundAmount(Number(b.totalAmount));
+                                setRefundReason('Administrator approved traveler refund request');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-900 text-purple-300 font-bold text-[11px] border border-purple-500/30 inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <RotateCcw className="w-3 h-3" /> Refund
+                            </button>
+                          ) : rawStatus === 'REFUNDED' ? (
+                            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                              Refunded
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 text-xs">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <div className="p-3.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                  <span>
+                    Page {page + 1} of {totalPages}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={page === 0}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 cursor-pointer"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* VIEW 2: AG GRID PRO CONTAINER */}
+      {viewMode === 'grid' && (
+        <div className="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-900">
+          <div style={{ height: 520, width: '100%' }}>
+            <AgGridReact
+              theme={wayrivoAgGridTheme}
+              rowData={filteredBookings}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              quickFilterText={quickFilterText}
+              pagination={true}
+              paginationPageSize={10}
+              paginationPageSizeSelector={[10, 20, 50]}
+              animateRows={true}
+              rowHeight={48}
+              headerHeight={44}
+            />
           </div>
         </div>
       )}
 
-      {/* Cards View */}
+      {/* VIEW 3: CARDS VIEW */}
       {viewMode === 'cards' && (
         <div>
           {loading ? (
             <div className="flex items-center justify-center p-12">
               <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : bookings.length === 0 ? (
+          ) : filteredBookings.length === 0 ? (
             <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-xs">
               No bookings recorded yet in the database.
             </div>
           ) : (
             <div className="space-y-4">
-              {bookings.map((b: any) => {
-                const isConfirmedOrEscrow = b.status === 'CONFIRMED' || b.status === 'ESCROW_HOLD';
+              {filteredBookings.map((b: any) => {
+                const rawStatus = b.status || 'CONFIRMED';
+                const isConfirmedOrEscrow = rawStatus === 'CONFIRMED' || rawStatus === 'ESCROW_HOLD';
                 const hasPayment = !!b.payment;
 
                 return (
@@ -324,10 +505,10 @@ const AdminBookings: React.FC = () => {
 
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                              statusBadgeStyles[b.status] || 'bg-slate-800 text-slate-400 border-slate-700'
+                              statusBadgeStyles[rawStatus] || 'bg-slate-800 text-slate-400 border-slate-700'
                             }`}
                           >
-                            {b.status === 'ESCROW_HOLD' ? 'Escrow Held' : b.status.replace('_', ' ')}
+                            {rawStatus === 'ESCROW_HOLD' ? 'Escrow Held' : rawStatus.replace(/_/g, ' ')}
                           </span>
 
                           {b.payment?.paypalCaptureId && (
@@ -350,8 +531,8 @@ const AdminBookings: React.FC = () => {
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
                             {new Date(b.createdAt).toLocaleDateString('en-IN')}
                           </span>
-                          <span className="font-bold text-white text-sm">
-                            ₹{Number(b.totalAmount).toLocaleString('en-IN')}
+                          <span className="font-bold text-white text-sm font-mono">
+                            ₹{Number(b.totalAmount || 0).toLocaleString('en-IN')}
                           </span>
                         </div>
 
@@ -378,7 +559,7 @@ const AdminBookings: React.FC = () => {
                           </button>
                         )}
 
-                        {b.status === 'REFUNDED' && (
+                        {rawStatus === 'REFUNDED' && (
                           <span className="px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-300 text-xs font-bold border border-purple-500/20">
                             Refund Reconciled
                           </span>
@@ -417,7 +598,7 @@ const AdminBookings: React.FC = () => {
         </div>
       )}
 
-      {/* Admin Refund Modal (Part D) */}
+      {/* Admin Refund Modal */}
       {selectedBookingForRefund && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
@@ -448,45 +629,61 @@ const AdminBookings: React.FC = () => {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Refund Amount (INR) — Max ₹{Number(selectedBookingForRefund.totalAmount).toLocaleString('en-IN')}
-              </label>
-              <input
-                type="number"
-                value={refundAmount}
-                onChange={(e) => setRefundAmount(Number(e.target.value))}
-                max={Number(selectedBookingForRefund.totalAmount)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Refund Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={refundAmount}
+                  max={Number(selectedBookingForRefund.totalAmount)}
+                  min={1}
+                  onChange={(e) => setRefundAmount(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Original payment amount: ₹{Number(selectedBookingForRefund.totalAmount).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Reason for Refund
+                </label>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={2}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 resize-none"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Administrator Reason / Note to Payer
-              </label>
-              <textarea
-                rows={2}
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="pt-2 flex items-center justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setSelectedBookingForRefund(null)}
-                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
               >
                 Cancel
               </button>
-
               <button
-                onClick={handleExecuteRefund}
+                type="button"
                 disabled={isProcessingRefund}
-                className="px-5 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                onClick={handleExecuteRefund}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg disabled:opacity-50 flex items-center gap-1.5"
               >
-                {isProcessingRefund ? 'Processing Refund...' : 'Confirm & Execute Refund'}
+                {isProcessingRefund ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Refunding via PayPal...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-3.5 h-3.5" /> Confirm PayPal Refund
+                  </>
+                )}
               </button>
             </div>
           </div>

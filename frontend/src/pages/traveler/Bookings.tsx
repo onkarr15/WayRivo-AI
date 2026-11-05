@@ -129,7 +129,7 @@ const Bookings: React.FC = () => {
                           statusBadgeStyles[b.status] || 'bg-slate-800 text-slate-400 border-slate-700'
                         }`}
                       >
-                        {b.status === 'ESCROW_HOLD' ? 'Escrow Secured' : b.status.replace('_', ' ')}
+                        {(b.status || 'CONFIRMED') === 'ESCROW_HOLD' ? 'Escrow Secured' : (b.status || 'CONFIRMED').replace('_', ' ')}
                       </span>
 
                       {b.payment?.paypalCaptureId && (

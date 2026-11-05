@@ -64,7 +64,7 @@ async function testDashboards() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: travelerEmail, password }),
     });
-    const jsonT = await resT.json();
+    const jsonT: any = await resT.json();
     travelerToken = jsonT.data?.token;
     travelerId = jsonT.data?.user?.id;
 
@@ -73,7 +73,7 @@ async function testDashboards() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: adminEmail, password }),
     });
-    const jsonA = await resA.json();
+    const jsonA: any = await resA.json();
     adminToken = jsonA.data?.token;
 
     if (!travelerToken || !adminToken) {
@@ -94,7 +94,7 @@ async function testDashboards() {
   // 2. GET /api/v1/users/dashboard
   await test('2. GET /api/v1/users/dashboard (Full Overview, Trips, Itineraries, AI Chats, Payments)', async () => {
     const res = await fetch(`${baseUrl}/users/dashboard`, { headers: travelerHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const data = json.data;
 
     if (!data || typeof data.overview?.totalTrips !== 'number') {
@@ -117,7 +117,7 @@ async function testDashboards() {
         preferredCurrency: 'INR',
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!json.data?.preferredDestinations?.includes('Goa')) {
       throw new Error(`Failed to update profile preferences: ${JSON.stringify(json)}`);
     }
@@ -126,7 +126,7 @@ async function testDashboards() {
   // 4. GET /api/v1/admin/stats
   await test('4. GET /api/v1/admin/stats (Admin KPI Overview & Operational Health)', async () => {
     const res = await fetch(`${baseUrl}/admin/stats`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const data = json.data;
     if (!data || typeof data.totalUsers !== 'number' || data.systemHealth !== 'OPERATIONAL') {
       throw new Error(`Invalid admin stats: ${JSON.stringify(json)}`);
@@ -136,7 +136,7 @@ async function testDashboards() {
   // 5. GET /api/v1/admin/analytics
   await test('5. GET /api/v1/admin/analytics (Booking Velocity, Popular Destinations, Package Occupancy, AI Telemetry)', async () => {
     const res = await fetch(`${baseUrl}/admin/analytics`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const data = json.data;
     if (
       !data ||
@@ -152,7 +152,7 @@ async function testDashboards() {
   // 6. GET /api/v1/admin/users
   await test('6. GET /api/v1/admin/users (AG Grid Users List with Total Bookings & Spend Metrics)', async () => {
     const res = await fetch(`${baseUrl}/admin/users?page=0&size=10`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!Array.isArray(json.data?.content) || json.data.totalElements < 1) {
       throw new Error(`Expected paginated users array: ${JSON.stringify(json)}`);
     }
@@ -164,7 +164,7 @@ async function testDashboards() {
       method: 'PATCH',
       headers: adminHeaders,
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.data?.isEmailVerified !== true) {
       throw new Error(`Failed to toggle verification: ${JSON.stringify(json)}`);
     }
@@ -177,7 +177,7 @@ async function testDashboards() {
       headers: adminHeaders,
       body: JSON.stringify({ role: 'USER' }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.data?.role !== 'USER') {
       throw new Error(`Failed to update role: ${JSON.stringify(json)}`);
     }
@@ -186,7 +186,7 @@ async function testDashboards() {
   // 9. GET /api/v1/admin/bookings
   await test('9. GET /api/v1/admin/bookings (AG Grid Bookings Control with Reference & Escrow Status)', async () => {
     const res = await fetch(`${baseUrl}/admin/bookings?page=0&size=10`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!Array.isArray(json.data?.content)) {
       throw new Error(`Expected bookings array: ${JSON.stringify(json)}`);
     }
@@ -195,7 +195,7 @@ async function testDashboards() {
   // 10. GET /api/v1/admin/payments
   await test('10. GET /api/v1/admin/payments (Payment Records with PayPal Capture ID & Escrow Status)', async () => {
     const res = await fetch(`${baseUrl}/admin/payments?page=0&size=10`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!Array.isArray(json.data?.content)) {
       throw new Error(`Expected payments array: ${JSON.stringify(json)}`);
     }
@@ -204,7 +204,7 @@ async function testDashboards() {
   // 11. GET /api/v1/admin/cancellations
   await test('11. GET /api/v1/admin/cancellations (Administrative Review Queue for Traveler Cancellations)', async () => {
     const res = await fetch(`${baseUrl}/admin/cancellations`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!Array.isArray(json.data)) {
       throw new Error(`Expected cancellations array: ${JSON.stringify(json)}`);
     }
@@ -213,7 +213,7 @@ async function testDashboards() {
   // 12. GET /api/v1/admin/audit-logs
   await test('12. GET /api/v1/admin/audit-logs (Immutable PostgreSQL Security & Moderation Audit Trail)', async () => {
     const res = await fetch(`${baseUrl}/admin/audit-logs?limit=20`, { headers: adminHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const logs = json.data?.content || json.data?.logs || json.data;
     if (!Array.isArray(logs) || logs.length === 0) {
       throw new Error(`Expected audit logs array: ${JSON.stringify(json)}`);

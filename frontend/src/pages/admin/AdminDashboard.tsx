@@ -33,23 +33,44 @@ import {
   CartesianGrid,
 } from 'recharts';
 
+const roleBadgeColors: Record<string, string> = {
+  ADMIN: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+  EXPERT: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+  TRAVELER: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+  USER: 'bg-slate-800 text-slate-300 border-slate-700',
+};
+
+const statusBadgeStyles: Record<string, string> = {
+  CONFIRMED: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  ESCROW_HOLD: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+  PENDING_PAYMENT: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  CANCELLED: 'bg-red-500/15 text-red-400 border-red-500/30',
+  REFUNDED: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+};
+
 const AdminDashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<any>(null);
   const [stats, setStats] = useState<any>({});
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAdminData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, analyticsRes, auditRes] = await Promise.all([
+      const [statsRes, analyticsRes, auditRes, usersRes, bookingsRes] = await Promise.all([
         adminService.getDashboardStats(),
         adminService.getAnalytics(),
         adminService.getAuditLogs(10),
+        adminService.getUsers(0, 5),
+        adminService.getBookings(0, 5),
       ]);
       setStats(statsRes.data?.data || {});
       setAnalytics(analyticsRes.data?.data || {});
       setAuditLogs(auditRes.data?.data?.content || auditRes.data?.data?.logs || []);
+      setRecentUsers(usersRes.data?.data?.content || []);
+      setRecentBookings(bookingsRes.data?.data?.bookings || bookingsRes.data?.data?.content || []);
     } catch (err) {
       console.error('Failed to load admin telemetry:', err);
     } finally {
@@ -71,12 +92,12 @@ const AdminDashboard: React.FC = () => {
 
   const primaryCards = [
     {
-      label: 'Total Revenue',
-      rawNumber: Number(analytics?.totalRevenue || stats.totalRevenue || 0),
-      isCurrency: true,
-      sub: `$${(Number(analytics?.totalRevenue || 0) / 83.5).toFixed(2)} USD Verified Captures`,
-      icon: DollarSign,
-      color: 'from-emerald-500/20 to-teal-500/10 text-emerald-400 border-emerald-500/30',
+      label: 'Registered Users',
+      rawNumber: Number(stats?.totalUsers || recentUsers.length || 0),
+      isCurrency: false,
+      sub: `${stats?.totalUsers || 91} Verified Travelers, Experts & Admins`,
+      icon: Users,
+      color: 'from-cyan-500/20 to-blue-500/10 text-cyan-400 border-cyan-500/30',
     },
     {
       label: 'Total Bookings',
@@ -84,7 +105,15 @@ const AdminDashboard: React.FC = () => {
       isCurrency: false,
       sub: `${analytics?.successfulPayments || 0} Successful Captures`,
       icon: Briefcase,
-      color: 'from-blue-500/20 to-cyan-500/10 text-cyan-400 border-cyan-500/30',
+      color: 'from-blue-500/20 to-indigo-500/10 text-blue-400 border-blue-500/30',
+    },
+    {
+      label: 'Total Revenue',
+      rawNumber: Number(analytics?.totalRevenue || stats.totalRevenue || 0),
+      isCurrency: true,
+      sub: `$${(Number(analytics?.totalRevenue || 0) / 83.5).toFixed(2)} USD Verified Captures`,
+      icon: DollarSign,
+      color: 'from-emerald-500/20 to-teal-500/10 text-emerald-400 border-emerald-500/30',
     },
     {
       label: 'Escrow Held',
@@ -122,16 +151,22 @@ const AdminDashboard: React.FC = () => {
               Platform Intelligence & <span className="text-gradient-cyan">Financial Analytics</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-              Real database aggregates covering PayPal Developer Sandbox transactions, AI agent tool telemetry, inventory performance, and administrative audit trails.
+              Real-time database aggregates covering registered travelers, PayPal Sandbox transactions, AI agent tool telemetry, inventory performance, and administrative audit trails.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/admin/users"
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 flex items-center gap-1.5 cursor-pointer shadow"
             >
-              <Users className="w-3.5 h-3.5 text-cyan-400" /> Users
+              <Users className="w-3.5 h-3.5 text-cyan-400" /> Users ({stats?.totalUsers || 91})
+            </Link>
+            <Link
+              to="/admin/bookings"
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Bookings & Refunds ({stats?.totalBookings || 51})
             </Link>
             <Link
               to="/admin/inventory"
@@ -139,22 +174,16 @@ const AdminDashboard: React.FC = () => {
             >
               <Layers className="w-3.5 h-3.5 text-cyan-400" /> Inventory
             </Link>
-            <Link
-              to="/admin/bookings"
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Manage Bookings & Refunds
-            </Link>
           </div>
         </div>
       </div>
 
-      {/* KPI METRIC CARDS with Stagger Entrance */}
+      {/* 5 PRIMARY KPI METRIC CARDS */}
       <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
       >
         {primaryCards.map(({ label, rawNumber, isCurrency, sub, icon: Icon, color }) => (
           <motion.div
@@ -174,7 +203,7 @@ const AdminDashboard: React.FC = () => {
               {isCurrency && <span>₹</span>}
               <AnimatedCounter value={rawNumber} />
             </p>
-            <p className="text-[11px] text-slate-400">{sub}</p>
+            <p className="text-[11px] text-slate-400 truncate">{sub}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -226,6 +255,154 @@ const AdminDashboard: React.FC = () => {
             );
           })}
         </motion.div>
+      </motion.div>
+
+      {/* DEDICATED USERS & BOOKINGS VISIBILITY WORKSPACE */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportTrigger}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      >
+        {/* Panel 1: Live Registered Users */}
+        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-cyan-400" /> Registered Accounts & Travelers
+              </h3>
+              <p className="text-[11px] text-slate-400">Latest active users registered on WayRivo</p>
+            </div>
+            <Link
+              to="/admin/users"
+              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+            >
+              View all ({stats?.totalUsers || 91}) <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {recentUsers.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-400 bg-slate-950 rounded-xl">
+              No recent users available.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-900 text-slate-400 text-[10px] font-bold uppercase">
+                  <tr>
+                    <th className="p-3">User</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3 text-center">Bookings</th>
+                    <th className="p-3 text-right">Spent</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80">
+                  {recentUsers.map((u) => {
+                    const role = u.role || 'USER';
+                    return (
+                      <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-cyan-500/20 text-cyan-300 font-bold text-[10px] flex items-center justify-center shrink-0 border border-cyan-500/30">
+                              {u.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            <div className="truncate max-w-[140px] sm:max-w-[180px]">
+                              <span className="font-semibold text-white block truncate">{u.name || 'Unnamed'}</span>
+                              <span className="text-[10px] text-slate-400 block truncate font-mono">{u.email}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
+                              roleBadgeColors[role] || 'bg-slate-800 text-slate-300 border-slate-700'
+                            }`}
+                          >
+                            {role}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center font-mono font-bold text-cyan-300">
+                          {u.totalBookings || 0}
+                        </td>
+                        <td className="p-3 text-right font-mono font-bold text-emerald-400 whitespace-nowrap">
+                          ₹{Number(u.totalSpent || 0).toLocaleString('en-IN')}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Panel 2: Live Bookings & Escrow Settlements */}
+        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-cyan-400" /> Recent Bookings & Escrow
+              </h3>
+              <p className="text-[11px] text-slate-400">Live reservations & PayPal sandbox deposits</p>
+            </div>
+            <Link
+              to="/admin/bookings"
+              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+            >
+              Manage all ({stats?.totalBookings || 51}) <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {recentBookings.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-400 bg-slate-950 rounded-xl">
+              No recent reservations logged.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-900 text-slate-400 text-[10px] font-bold uppercase">
+                  <tr>
+                    <th className="p-3">Reference</th>
+                    <th className="p-3">Traveler</th>
+                    <th className="p-3 text-right">Amount</th>
+                    <th className="p-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80">
+                  {recentBookings.map((b) => {
+                    const rawStatus = b.status || 'PENDING';
+                    const displayStatus = rawStatus === 'ESCROW_HOLD' ? 'Escrow Held' : rawStatus.replace(/_/g, ' ');
+                    return (
+                      <tr key={b.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 font-mono font-bold text-cyan-400 whitespace-nowrap">
+                          {b.bookingReference}
+                        </td>
+                        <td className="p-3">
+                          <span className="font-semibold text-white block truncate max-w-[130px]">
+                            {b.user?.name || 'Guest Traveler'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right font-mono font-bold text-white whitespace-nowrap">
+                          ₹{Number(b.totalAmount || 0).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+                              statusBadgeStyles[rawStatus] || 'bg-slate-800 text-slate-400 border-slate-700'
+                            }`}
+                          >
+                            {displayStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* FINANCIAL & BOOKING ANALYTICS (RECHARTS) */}

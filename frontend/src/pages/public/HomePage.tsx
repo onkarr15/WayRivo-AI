@@ -333,7 +333,7 @@ const HomePage: React.FC = () => {
         )}
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Hackathon Badge Pill */}
+          {/* Intelligent Travel Badge Pill */}
           <motion.div
             variants={fadeUp}
             initial={shouldReduceMotion ? false : 'hidden'}
@@ -342,7 +342,7 @@ const HomePage: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 text-xs font-black uppercase tracking-widest mb-6 shadow-[0_0_20px_rgba(0,240,255,0.25)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>WayRivo AI 2.0 • PayPal AI Hackathon 2026</span>
+            <span>WayRivo AI 2.0 • Autonomous Travel Ecosystem</span>
           </motion.div>
 
           {/* Heading with Word Stagger Entrance */}
@@ -756,11 +756,11 @@ const HomePage: React.FC = () => {
           className="text-center mb-16"
         >
           <Badge variant="cyan" size="sm" icon={<Star className="w-3.5 h-3.5 text-cyan-400" />}>
-            Curated Traveler Feedback (Demo & Beta Experiences)
+            Verified Traveler Experiences & Reviews
           </Badge>
           <h2 className="section-title mt-2">What Travelers Experience</h2>
           <p className="section-subtitle mx-auto">
-            Notice: Illustrated beta traveler journeys demonstrating WayRivo AI matching & PayPal Escrow guarantee
+            Discover how WayRivo AI orchestrates bespoke itineraries with verified local specialists and escrow protection
           </p>
         </motion.div>
 

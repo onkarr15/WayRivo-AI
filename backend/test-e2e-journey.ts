@@ -52,7 +52,7 @@ async function runE2EJourney() {
         role: 'TRAVELER',
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || !json.data?.token) {
       throw new Error(`Registration failed: ${JSON.stringify(json)}`);
     }
@@ -69,7 +69,7 @@ async function runE2EJourney() {
         password: testPassword,
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || !json.data?.token) {
       throw new Error(`Login failed: ${JSON.stringify(json)}`);
     }
@@ -84,7 +84,7 @@ async function runE2EJourney() {
   // 3. Destination discovery
   await step('3: Destination Discovery (GET /api/v1/destinations)', async () => {
     const res = await fetch(`${baseUrl}/destinations?limit=5`);
-    const json = await res.json();
+    const json: any = await res.json();
     const list = Array.isArray(json.data) ? json.data : json.data?.destinations || [];
     if (!res.ok || list.length === 0) {
       throw new Error(`Failed to discover destinations: ${JSON.stringify(json)}`);
@@ -95,7 +95,7 @@ async function runE2EJourney() {
 
     // Verify slug endpoint
     const slugRes = await fetch(`${baseUrl}/destinations/slug/${dest.slug}`);
-    const slugJson = await slugRes.json();
+    const slugJson: any = await slugRes.json();
     if (!slugRes.ok || !slugJson.data) {
       throw new Error('Failed to retrieve destination details by slug');
     }
@@ -109,7 +109,7 @@ async function runE2EJourney() {
       headers: authHeaders,
       body: JSON.stringify({ message: prompt }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || !json.data?.reply) {
       throw new Error(`AI conversation failed: ${JSON.stringify(json)}`);
     }
@@ -131,7 +131,7 @@ async function runE2EJourney() {
         travelStyle: 'Comfortable',
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     const itineraryData = json.data;
     if (!res.ok || !itineraryData?.days || itineraryData.days.length !== 5) {
       throw new Error(`Failed to generate 5-day itinerary: ${JSON.stringify(json)}`);
@@ -152,7 +152,7 @@ async function runE2EJourney() {
         userBudget: 25000, // Trigger budget intelligence
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || (!json.data?.isOverBudget && !json.data?.expensiveComponents)) {
       throw new Error(`Budget optimization failed: ${JSON.stringify(json)}`);
     }
@@ -176,8 +176,8 @@ async function runE2EJourney() {
       fetch(`${baseUrl}/hotels?destinationId=${destinationId}&limit=2`),
       fetch(`${baseUrl}/activities?destinationId=${destinationId}&limit=2`),
     ]);
-    const hJson = await hRes.json();
-    const aJson = await aRes.json();
+    const hJson: any = await hRes.json();
+    const aJson: any = await aRes.json();
 
     const hotels = hJson.data?.hotels || hJson.data || [];
     const activities = aJson.data?.activities || aJson.data || [];
@@ -204,7 +204,7 @@ async function runE2EJourney() {
         days: generatedItinerary.days,
       }),
     });
-    const saveJson = await saveItinRes.json();
+    const saveJson: any = await saveItinRes.json();
     savedItineraryId = saveJson.data.id;
 
     // Create Booking
@@ -230,7 +230,7 @@ async function runE2EJourney() {
         ],
       }),
     });
-    const bJson = await bookingRes.json();
+    const bJson: any = await bookingRes.json();
     if (!bookingRes.ok || !bJson.data?.id || !bJson.data?.bookingReference) {
       throw new Error(`Booking creation failed: ${JSON.stringify(bJson)}`);
     }
@@ -249,7 +249,7 @@ async function runE2EJourney() {
         cancelUrl: 'http://localhost:5173/payment-cancel',
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || !json.data?.orderId || !json.data?.chargeAmount) {
       throw new Error(`PayPal order creation failed: ${JSON.stringify(json)}`);
     }
@@ -276,7 +276,7 @@ async function runE2EJourney() {
         paypalOrderId,
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     const isSuccess = res.ok && (
       json.data?.bookingStatus === 'ESCROW_HOLD' ||
       json.data?.bookingStatus === 'CONFIRMED' ||
@@ -308,7 +308,7 @@ async function runE2EJourney() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(webhookPayload),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (!res.ok || (!json.received && !json.success)) {
       throw new Error(`Webhook handler failed: ${JSON.stringify(json)}`);
     }
@@ -317,7 +317,7 @@ async function runE2EJourney() {
   // 13. Booking confirmation & escrow state verification
   await step('13: Booking Confirmation & Escrow Status (GET /api/v1/bookings/:id)', async () => {
     const res = await fetch(`${baseUrl}/bookings/${bookingId}`, { headers: authHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const b = json.data;
     const isEscrowOrConfirmed = (b.status === 'CONFIRMED' || b.status === 'ESCROW_HOLD') && b.payment?.escrowStatus === 'HELD';
     if (!isEscrowOrConfirmed) {
@@ -328,7 +328,7 @@ async function runE2EJourney() {
   // 14. Booking dashboard update
   await step('14: User Dashboard Live Update (GET /api/v1/users/dashboard)', async () => {
     const res = await fetch(`${baseUrl}/users/dashboard`, { headers: authHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const data = json.data;
     const found = data.bookings.some((b: any) => b.id === bookingId);
     if (!found) {
@@ -342,7 +342,7 @@ async function runE2EJourney() {
   // 15. Payment receipt generation
   await step('15: Payment Receipt Verification (Capture ID & Verified Amount)', async () => {
     const res = await fetch(`${baseUrl}/bookings/${bookingId}`, { headers: authHeaders });
-    const json = await res.json();
+    const json: any = await res.json();
     const payment = json.data?.payment;
     if (!payment || !payment.paypalCaptureId || !payment.amount) {
       throw new Error('Receipt generation data incomplete');
