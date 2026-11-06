@@ -15,6 +15,7 @@ import AiTravelAgentPage from './pages/public/AiTravelAgentPage';
 import ExpertPublicProfile from './pages/public/ExpertPublicProfile';
 import HowItWorksPage from './pages/public/HowItWorksPage';
 import AboutPage from './pages/public/AboutPage';
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
 import LoginPage from './pages/public/LoginPage';
 import RegisterPage from './pages/public/RegisterPage';
 import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
@@ -39,6 +40,13 @@ import ExpertRequests from './pages/expert/ExpertRequests';
 import ExpertRequestDetail from './pages/expert/ExpertRequestDetail';
 import ExpertProposals from './pages/expert/ExpertProposals';
 import ExpertProfile from './pages/expert/ExpertProfile';
+
+// Payment pages
+import PaymentSuccessPage from './pages/payment/PaymentSuccessPage';
+import PaymentDetailsPage from './pages/payment/PaymentDetailsPage';
+import PaymentCancelPage from './pages/payment/PaymentCancelPage';
+import CardCheckoutPage from './pages/payment/CardCheckoutPage';
+import PayPalLoginPage from './pages/payment/PayPalLoginPage';
 
 // Common pages
 import MessagesPage from './pages/common/MessagesPage';
@@ -74,11 +82,20 @@ function App() {
                 <Route path="/experts/:id" element={<ExpertPublicProfile />} />
                 <Route path="/how-it-works" element={<HowItWorksPage />} />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                
+                {/* Payment Checkout & Confirmation Routes */}
+                <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                <Route path="/payment/details/:paymentId" element={<PaymentDetailsPage />} />
+                <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+                <Route path="/payment/card-checkout/:bookingId" element={<CardCheckoutPage />} />
+                <Route path="/payment/paypal-login/:bookingId" element={<PayPalLoginPage />} />
               </Route>
 
               {/* Traveler Protected Routes */}
@@ -98,6 +115,8 @@ function App() {
                 <Route path="/traveler/compare/:id" element={<CompareProposals />} />
                 <Route path="/traveler/bookings" element={<Bookings />} />
                 <Route path="/traveler/booking-confirmation/:id" element={<BookingConfirmationPage />} />
+                <Route path="/traveler/card-checkout/:bookingId" element={<CardCheckoutPage />} />
+                <Route path="/traveler/paypal-login/:bookingId" element={<PayPalLoginPage />} />
                 <Route path="/traveler/messages" element={<MessagesPage />} />
                 <Route path="/traveler/profile" element={<TravelerProfile />} />
                 <Route path="/traveler/settings" element={<AccountSettingsPage />} />

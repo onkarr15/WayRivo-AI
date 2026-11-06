@@ -34,6 +34,9 @@ export const capturePaymentOrder = async (req: AuthRequest, res: Response, next:
       paypalOrderId: req.body.paypalOrderId,
       userId: req.user!.id,
       idempotencyKey: req.body.idempotencyKey || (req.headers['x-idempotency-key'] as string),
+      payerEmail: req.body.payerEmail,
+      payerName: req.body.payerName,
+      cardDetails: req.body.cardDetails,
     });
     sendSuccess(res, result, result.message);
   } catch (error) {
@@ -76,6 +79,16 @@ export const requestCancellation = async (req: AuthRequest, res: Response, next:
       req.body.reason
     );
     sendSuccess(res, result, result.message);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPaymentById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const isAdmin = req.user?.role === 'ADMIN';
+    const result = await paymentService.getPaymentDetails(req.params.paymentId, req.user!.id, isAdmin);
+    sendSuccess(res, result, 'Verified PayPal payment details retrieved');
   } catch (error) {
     next(error);
   }

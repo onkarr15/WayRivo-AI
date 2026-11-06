@@ -15,7 +15,9 @@ import {
   ChevronUp,
   ShieldCheck,
   CheckCircle2,
-  Briefcase
+  Briefcase,
+  Phone,
+  Mail,
 } from 'lucide-react';
 
 const lifecycleStages = [
@@ -34,21 +36,21 @@ const RequestDetail: React.FC = () => {
   const [proposals, setProposals] = useState<any[]>([]);
   const [matchedExperts, setMatchedExperts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selecting, setSelecting] = useState<number | null>(null);
-  const [expandedItinerary, setExpandedItinerary] = useState<number | null>(null);
+  const [selecting, setSelecting] = useState<string | number | null>(null);
+  const [expandedItinerary, setExpandedItinerary] = useState<string | number | null>(null);
 
   const fetchData = React.useCallback(async () => {
     if (!id) return;
     try {
       const [reqRes, propRes] = await Promise.all([
-        tripRequestService.getById(Number(id)),
-        proposalService.getForRequest(Number(id)),
+        tripRequestService.getById(id),
+        proposalService.getForRequest(id),
       ]);
       setRequest(reqRes.data?.data);
       setProposals(propRes.data?.data || []);
 
       // Fetch matched specialists
-      matchingService.getMatchedExperts(Number(id))
+      matchingService.getMatchedExperts(id)
         .then(res => {
           if (res.data?.success) setMatchedExperts(res.data.data);
         })
@@ -59,9 +61,29 @@ const RequestDetail: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
 
-  const handleSelect = async (proposalId: number) => {
+    // Real-time proposal sync: Poll every 2 seconds so traveler receives proposals at the exact same time
+    const interval = setInterval(() => {
+      if (id) {
+        proposalService.getForRequest(id)
+          .then(res => {
+            if (res.data?.data) {
+              setProposals(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(res.data.data)) {
+                  return res.data.data;
+                }
+                return prev;
+              });
+            }
+          })
+          .catch(() => {});
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [fetchData, id]);
+
+  const handleSelect = async (proposalId: string | number) => {
     if (!confirm('Confirm selection of this bespoke proposal? Other proposals will be automatically declined and your booking will be created.')) return;
     setSelecting(proposalId);
     try {
@@ -196,6 +218,37 @@ const RequestDetail: React.FC = () => {
             {request.specialRequirements}
           </div>
         )}
+
+        {Array.isArray(request.travelers) && request.travelers.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 mb-2.5">
+              <Users className="w-3.5 h-3.5 text-cyan-400" /> Registered Travelers ({request.travelers.length})
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {request.travelers.map((t: any, idx: number) => (
+                <div key={idx} className="p-3 bg-surface-dark border border-border/80 rounded-xl text-xs space-y-1">
+                  <div className="flex items-center justify-between font-bold text-white">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] flex items-center justify-center font-bold">
+                        {idx + 1}
+                      </span>
+                      {t.name || `Traveler ${idx + 1}`}
+                    </span>
+                    <span className="text-[10px] text-slate-400 bg-surface px-1.5 py-0.5 rounded border border-border">
+                      {t.gender || '—'}, {t.age ? `${t.age}y` : '—'}
+                    </span>
+                  </div>
+                  {(t.phone || t.email) && (
+                    <div className="text-[11px] text-slate-400 pt-1 border-t border-border/40 flex flex-col gap-0.5">
+                      {t.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-cyan-400" /> {t.phone}</span>}
+                      {t.email && <span className="flex items-center gap-1 truncate"><Mail className="w-3 h-3 text-cyan-400" /> {t.email}</span>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Matched Specialists Discovery Panel */}
@@ -264,10 +317,16 @@ const RequestDetail: React.FC = () => {
 
       {/* Received Proposals Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-white">Received Proposals ({proposals.length})</h2>
-            <p className="text-xs text-slate-400">Detailed customized itineraries crafted by verified specialists</p>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-white">Received Proposals ({proposals.length})</h2>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Sync Active
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">Detailed customized itineraries crafted by verified specialists</p>
           </div>
           {proposals.length > 1 && (
             <Link to={`/traveler/compare/${id}`} className="btn-outline text-xs px-3 py-1.5">

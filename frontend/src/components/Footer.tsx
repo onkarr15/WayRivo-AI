@@ -2,7 +2,24 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Mail, Phone, Lock, ShieldCheck } from 'lucide-react';
 
-const Footer: React.FC = () => (
+const Footer: React.FC = () => {
+  const handleScrollToFeature = (featureId?: string) => {
+    // If already on /about, smoothly scroll up to the requested section or top
+    if (window.location.pathname === '/about') {
+      if (featureId) {
+        const el = document.getElementById(featureId);
+        if (el) {
+          const yOffset = -90;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+          return;
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  return (
   <footer className="bg-navy-dark border-t border-border/80 text-white relative overflow-hidden">
     {/* Subtle Glow Accents */}
     <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -31,10 +48,14 @@ const Footer: React.FC = () => (
           </p>
 
           {/* Escrow Guarantee Pill */}
-          <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-cyan-500/25 text-xs text-cyan-300">
+          <Link
+            to="/about?feature=escrow#escrow-terms"
+            onClick={() => handleScrollToFeature('escrow-terms')}
+            className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-cyan-500/25 text-xs text-cyan-300 hover:border-cyan-400/50 hover:bg-surface-elevated transition-all cursor-pointer"
+          >
             <Lock className="w-3.5 h-3.5 text-cyan-400" />
             <span>Escrow Protected &bull; PayPal Developer Sandbox</span>
-          </div>
+          </Link>
 
           <div className="flex gap-3 mt-6">
             <a
@@ -82,6 +103,7 @@ const Footer: React.FC = () => (
               <Link
                 key={label}
                 to={href}
+                onClick={() => href === '/about' && handleScrollToFeature()}
                 className="block text-xs font-medium text-slate-400 hover:text-cyan-400 transition-colors"
               >
                 {label}
@@ -119,10 +141,14 @@ const Footer: React.FC = () => (
             Security & Support
           </h4>
           <div className="space-y-3 text-xs text-slate-400">
-            <div className="flex items-center gap-2 text-slate-300">
+            <Link
+              to="/about?feature=escrow#escrow-terms"
+              onClick={() => handleScrollToFeature('escrow-terms')}
+              className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer"
+            >
               <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>100% Escrow Protection</span>
-            </div>
+            </Link>
             <a
               href="mailto:support@wayrivo.com"
               className="flex items-center gap-2 hover:text-cyan-400 transition-colors"
@@ -152,13 +178,28 @@ const Footer: React.FC = () => (
           &copy; 2026 WayRivo AI 2.0 &bull; Intelligent Travel Commerce. All rights reserved.
         </p>
         <div className="flex gap-6 text-xs text-slate-500">
-          <Link to="/about" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
-          <Link to="/about" className="hover:text-slate-300 transition-colors">Escrow Terms</Link>
-          <Link to="/about" className="hover:text-slate-300 transition-colors">Security</Link>
+          <Link to="/privacy-policy" className="hover:text-slate-300 transition-colors focus:outline-hidden focus:text-cyan-400">
+            Privacy Policy
+          </Link>
+          <Link
+            to="/about?feature=escrow#escrow-terms"
+            onClick={() => handleScrollToFeature('escrow-terms')}
+            className="hover:text-slate-300 transition-colors focus:outline-hidden focus:text-cyan-400 cursor-pointer"
+          >
+            Escrow Terms
+          </Link>
+          <Link
+            to="/about?feature=security#security-architecture"
+            onClick={() => handleScrollToFeature('security-architecture')}
+            className="hover:text-slate-300 transition-colors focus:outline-hidden focus:text-cyan-400 cursor-pointer"
+          >
+            Security
+          </Link>
         </div>
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;

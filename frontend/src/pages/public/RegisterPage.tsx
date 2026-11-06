@@ -296,8 +296,8 @@ const RegisterPage: React.FC = () => {
                 />
                 <span>
                   I agree to WayRivo AI's{' '}
-                  <span className="text-cyan-400 hover:underline">Terms of Service</span>,{' '}
-                  <span className="text-cyan-400 hover:underline">Privacy Policy</span>, and PayPal Escrow dispute terms.
+                  <Link to="/about" className="text-cyan-400 hover:underline">Terms of Service</Link>,{' '}
+                  <Link to="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Privacy Policy</Link>, and PayPal Escrow dispute terms.
                 </span>
               </label>
             </div>

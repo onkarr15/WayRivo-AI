@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
   Printer,
   ShieldCheck,
-  CreditCard,
-  Lock,
   ArrowRight,
   AlertCircle,
   Hotel,
@@ -14,13 +12,24 @@ import {
   User,
   Info,
   DollarSign,
+  MapPin,
+  Calendar,
+  PlaneTakeoff,
+  PlaneLanding,
+  Users,
+  Clock,
+  Sparkles,
+  Award,
+  Receipt,
 } from 'lucide-react';
 import { bookingService, paymentService, itineraryIntelligenceService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
+import PayPalCheckoutButton from '../../components/payment/PayPalCheckoutButton';
 
 const BookingConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -35,11 +44,6 @@ const BookingConfirmationPage: React.FC = () => {
   const [emergencyContact, setEmergencyContact] = useState<string>('+91 98765 00000');
   const [specialRequests, setSpecialRequests] = useState<string>('Non-smoking room, vegetarian meal preference.');
   const [termsAgreed, setTermsAgreed] = useState<boolean>(false);
-
-  // Payment Processing State
-  const [orderInProgress, setOrderInProgress] = useState<boolean>(false);
-  const [payPalOrderData, setPayPalOrderData] = useState<any>(null);
-  const [isCapturing, setIsCapturing] = useState<boolean>(false);
 
   // Fetch PayPal Config on mount
   useEffect(() => {
@@ -85,54 +89,10 @@ const BookingConfirmationPage: React.FC = () => {
     fetchBookingOrItinerary();
   }, [fetchBookingOrItinerary]);
 
-  // Step 1: Initialize PayPal Order
-  const handleInitiatePayPalOrder = async () => {
-    if (!booking) return;
-    if (!termsAgreed) {
-      toast.warning('Please review and agree to the booking cancellation terms.');
-      return;
-    }
-    if (!primaryTraveler || !phone) {
-      toast.warning('Please provide your primary traveler contact information.');
-      return;
-    }
-
-    setOrderInProgress(true);
-    try {
-      const res = await paymentService.createOrder({
-        bookingId: booking.id,
-      });
-      const data = res.data?.data;
-      setPayPalOrderData(data);
-      toast.success('PayPal Sandbox order initialized. Please approve payment.');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to initialize PayPal order.');
-    } finally {
-      setOrderInProgress(false);
-    }
-  };
-
-  // Step 2: Approve & Capture Payment Server-Side
-  const handleApproveAndCapture = async () => {
-    if (!booking || !payPalOrderData) return;
-    setIsCapturing(true);
-    try {
-      const res = await paymentService.captureOrder({
-        bookingId: booking.id,
-        paypalOrderId: payPalOrderData.orderId,
-        idempotencyKey: `idemp-${Date.now()}-${booking.id}`,
-      });
-
-      const msg = res.data?.data?.message || 'Payment captured! Booking confirmed with PayPal Escrow protection.';
-      toast.success(msg);
-      setPayPalOrderData(null);
-      // Refresh booking to show confirmation receipt
-      fetchBookingOrItinerary();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Payment capture failed.');
-    } finally {
-      setIsCapturing(false);
-    }
+  const handlePayPalSuccess = (captureData: any) => {
+    const paymentId = captureData.payment?.id || captureData.captureId || booking?.id;
+    fetchBookingOrItinerary();
+    navigate(`/payment/success?paymentId=${paymentId}&bookingId=${booking?.id}&orderId=${captureData.payment?.paypalOrderId || ''}`);
   };
 
   const handlePrint = () => {
@@ -175,6 +135,58 @@ const BookingConfirmationPage: React.FC = () => {
   const totalInr = Number(booking.totalAmount || 0);
   const totalCharge = (totalInr / exchangeRate).toFixed(2);
 
+  // Extract comprehensive trip details
+  const getTripDetails = () => {
+    if (!booking) return null;
+    const reqText = booking.specialRequests || '';
+    const fromMatch = reqText.match(/\[FROM:(.*?)\]/);
+    const destMatch = reqText.match(/\[DEST:(.*?)\]/);
+    const locMatch = reqText.match(/\[LOC:(.*?)\]/);
+    const expertMatch = reqText.match(/\[EXPERT:(.*?)\]/);
+
+    const departureLocation = booking.departureLocation || (fromMatch ? fromMatch[1] : 'Mumbai (BOM)');
+    const destinationTitle = booking.tripDestination || (destMatch ? destMatch[1] : (booking.itinerary?.title || 'Kerala Backwaters & Munnar Tea Trails'));
+    const destinationLocation = booking.destinationLocation || (locMatch ? locMatch[1] : (
+      booking.itinerary?.destination
+        ? `${booking.itinerary.destination.name}, ${booking.itinerary.destination.state ? `${booking.itinerary.destination.state}, ` : ''}${booking.itinerary.destination.country || 'India'}`
+        : 'Kerala, India'
+    ));
+    const expertDetails = booking.expertDetails || (expertMatch ? expertMatch[1] : 'Vikram Singh Rathore • Royal Kerala Luxury Journeys');
+
+    const startDate = booking.itinerary?.startDate
+      ? new Date(booking.itinerary.startDate)
+      : new Date(Date.now() + 14 * 86400000);
+    const endDate = booking.itinerary?.endDate
+      ? new Date(booking.itinerary.endDate)
+      : new Date(Date.now() + 20 * 86400000);
+
+    const totalDays = booking.itinerary?.numberOfDays || 6;
+    const totalNights = Math.max(1, totalDays - 1);
+    const travelersCount = booking.itinerary?.travelersCount || 2;
+    const travelStyle = booking.itinerary?.travelStyle || 'Luxury Heritage & Wellness';
+    const totalAmount = Number(booking.totalAmount || 0);
+    const perPersonAmount = Math.round(totalAmount / travelersCount);
+    const itineraryDays = booking.itinerary?.days || [];
+
+    return {
+      departureLocation,
+      destinationTitle,
+      destinationLocation,
+      expertDetails,
+      startDate,
+      endDate,
+      totalDays,
+      totalNights,
+      travelersCount,
+      travelStyle,
+      totalAmount,
+      perPersonAmount,
+      itineraryDays,
+    };
+  };
+
+  const trip = getTripDetails();
+
   return (
     <div className="max-w-5xl mx-auto pt-24 pb-20 px-4 sm:px-6">
       {/* 1. Status Header */}
@@ -195,7 +207,7 @@ const BookingConfirmationPage: React.FC = () => {
       {/* 2. Main Card */}
       <div className="p-6 sm:p-10 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl relative overflow-hidden print:border-none print:shadow-none print:bg-white print:text-black">
         {/* Header Ribbon */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-800 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-800 gap-4 print:border-slate-300">
           <div>
             <div className="flex items-center gap-1.5 text-2xl font-black tracking-wider text-white print:text-slate-900">
               WAY<span className="text-gradient-cyan">RIVO</span>
@@ -207,7 +219,7 @@ const BookingConfirmationPage: React.FC = () => {
           </div>
 
           <div className="sm:text-right">
-            <span className="text-xs text-slate-400 block">
+            <span className="text-xs text-slate-400 block print:text-slate-600">
               Booking Date: {new Date(booking.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
             <span
@@ -222,25 +234,192 @@ const BookingConfirmationPage: React.FC = () => {
           </div>
         </div>
 
+        {/* 2.5 Prominent Route & Departure / Destination Banner */}
+        {trip && (
+          <div className="my-6 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-cyan-500/30 p-5 sm:p-6 shadow-xl print:border-slate-300 print:bg-slate-50">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* Departure Location & Starting Date */}
+              <div className="flex items-center gap-3.5 w-full md:w-auto">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                  <PlaneTakeoff className="w-6 h-6 text-cyan-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block print:text-slate-600">
+                    Departure Location
+                  </span>
+                  <h3 className="text-lg font-black text-white tracking-tight print:text-black">
+                    {trip.departureLocation}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-0.5 print:text-slate-700">
+                    <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>
+                      Start: {trip.startDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transit Flight / Distance Divider */}
+              <div className="flex flex-col items-center justify-center shrink-0 w-full md:w-auto px-4">
+                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 tracking-wider uppercase mb-1.5">
+                  {trip.totalDays} Days • {trip.totalNights} Nights
+                </span>
+                <div className="flex items-center gap-2 w-full max-w-[200px]">
+                  <div className="h-0.5 flex-1 bg-gradient-to-r from-cyan-500/20 to-cyan-500"></div>
+                  <PlaneLanding className="w-4 h-4 text-cyan-400 rotate-45" />
+                  <div className="h-0.5 flex-1 bg-gradient-to-r from-cyan-500 to-teal-500/20"></div>
+                </div>
+                <span className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-semibold">
+                  Escrow Verified Transit
+                </span>
+              </div>
+
+              {/* Destination Location & Return Date */}
+              <div className="flex items-center gap-3.5 w-full md:w-auto md:text-right md:flex-row-reverse">
+                <div className="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center shrink-0">
+                  <MapPin className="w-6 h-6 text-teal-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-400 block print:text-slate-600">
+                    Destination Location
+                  </span>
+                  <h3 className="text-lg font-black text-white tracking-tight print:text-black">
+                    {trip.destinationLocation}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-0.5 md:justify-end print:text-slate-700">
+                    <Calendar className="w-3.5 h-3.5 text-teal-400" />
+                    <span>
+                      Return: {trip.endDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-bar: Trip Title & Specialist */}
+            <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400 print:border-slate-300">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="font-semibold text-white print:text-black">
+                  Trip: {trip.destinationTitle}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-cyan-400" />
+                <span>Specialist: <strong className="text-cyan-300 print:text-black">{trip.expertDetails}</strong></span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 2.6 Detailed 4-Grid Trip Breakdown */}
+        {trip && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
+            {/* Tile 1: Starting Date & Duration */}
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 print:border-slate-300 print:bg-white">
+              <div className="flex items-center gap-2 text-cyan-400 mb-1">
+                <Calendar className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 print:text-slate-600">Starting Date</span>
+              </div>
+              <div className="text-sm font-black text-white print:text-black">
+                {trip.startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Through {trip.endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} ({trip.totalDays} Days)
+              </p>
+            </div>
+
+            {/* Tile 2: Departure Location */}
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 print:border-slate-300 print:bg-white">
+              <div className="flex items-center gap-2 text-cyan-400 mb-1">
+                <PlaneTakeoff className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 print:text-slate-600">Departure Location</span>
+              </div>
+              <div className="text-sm font-black text-white print:text-black">
+                {trip.departureLocation}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Origin city & verified departure point
+              </p>
+            </div>
+
+            {/* Tile 3: Destination Location */}
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 print:border-slate-300 print:bg-white">
+              <div className="flex items-center gap-2 text-teal-400 mb-1">
+                <Compass className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 print:text-slate-600">Destination Location</span>
+              </div>
+              <div className="text-sm font-black text-white print:text-black">
+                {trip.destinationLocation}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 truncate">
+                {trip.destinationTitle}
+              </p>
+            </div>
+
+            {/* Tile 4: Total Trip Amount */}
+            <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-800/40 print:border-slate-300 print:bg-white">
+              <div className="flex items-center gap-2 text-cyan-400 mb-1">
+                <DollarSign className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 print:text-slate-600">Total Trip Amount</span>
+              </div>
+              <div className="text-base font-black text-cyan-300 print:text-black">
+                ₹{trip.totalAmount.toLocaleString('en-IN')}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-cyan-400" />
+                ₹{trip.perPersonAmount.toLocaleString('en-IN')} / person ({trip.travelersCount} travelers)
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 2.7 Day-by-Day Travel Schedule Breakdown */}
+        {trip && trip.itineraryDays && trip.itineraryDays.length > 0 && (
+          <div className="my-6 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> Day-by-Day Journey Schedule
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {trip.itineraryDays.map((d: any, idx: number) => (
+                <div key={idx} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 text-xs print:border-slate-300 print:bg-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase">
+                      Day {d.dayNumber || idx + 1}
+                    </span>
+                    {d.estimatedDayCost && (
+                      <span className="text-[11px] font-bold text-slate-300">
+                        ₹{Number(d.estimatedDayCost).toLocaleString('en-IN')}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-bold text-white print:text-black mb-1 line-clamp-1">{d.title}</h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed print:text-slate-700">{d.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 3. Review Selected Services & Line Items */}
         <div className="my-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
             <FileText className="w-4 h-4" /> Selected Services & Verified Inventory
           </h3>
 
-          <div className="rounded-2xl bg-slate-950/70 border border-slate-800/80 overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="rounded-2xl bg-slate-950/70 border border-slate-800/80 overflow-hidden print:border-slate-300 print:bg-white">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between print:border-slate-300">
               <div>
                 <h4 className="text-sm font-bold text-white print:text-slate-900">
                   {booking.itinerary?.title || 'Custom Curated Vacation Package'}
                 </h4>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 print:text-slate-600">
                   {booking.itinerary?.numberOfDays || 5} Days • {booking.itinerary?.travelersCount || 2} Travelers • {booking.itinerary?.travelStyle || 'COMFORT'}
                 </p>
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block uppercase">Server-Verified Total</span>
+                <span className="text-[10px] text-slate-400 block uppercase print:text-slate-600">Server-Verified Total</span>
                 <span className="text-base font-black text-cyan-300 print:text-slate-900">
                   ₹{totalInr.toLocaleString('en-IN')}
                 </span>
@@ -432,82 +611,52 @@ const BookingConfirmationPage: React.FC = () => {
 
         {/* 7. PayPal Checkout Execution */}
         {!isPaid ? (
-          <div className="my-6 p-6 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Lock className="w-5 h-5 text-amber-400" />
-                <h4 className="text-sm font-bold text-white">Proceed to PayPal Developer Sandbox</h4>
-              </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                Sandbox Mode
-              </span>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Click below to initiate the PayPal Orders API v2 workflow. You will be able to approve the test order using PayPal Sandbox credentials and capture funds safely into escrow.
-            </p>
-
-            {/* Step A: Initialize Order */}
-            {!payPalOrderData ? (
-              <button
-                onClick={handleInitiatePayPalOrder}
-                disabled={orderInProgress || !termsAgreed}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-sm shadow-lg shadow-amber-400/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {orderInProgress ? (
-                  <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4" /> Pay ${totalCharge} {chargeCurrency} with PayPal Sandbox
-                  </>
-                )}
-              </button>
-            ) : (
-              /* Step B: PayPal Approval & Capture Modal / Prompt */
-              <div className="p-4 rounded-xl bg-slate-900 border border-cyan-500/40 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-cyan-300 font-bold">PayPal Order Initialized</span>
-                  <span className="font-mono text-xs text-slate-300">{payPalOrderData.orderId}</span>
-                </div>
-
-                <div className="text-xs text-slate-300">
-                  <p>Order reference: <strong>{payPalOrderData.bookingReference}</strong></p>
-                  <p>Charge amount: <strong>${payPalOrderData.chargeAmount} {payPalOrderData.chargeCurrency}</strong> (~ ₹{Number(payPalOrderData.displayAmount).toLocaleString('en-IN')})</p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <a
-                    href={payPalOrderData.approvalUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold text-center border border-slate-700"
-                  >
-                    Open PayPal Hosted Checkout ↗
-                  </a>
-
-                  <button
-                    onClick={handleApproveAndCapture}
-                    disabled={isCapturing}
-                    className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
-                  >
-                    {isCapturing ? (
-                      <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4" /> Confirm & Capture Order (Server-Side)
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="my-6">
+            <PayPalCheckoutButton
+              bookingId={booking.id}
+              amount={booking.totalAmount}
+              currency={booking.currency || 'INR'}
+              chargeAmount={totalCharge}
+              chargeCurrency={chargeCurrency}
+              disabled={!termsAgreed || !primaryTraveler || !phone}
+              onSuccess={handlePayPalSuccess}
+              onCancel={() => {
+                toast.info('Payment was cancelled. You can retry anytime.');
+              }}
+              onError={(err) => {
+                console.error('PayPal checkout error:', err);
+              }}
+            />
           </div>
         ) : (
           /* Verified Escrow Receipt Badge */
-          <div className="my-6 p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-xs space-y-3">
-            <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-sm">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>PayPal Escrow Verification Receipt</span>
+          <div className="my-6 p-6 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-sm">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>PayPal Escrow Verification Receipt</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="px-3 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-[11px] font-black flex items-center gap-1 transition-colors cursor-pointer shadow"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print Receipt
+                </button>
+                <Link
+                  to={`/payment/details/${booking.payment?.id || booking.payment?.paypalCaptureId || booking.id}`}
+                  className="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                >
+                  <Receipt className="w-3.5 h-3.5" /> Details
+                </Link>
+                <Link
+                  to={`/payment/success?bookingId=${booking.id}&paymentId=${booking.payment?.id || booking.payment?.paypalCaptureId || ''}`}
+                  className="px-3 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                >
+                  Confirmation Screen
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-slate-300">

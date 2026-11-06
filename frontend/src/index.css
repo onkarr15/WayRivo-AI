@@ -208,4 +208,18 @@
   .hover\:text-navy:hover {
     color: #FFFFFF !important;
   }
+
+  /* PayPal Buttons Styling & Transparency Normalization */
+  .paypal-buttons,
+  .paypal-button-container,
+  div[id^="zoid-paypal-buttons"] {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    width: 100% !important;
+  }
+
+  iframe[name^="__zoid__paypal_buttons__"] {
+    border-radius: 12px !important;
+    width: 100% !important;
+  }
 }

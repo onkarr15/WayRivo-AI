@@ -23,15 +23,15 @@ const CompareProposals: React.FC = () => {
   const [request, setRequest] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selecting, setSelecting] = useState<number | null>(null);
+  const [selecting, setSelecting] = useState<string | number | null>(null);
 
   const fetchData = React.useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
       const [reqRes, propRes] = await Promise.all([
-        tripRequestService.getById(Number(id)),
-        proposalService.getForRequest(Number(id)),
+        tripRequestService.getById(id),
+        proposalService.getForRequest(id),
       ]);
       setRequest(reqRes.data?.data);
       setProposals(propRes.data?.data || []);
@@ -43,7 +43,7 @@ const CompareProposals: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleSelect = async (proposalId: number) => {
+  const handleSelect = async (proposalId: string | number) => {
     if (!confirm('Confirm selection of this proposal? Other competing proposals will be automatically rejected and your booking confirmation will be generated.')) return;
     setSelecting(proposalId);
     try {

@@ -17,7 +17,7 @@ export class BookingRepository {
         items: true,
         payment: true,
         itinerary: {
-          include: { days: true },
+          include: { days: true, destination: true },
         },
         user: {
           select: { id: true, name: true, email: true },
@@ -32,6 +32,9 @@ export class BookingRepository {
       include: {
         items: true,
         payment: true,
+        itinerary: {
+          include: { days: true, destination: true },
+        },
         user: {
           select: { id: true, name: true, email: true },
         },
@@ -45,6 +48,12 @@ export class BookingRepository {
       include: {
         items: true,
         payment: true,
+        itinerary: {
+          include: {
+            destination: true,
+            days: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

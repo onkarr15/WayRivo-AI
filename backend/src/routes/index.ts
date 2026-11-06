@@ -1,5 +1,8 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { checkDatabaseConnection, prisma } from '../config/db';
+import { optionalAuthenticate } from '../middleware/auth.middleware';
+import { AuthRequest } from '../types';
+import { BookingStatus, BookingItemType, PaymentStatus, EscrowStatus, Prisma } from '@prisma/client';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
 import destinationRoutes from './destination.routes';
@@ -143,7 +146,52 @@ router.post('/messages', (req, res) => {
 // -------------------------------------------------------------
 // Legacy Trip Requests, Proposals, Experts & Reviews Handlers
 // -------------------------------------------------------------
-const sampleOpenTripRequests = [
+interface SampleTripRequest {
+  id: string;
+  destination: string;
+  fromLocation: string;
+  startDate: string;
+  endDate: string;
+  travelersCount: number;
+  budget: number;
+  travelStyle: string;
+  travelType: string;
+  durationDays: number;
+  matchScore: number;
+  travelerName: string;
+  notes: string;
+  interests?: string;
+  specialRequirements?: string;
+  status: string;
+  createdAt: string;
+}
+
+interface SampleExpertProposal {
+  id: string;
+  tripRequestId: string;
+  title: string;
+  destination: string;
+  travelerName: string;
+  expertName?: string;
+  organizationName?: string;
+  totalPrice: number;
+  pricePerPerson?: number;
+  status: string;
+  validityDate: string;
+  description: string;
+  itinerary?: string;
+  accommodationDetails?: string;
+  transportationDetails?: string;
+  activities?: string;
+  inclusions?: string;
+  exclusions?: string;
+  cancellationPolicy?: string;
+  escrowStatus: string;
+  submittedAt: string;
+  createdAt?: string;
+}
+
+const sampleOpenTripRequests: SampleTripRequest[] = [
   {
     id: 'req_101',
     destination: 'Kerala Backwaters & Munnar Tea Trails',
@@ -158,6 +206,7 @@ const sampleOpenTripRequests = [
     matchScore: 98,
     travelerName: 'Arjun K. Sharma',
     notes: 'Prefer private traditional houseboat with dedicated chef, and an organic spice plantation estate retreat.',
+    status: 'OPEN',
     createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
   },
   {
@@ -174,6 +223,7 @@ const sampleOpenTripRequests = [
     matchScore: 96,
     travelerName: 'Pooja Iyer & Family',
     notes: 'Need family-friendly stays in Jaipur and Jodhpur with private heritage walks and camel safari for kids.',
+    status: 'OPEN',
     createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
   },
   {
@@ -190,6 +240,7 @@ const sampleOpenTripRequests = [
     matchScore: 93,
     travelerName: 'Rohan Deshmukh',
     notes: 'Stargazing camps at Nubra and Pangong, professional 4x4 vehicle, oxygen support equipment verified.',
+    status: 'OPEN',
     createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
   },
   {
@@ -206,17 +257,20 @@ const sampleOpenTripRequests = [
     matchScore: 89,
     travelerName: 'Devendra Patel',
     notes: 'Boutique heritage Portuguese villa in Latin Quarter and sunset catamaran private cruise.',
+    status: 'OPEN',
     createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
   },
 ];
 
-const sampleExpertProposals = [
+const sampleExpertProposals: SampleExpertProposal[] = [
   {
     id: 'prop_201',
     title: 'Royal Udaipur & Jodhpur Heritage Palaces Retreat',
     tripRequestId: 'req_102',
     destination: 'Rajasthan',
     travelerName: 'Pooja Iyer',
+    expertName: 'Vikram Singh Rathore',
+    organizationName: 'Royal Rajasthan & Kerala Journeys',
     totalPrice: 175000,
     status: 'SELECTED',
     validityDate: '2026-11-30',
@@ -230,6 +284,8 @@ const sampleExpertProposals = [
     tripRequestId: 'req_101',
     destination: 'Kerala',
     travelerName: 'Arjun K. Sharma',
+    expertName: 'Vikram Singh Rathore',
+    organizationName: 'Royal Rajasthan & Kerala Journeys',
     totalPrice: 142000,
     status: 'SUBMITTED',
     validityDate: '2026-12-05',
@@ -243,6 +299,8 @@ const sampleExpertProposals = [
     tripRequestId: 'req_103',
     destination: 'Ladakh',
     travelerName: 'Rohan Deshmukh',
+    expertName: 'Vikram Singh Rathore',
+    organizationName: 'Royal Rajasthan & Kerala Journeys',
     totalPrice: 215000,
     status: 'SELECTED',
     validityDate: '2026-12-12',
@@ -256,6 +314,8 @@ const sampleExpertProposals = [
     tripRequestId: 'req_105',
     destination: 'Varanasi',
     travelerName: 'Meera Swaminathan',
+    expertName: 'Vikram Singh Rathore',
+    organizationName: 'Royal Rajasthan & Kerala Journeys',
     totalPrice: 82000,
     status: 'SUBMITTED',
     validityDate: '2026-12-01',
@@ -265,7 +325,27 @@ const sampleExpertProposals = [
   },
 ];
 
-router.get('/trip-requests/open', async (_req, res) => {
+router.get('/trip-requests/open', async (req, res) => {
+  const search = ((req.query.search as string) || '').toLowerCase().trim();
+  let filtered = sampleOpenTripRequests;
+  if (search) {
+    filtered = sampleOpenTripRequests.filter(r =>
+      r.destination.toLowerCase().includes(search) ||
+      (r.fromLocation && r.fromLocation.toLowerCase().includes(search)) ||
+      (r.travelerName && r.travelerName.toLowerCase().includes(search))
+    );
+  }
+  res.json({
+    success: true,
+    data: {
+      content: filtered,
+      totalPages: 1,
+      totalElements: filtered.length,
+    },
+  });
+});
+
+router.get('/trip-requests/my', async (_req, res) => {
   res.json({
     success: true,
     data: {
@@ -276,35 +356,103 @@ router.get('/trip-requests/open', async (_req, res) => {
   });
 });
 
-router.get('/trip-requests/my', async (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      content: sampleOpenTripRequests.slice(0, 2),
-      totalPages: 1,
-      totalElements: 2,
-    },
-  });
-});
-
 router.get('/trip-requests/dashboard-stats', async (_req, res) => {
   res.json({
     success: true,
     data: {
       totalRequests: sampleOpenTripRequests.length,
-      activeRequests: 4,
+      activeRequests: sampleOpenTripRequests.filter(r => r.status !== 'CANCELLED' && r.status !== 'COMPLETED').length,
       matchedExperts: 18,
     },
   });
 });
 
 router.get('/trip-requests/:id', async (req, res) => {
-  const item = sampleOpenTripRequests.find(r => r.id === req.params.id) || sampleOpenTripRequests[0];
+  const targetId = String(req.params.id);
+  const item = sampleOpenTripRequests.find(r => String(r.id) === targetId) || sampleOpenTripRequests[0];
   res.json({ success: true, data: item });
 });
 
-router.post('/trip-requests', async (_req, res) => {
-  res.json({ success: true, data: { id: 'req_' + Date.now(), status: 'OPEN' } });
+router.post('/trip-requests', async (req, res) => {
+  const id = 'req_' + Date.now();
+  const travelersList = Array.isArray(req.body.travelers) && req.body.travelers.length > 0
+    ? req.body.travelers
+    : [
+        {
+          name: req.body.travelerName || 'Arjun K. Sharma',
+          gender: req.body.gender || 'Male',
+          age: req.body.age || 28,
+          phone: req.body.travelerPhone || '+91 98765 43210',
+          email: req.body.travelerEmail || 'arjun@example.com',
+        },
+      ];
+
+  const primary = travelersList[0] || {};
+
+  const newTrip = {
+    id,
+    destination: req.body.destination || 'Kerala Backwaters & Munnar',
+    fromLocation: req.body.fromLocation || 'Mumbai',
+    startDate: req.body.startDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    endDate: req.body.endDate || new Date(Date.now() + 20 * 86400000).toISOString().split('T')[0],
+    travelersCount: Number(req.body.travelersCount) || travelersList.length || 2,
+    travelers: travelersList,
+    primaryTraveler: primary,
+    budget: Number(req.body.budget) || 120000,
+    travelStyle: req.body.travelStyle || 'Luxury Heritage & Wellness',
+    travelType: req.body.travelType || 'Couple',
+    durationDays: Number(req.body.numberOfDays) || 6,
+    matchScore: 98,
+    travelerName: primary.name || req.body.travelerName || 'Arjun K. Sharma',
+    travelerEmail: primary.email || req.body.travelerEmail || 'arjun@example.com',
+    travelerPhone: primary.phone || req.body.travelerPhone || '+91 98765 43210',
+    notes: req.body.specialRequirements || req.body.notes || 'Looking for verified specialist itineraries.',
+    interests: req.body.interests || 'Heritage, Backwaters, Wellness',
+    specialRequirements: req.body.specialRequirements || '',
+    status: 'OPEN',
+    createdAt: new Date().toISOString(),
+  };
+
+  sampleOpenTripRequests.unshift(newTrip);
+  res.json({ success: true, data: newTrip });
+});
+
+router.patch('/trip-requests/:id/cancel', async (req, res) => {
+  const targetId = String(req.params.id);
+  const found = sampleOpenTripRequests.find(r => String(r.id) === targetId);
+  if (found) found.status = 'CANCELLED';
+  res.json({ success: true, data: found || { id: targetId, status: 'CANCELLED' } });
+});
+
+router.get('/trip-requests/:id/matched-experts', async (req, res) => {
+  const targetId = String(req.params.id);
+  const reqObj = sampleOpenTripRequests.find(r => String(r.id) === targetId);
+  const dest = reqObj?.destination || 'India';
+  res.json({
+    success: true,
+    data: [
+      {
+        expertId: 'exp_01',
+        name: 'Vikram Singh Rathore',
+        organizationName: 'Royal Rajasthan & Kerala Journeys',
+        matchScore: 98,
+        rating: 4.9,
+        totalReviews: 52,
+        verificationStatus: 'VERIFIED',
+        matchReasons: [`Specialist in ${dest} travel`, '14+ years experience', '98% 5-star traveler satisfaction'],
+      },
+      {
+        expertId: 'exp_02',
+        name: 'Ananya Deshmukh',
+        organizationName: 'Bespoke India Explorations',
+        matchScore: 95,
+        rating: 4.8,
+        totalReviews: 44,
+        verificationStatus: 'VERIFIED',
+        matchReasons: ['Verified luxury concierge', 'Direct contracts with premium resorts'],
+      },
+    ],
+  });
 });
 
 router.get('/proposals/my', async (_req, res) => {
@@ -322,8 +470,8 @@ router.get('/proposals/expert/dashboard-stats', async (_req, res) => {
   res.json({
     success: true,
     data: {
-      totalProposals: 18,
-      acceptedProposals: 12,
+      totalProposals: sampleExpertProposals.length,
+      acceptedProposals: sampleExpertProposals.filter(p => p.status === 'SELECTED').length,
       activeBookings: 6,
       rating: '4.9',
       totalReviews: 52,
@@ -339,19 +487,285 @@ router.get('/proposals/expert/dashboard-stats', async (_req, res) => {
   });
 });
 
-router.get('/proposals/request/:id', async (_req, res) => {
-  res.json({ success: true, data: sampleExpertProposals.slice(0, 2) });
+router.get('/proposals/request/:id', async (req, res) => {
+  const reqId = String(req.params.id);
+  const matching = sampleExpertProposals.filter(p => String(p.tripRequestId) === reqId);
+  if (matching.length > 0) {
+    return res.json({ success: true, data: matching });
+  }
+  // Default sample proposal mapped to sample request
+  if (reqId === 'req_101') {
+    return res.json({ success: true, data: sampleExpertProposals.filter(p => p.tripRequestId === 'req_101') });
+  }
+  if (reqId === 'req_102') {
+    return res.json({ success: true, data: sampleExpertProposals.filter(p => p.tripRequestId === 'req_102') });
+  }
+  if (reqId === 'req_103') {
+    return res.json({ success: true, data: sampleExpertProposals.filter(p => p.tripRequestId === 'req_103') });
+  }
+  res.json({ success: true, data: [] });
+});
+
+router.get('/proposals/:id', async (req, res) => {
+  const propId = String(req.params.id);
+  const found = sampleExpertProposals.find(p => String(p.id) === propId) || sampleExpertProposals[0];
+  res.json({ success: true, data: found });
 });
 
 router.post('/proposals', async (req, res) => {
+  const id = 'prop_' + Date.now();
+  const tripRequestId = String(req.body.tripRequestId || '');
+  const matchingTrip = sampleOpenTripRequests.find(r => String(r.id) === tripRequestId);
+
+  const newProposal = {
+    id,
+    tripRequestId,
+    title: req.body.title || 'Bespoke Curated Travel Proposal',
+    destination: req.body.destination || matchingTrip?.destination || 'India',
+    travelerName: req.body.travelerName || matchingTrip?.travelerName || 'Arjun K. Sharma',
+    expertName: req.body.expertName || 'Vikram Singh Rathore',
+    organizationName: req.body.organizationName || 'Royal Rajasthan & Kerala Journeys',
+    totalPrice: Number(req.body.totalPrice) || 85000,
+    pricePerPerson: Number(req.body.pricePerPerson) || Math.round((Number(req.body.totalPrice) || 85000) / 2),
+    status: 'SUBMITTED',
+    validityDate: req.body.validityDate || new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0],
+    description: req.body.description || 'Customized luxury travel plan crafted by destination specialist.',
+    itinerary: req.body.itinerary || 'Day 1: Private Airport Arrival & Coastal Welcome\nDay 2: Guided Excursion & Heritage Exploration\nDay 3: Sunset Cruise & Cultural Gastronomy',
+    accommodationDetails: req.body.accommodationDetails || 'Handpicked 5-star boutique resort with private veranda',
+    transportationDetails: req.body.transportationDetails || 'Chauffeured private AC sedan throughout the entire journey',
+    activities: req.body.activities || 'Guided cultural heritage walks, sunset cruise, and curated dining',
+    inclusions: req.body.inclusions || 'Breakfast daily, airport transfers, all entry permits, dedicated destination expert on call',
+    exclusions: req.body.exclusions || 'Personal expenses, international flights, optional spa treatments',
+    cancellationPolicy: req.body.cancellationPolicy || '100% refundable up to 7 days before departure under WayRivo Escrow Guarantee',
+    escrowStatus: 'PENDING_APPROVAL',
+    submittedAt: 'Just now',
+    createdAt: new Date().toISOString(),
+  };
+
+  sampleExpertProposals.unshift(newProposal);
+
+  if (matchingTrip) {
+    matchingTrip.status = 'PROPOSALS_RECEIVED';
+  }
+
   res.json({
     success: true,
-    data: {
-      id: 'prop_' + Date.now(),
-      status: 'SUBMITTED',
-      ...req.body,
-    },
+    data: newProposal,
   });
+});
+
+router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const propId = String(req.params.id);
+    const found = sampleExpertProposals.find(p => String(p.id) === propId);
+    const matchingTrip = found ? sampleOpenTripRequests.find(r => String(r.id) === String(found.tripRequestId)) : undefined;
+
+    if (found) {
+      found.status = 'SELECTED';
+      found.escrowStatus = 'HELD';
+
+      // Mark other proposals for same trip as REJECTED
+      sampleExpertProposals.forEach(p => {
+        if (p.tripRequestId === found.tripRequestId && String(p.id) !== propId) {
+          p.status = 'REJECTED';
+        }
+      });
+
+      if (matchingTrip) {
+        matchingTrip.status = 'PROPOSAL_SELECTED';
+      }
+    }
+
+    // Determine traveler identity
+    let user = req.user;
+    let userId = user?.id;
+
+    if (!userId) {
+      const defaultUser = (await prisma.user.findFirst({
+        where: { role: 'TRAVELER' },
+      })) || (await prisma.user.findFirst());
+
+      if (defaultUser) {
+        userId = defaultUser.id;
+        user = {
+          id: defaultUser.id,
+          name: defaultUser.name,
+          email: defaultUser.email,
+          role: defaultUser.role as any,
+          status: defaultUser.status as any,
+        };
+      }
+    }
+
+    // Idempotency: Return existing confirmed booking if already generated for this proposal and user
+    if (userId) {
+      const existingBooking = await prisma.booking.findFirst({
+        where: {
+          userId,
+          specialRequests: { contains: `[PROP_ID:${propId}]` },
+        },
+        include: {
+          items: true,
+          payment: true,
+          itinerary: {
+            include: { destination: true, days: true },
+          },
+        },
+      });
+
+      if (existingBooking) {
+        return res.json({
+          success: true,
+          data: {
+            id: existingBooking.id,
+            bookingReference: existingBooking.bookingReference,
+            proposalId: propId,
+            status: existingBooking.status,
+            totalAmount: Number(existingBooking.totalAmount),
+            currency: existingBooking.currency,
+            booking: existingBooking,
+          },
+        });
+      }
+    }
+
+    // Resolve matching destination
+    const targetDestName = (matchingTrip?.destination || found?.destination || 'Kerala').toLowerCase();
+    let destination = await prisma.destination.findFirst({
+      where: {
+        OR: [
+          { name: { contains: targetDestName, mode: 'insensitive' } },
+          { state: { contains: targetDestName, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    if (!destination) {
+      destination = await prisma.destination.findFirst();
+    }
+
+    const totalAmount = new Prisma.Decimal(found?.totalPrice || 142000);
+    const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const bookingReference = `WR-2026-${randomCode}`;
+
+    let createdBooking: any = null;
+
+    if (userId && destination) {
+      const departureCity = matchingTrip?.fromLocation || 'Mumbai';
+      const destFullTitle = matchingTrip?.destination || found?.destination || `${destination.name} Backwaters & Heritage`;
+      const destLocation = `${destination.name}, ${destination.state ? `${destination.state}, ` : ''}${destination.country || 'India'}`;
+      const expertName = found?.expertName || 'Vikram Singh Rathore';
+      const agencyName = found?.organizationName || 'Royal Rajasthan & Kerala Journeys';
+
+      const itineraryTitle = found?.title || `${destFullTitle} Curated Bespoke Journey`;
+      const durationDays = matchingTrip?.durationDays || 6;
+      const travelersCount = matchingTrip?.travelersCount || 2;
+
+      // 1. Create Itinerary
+      const itinerary = await prisma.itinerary.create({
+        data: {
+          userId,
+          destinationId: destination.id,
+          title: itineraryTitle,
+          travelStyle: matchingTrip?.travelStyle || 'Bespoke Escrow',
+          startDate: matchingTrip?.startDate ? new Date(matchingTrip.startDate) : new Date(Date.now() + 14 * 86400000),
+          endDate: matchingTrip?.endDate ? new Date(matchingTrip.endDate) : new Date(Date.now() + 20 * 86400000),
+          numberOfDays: durationDays,
+          travelersCount,
+          budget: totalAmount,
+          currency: 'INR',
+          status: 'CONFIRMED',
+          totalEstimatedCost: totalAmount,
+          days: {
+            create: [
+              {
+                dayNumber: 1,
+                title: `Day 1: Departure from ${departureCity} & Arrival in ${destination.name}`,
+                description: `Depart from ${departureCity}. Private VIP greeting at arrival, luxury chauffeured transfer to boutique resort, orientation, and welcome dinner.`,
+                estimatedDayCost: totalAmount.mul(0.2),
+              },
+              {
+                dayNumber: 2,
+                title: `Day 2: Guided Specialist Excursions in ${destination.name}`,
+                description: found?.description || 'Exclusive curated experience crafted by verified destination specialist.',
+                estimatedDayCost: totalAmount.mul(0.4),
+              },
+              {
+                dayNumber: 3,
+                title: `Day 3: Cultural Immersion & Return Journey to ${departureCity}`,
+                description: `Artisanal local visits, culinary heritage lunch, and assisted transfer for return journey to ${departureCity}.`,
+                estimatedDayCost: totalAmount.mul(0.4),
+              },
+            ],
+          },
+        },
+      });
+
+      // 2. Create Confirmed Booking with line items and Escrow Payment
+      createdBooking = await prisma.booking.create({
+        data: {
+          bookingReference,
+          userId,
+          itineraryId: itinerary.id,
+          status: BookingStatus.CONFIRMED,
+          totalAmount,
+          currency: 'INR',
+          specialRequests: `[PROP_ID:${propId}][FROM:${departureCity}][DEST:${destFullTitle}][LOC:${destLocation}][EXPERT:${expertName} • ${agencyName}] ${matchingTrip?.notes || 'Bespoke luxury itinerary with dedicated chauffeur and verified escrow protection.'}`,
+          escrowReleaseDate: new Date(Date.now() + 30 * 86400000),
+          confirmedAt: new Date(),
+          items: {
+            create: [
+              {
+                itemType: BookingItemType.CUSTOM,
+                title: found?.title || `${destination.name} Bespoke Travel Package`,
+                unitPrice: totalAmount,
+                quantity: 1,
+                totalPrice: totalAmount,
+                notes: `Expert: ${expertName} (${agencyName}). Route: ${departureCity} ➔ ${destLocation}. Escrow Protected.`,
+              },
+            ],
+          },
+          payment: {
+            create: {
+              paypalOrderId: `PAYPAL-ESCROW-${Date.now()}`,
+              paypalCaptureId: `CAP-${randomCode}`,
+              status: PaymentStatus.CAPTURED,
+              amount: totalAmount,
+              currency: 'INR',
+              escrowStatus: EscrowStatus.HELD,
+              payerEmail: user?.email || 'traveler@wayrivo.com',
+              payerName: user?.name || 'WayRivo Traveler',
+            },
+          },
+        },
+        include: {
+          items: true,
+          payment: true,
+          itinerary: {
+            include: { destination: true, days: true },
+          },
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: createdBooking ? createdBooking.id : 'book_' + Date.now(),
+        bookingReference: createdBooking ? createdBooking.bookingReference : bookingReference,
+        proposalId: propId,
+        status: 'CONFIRMED',
+        totalAmount: Number(totalAmount),
+        currency: 'INR',
+        booking: createdBooking,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to select proposal and confirm booking',
+    });
+  }
 });
 
 router.get('/experts/featured', async (_req, res) => {

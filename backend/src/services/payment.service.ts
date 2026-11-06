@@ -94,8 +94,15 @@ export class PaymentService {
     paypalOrderId: string;
     userId: string;
     idempotencyKey?: string;
+    payerEmail?: string;
+    payerName?: string;
+    cardDetails?: {
+      cardholderName?: string;
+      cardBrand?: string;
+      last4?: string;
+    };
   }) {
-    const { bookingId, paypalOrderId, userId, idempotencyKey } = params;
+    const { bookingId, paypalOrderId, userId, idempotencyKey, payerEmail, payerName, cardDetails } = params;
 
     // 1. Idempotency Key check
     if (idempotencyKey) {
@@ -143,15 +150,27 @@ export class PaymentService {
       captureUnit?.id || `CAP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
     // 3. Atomically update DB records, lock in escrow, and decrement inventory
+    const finalPayerName = payerName || cardDetails?.cardholderName?.trim() || (captureResult.payer?.name
+      ? `${captureResult.payer.name.given_name || ''} ${captureResult.payer.name.surname || ''}`.trim()
+      : undefined);
+
+    const finalPayerEmail = payerEmail || captureResult.payer?.email_address;
+
+    const mergedCaptureData = {
+      ...captureResult,
+      paymentMethod: cardDetails ? 'CREDIT_DEBIT_CARD' : 'PAYPAL_WALLET',
+      cardDetails: cardDetails || null,
+      payerEmail: finalPayerEmail,
+      payerName: finalPayerName,
+    };
+
     const updatedPayment = await paymentRepository.recordSuccessfulCapture({
       paypalOrderId,
       paypalCaptureId,
-      payerEmail: captureResult.payer?.email_address,
-      payerName: captureResult.payer?.name
-        ? `${captureResult.payer.name.given_name || ''} ${captureResult.payer.name.surname || ''}`.trim()
-        : undefined,
+      payerEmail: finalPayerEmail,
+      payerName: finalPayerName,
       payerId: captureResult.payer?.payer_id,
-      captureData: captureResult,
+      captureData: mergedCaptureData,
       idempKey: idempotencyKey,
     });
 
@@ -254,6 +273,56 @@ export class PaymentService {
       status: booking.status,
       message:
         'Cancellation request received. In accordance with WayRivo escrow policies, an administrator will review your cancellation within 24 hours.',
+    };
+  }
+
+  /**
+   * Retrieve Genuine Verified Payment Details
+   */
+  async getPaymentDetails(paymentId: string, userId: string, isAdmin: boolean = false) {
+    const payment = await paymentRepository.findById(paymentId);
+    if (!payment) {
+      throw new NotFoundError(`Payment record not found for: ${paymentId}`);
+    }
+
+    const booking = (payment as any).booking;
+    if (!isAdmin && booking && booking.userId !== userId) {
+      throw new ForbiddenError('You are not authorized to view this payment record.');
+    }
+
+    const conversion = paypalClient.resolveTransactionCurrency(
+      payment.amount.toNumber(),
+      payment.currency
+    );
+
+    const captureData = (payment.captureData || {}) as any;
+    const paymentMethod = captureData.paymentMethod || (captureData.cardDetails ? 'CREDIT_DEBIT_CARD' : 'PAYPAL_WALLET');
+    const cardBrand = captureData.cardDetails?.cardBrand || null;
+    const cardLast4 = captureData.cardDetails?.last4 || null;
+
+    return {
+      id: payment.id,
+      bookingId: payment.bookingId,
+      bookingReference: booking?.bookingReference || 'N/A',
+      paypalOrderId: payment.paypalOrderId,
+      paypalCaptureId: payment.paypalCaptureId || 'PENDING',
+      status: payment.status,
+      escrowStatus: payment.escrowStatus,
+      paymentMethod,
+      cardBrand,
+      cardLast4,
+      amount: payment.amount.toNumber(),
+      currency: payment.currency,
+      chargeAmount: conversion.chargeAmount,
+      chargeCurrency: conversion.chargeCurrency,
+      exchangeRate: conversion.exchangeRate,
+      payerEmail: payment.payerEmail || booking?.user?.email,
+      payerName: payment.payerName || booking?.user?.name,
+      payerId: payment.payerId,
+      merchantName: 'WayRivo AI 2.0',
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+      booking,
     };
   }
 }

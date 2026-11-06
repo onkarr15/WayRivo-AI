@@ -5,6 +5,7 @@ import {
   capturePaymentOrder,
   processRefund,
   requestCancellation,
+  getPaymentById,
 } from '../controllers/payment.controller';
 import { handlePayPalWebhook } from '../webhooks/paypal.webhook';
 import { authenticate, requireRoles } from '../middleware/auth.middleware';
@@ -24,6 +25,7 @@ router.get('/config', getPaymentConfig);
 // 2. Authenticated booking order creation & server capture
 router.post('/create-order', authenticate, validate(createPaymentOrderSchema), createPaymentOrder);
 router.post('/capture-order', authenticate, validate(capturePaymentOrderSchema), capturePaymentOrder);
+router.get('/:paymentId', authenticate, getPaymentById);
 
 // 3. Administrator-controlled refund workflow (Part D)
 router.post(

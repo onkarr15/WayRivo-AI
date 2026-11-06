@@ -11,7 +11,16 @@ export const capturePaymentOrderSchema = z.object({
   bookingId: z.string().min(1, 'bookingId is required'),
   paypalOrderId: z.string().min(1, 'paypalOrderId is required'),
   idempotencyKey: z.string().min(8, 'idempotencyKey must be at least 8 characters').optional(),
-});
+  payerEmail: z.string().email().optional(),
+  payerName: z.string().optional(),
+  cardDetails: z
+    .object({
+      cardholderName: z.string().optional(),
+      cardBrand: z.string().optional(),
+      last4: z.string().optional(),
+    })
+    .optional(),
+}).passthrough();
 
 export const refundPaymentSchema = z.object({
   bookingId: z.string().optional(),

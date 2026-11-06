@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { tripRequestService, matchingService } from '../../services';
+import { useAuth } from '../../context/AuthContext';
 import {
   MapPin,
   Calendar,
@@ -16,7 +17,20 @@ import {
   ShieldCheck,
   Lightbulb,
   CheckCircle2,
+  User,
+  Mail,
+  Phone,
+  Plus,
+  Trash2,
 } from 'lucide-react';
+
+export interface TravelerInfo {
+  name: string;
+  gender: string;
+  age: string | number;
+  phone: string;
+  email: string;
+}
 
 const wizardSteps = [
   { id: 0, title: 'Destination', subtitle: 'Where to?' },
@@ -64,6 +78,7 @@ const transports = ['Private AC Innova/Cab', 'Chauffeured Luxury Sedan', 'Self-D
 
 const CreateTrip: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const destinationParam = searchParams.get('destination') || '';
   const fromLocationParam = searchParams.get('fromLocation') || '';
@@ -95,6 +110,82 @@ const CreateTrip: React.FC = () => {
     specialRequirements: '',
   });
 
+  const [travelers, setTravelers] = useState<TravelerInfo[]>(() => {
+    const list: TravelerInfo[] = [
+      {
+        name: user?.name || 'Arjun K. Sharma',
+        gender: 'Male',
+        age: 28,
+        phone: user?.phone || '+91 98765 43210',
+        email: user?.email || 'arjun@example.com',
+      },
+    ];
+    if (travelersCountParam >= 2) {
+      list.push({
+        name: 'Priya Sharma',
+        gender: 'Female',
+        age: 26,
+        phone: '+91 98765 43211',
+        email: 'priya.sharma@example.com',
+      });
+    }
+    for (let i = list.length; i < travelersCountParam; i++) {
+      list.push({
+        name: '',
+        gender: i % 2 === 1 ? 'Female' : 'Male',
+        age: '',
+        phone: '',
+        email: '',
+      });
+    }
+    return list;
+  });
+
+  const handleTravelersCountChange = (newCount: number) => {
+    const validCount = Math.max(1, newCount);
+    update('travelersCount', validCount);
+    if (validCount === 1) update('travelType', 'Solo Traveler');
+    else if (validCount === 2 && form.travelType === 'Solo Traveler') update('travelType', 'Couple');
+    else if (validCount > 2 && form.travelType === 'Solo Traveler') update('travelType', 'Family');
+
+    setTravelers(prev => {
+      if (validCount > prev.length) {
+        const added: TravelerInfo[] = [];
+        for (let i = prev.length; i < validCount; i++) {
+          added.push({
+            name: '',
+            gender: i % 2 === 1 ? 'Female' : 'Male',
+            age: '',
+            phone: '',
+            email: '',
+          });
+        }
+        return [...prev, ...added];
+      } else if (validCount < prev.length) {
+        return prev.slice(0, validCount);
+      }
+      return prev;
+    });
+  };
+
+  const handleAddTraveler = () => {
+    handleTravelersCountChange(travelers.length + 1);
+  };
+
+  const handleRemoveTraveler = (index: number) => {
+    if (travelers.length <= 1) return;
+    const updated = travelers.filter((_, i) => i !== index);
+    setTravelers(updated);
+    update('travelersCount', updated.length);
+  };
+
+  const handleUpdateTraveler = (index: number, field: keyof TravelerInfo, value: any) => {
+    setTravelers(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
 
   // Fetch live AI suggestions when destination / style changes
   useEffect(() => {
@@ -136,6 +227,13 @@ const CreateTrip: React.FC = () => {
     if (!form.destination) { setError('Please specify your destination'); setStep(0); return; }
     if (!form.budget) { setError('Please specify a target budget'); setStep(3); return; }
 
+    const missingNameIdx = travelers.findIndex(t => !t.name.trim());
+    if (missingNameIdx !== -1) {
+      setError(`Please provide the name for Traveler ${missingNameIdx + 1}`);
+      setStep(2);
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -143,6 +241,11 @@ const CreateTrip: React.FC = () => {
         budget: parseFloat(form.budget),
         interests: form.interests.join(', '),
         numberOfDays: form.numberOfDays || 5,
+        travelers: travelers,
+        primaryTraveler: travelers[0],
+        travelerName: travelers[0]?.name || 'Arjun K. Sharma',
+        travelerEmail: travelers[0]?.email || 'arjun@example.com',
+        travelerPhone: travelers[0]?.phone || '+91 98765 43210',
       };
       const res = await tripRequestService.create(payload);
       if (res.data?.success && res.data?.data?.id) {
@@ -159,6 +262,9 @@ const CreateTrip: React.FC = () => {
 
   const canProceed = () => {
     if (step === 0) return form.destination.trim().length > 0;
+    if (step === 2) {
+      return travelers.length > 0 && travelers[0].name.trim().length > 0;
+    }
     if (step === 3) return Number(form.budget) > 0;
     return true;
   };
@@ -393,7 +499,7 @@ const CreateTrip: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center font-bold">3</div>
               <div>
                 <h2 className="text-xl font-bold text-white">Who is traveling?</h2>
-                <p className="text-xs text-slate-400">Group composition helps experts tailor hotel rooms and vehicles</p>
+                <p className="text-xs text-slate-400">Specify group composition and traveler identity details</p>
               </div>
             </div>
 
@@ -405,9 +511,10 @@ const CreateTrip: React.FC = () => {
                   <input
                     type="number"
                     min="1"
+                    max="30"
                     className="input pl-10"
                     value={form.travelersCount}
-                    onChange={e => update('travelersCount', Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={e => handleTravelersCountChange(parseInt(e.target.value) || 1)}
                   />
                 </div>
               </div>
@@ -422,6 +529,148 @@ const CreateTrip: React.FC = () => {
                     <option key={t} value={t} className="bg-navy-dark text-white">{t}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            {/* Individual Traveler Details Roster */}
+            <div className="pt-4 border-t border-border space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Users className="w-4 h-4 text-cyan-400" /> Traveler Roster & Contact Information
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Please provide the Name, Gender, Age, Phone Number, and Email Address for each traveler.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddTraveler}
+                  className="btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-3 self-start sm:self-auto cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Traveler
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {travelers.map((traveler, index) => (
+                  <div
+                    key={index}
+                    className="p-4 sm:p-5 rounded-2xl bg-surface border border-border/80 hover:border-cyan-500/40 transition-all space-y-4 shadow-xs"
+                  >
+                    <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm font-bold text-white">
+                          {index === 0 ? 'Traveler 1 (Lead Traveler)' : `Traveler ${index + 1}`}
+                        </span>
+                        {index === 0 && (
+                          <span className="text-[10px] uppercase font-semibold bg-cyan-500/15 text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30">
+                            Primary Contact
+                          </span>
+                        )}
+                      </div>
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTraveler(index)}
+                          className="text-xs text-slate-400 hover:text-red-400 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+                      {/* Name */}
+                      <div className="sm:col-span-5">
+                        <label className="label text-xs">Full Name *</label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                          <input
+                            type="text"
+                            className="input pl-9 text-sm"
+                            value={traveler.name}
+                            onChange={e => handleUpdateTraveler(index, 'name', e.target.value)}
+                            placeholder="e.g. Arjun Sharma"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gender */}
+                      <div className="sm:col-span-4">
+                        <label className="label text-xs">Gender *</label>
+                        <select
+                          className="input text-sm"
+                          value={traveler.gender}
+                          onChange={e => handleUpdateTraveler(index, 'gender', e.target.value)}
+                        >
+                          <option value="Male" className="bg-navy-dark text-white">Male</option>
+                          <option value="Female" className="bg-navy-dark text-white">Female</option>
+                          <option value="Non-Binary" className="bg-navy-dark text-white">Non-Binary</option>
+                          <option value="Prefer not to say" className="bg-navy-dark text-white">Prefer not to say</option>
+                        </select>
+                      </div>
+
+                      {/* Age */}
+                      <div className="sm:col-span-3">
+                        <label className="label text-xs">Age *</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="120"
+                          className="input text-sm"
+                          value={traveler.age}
+                          onChange={e => handleUpdateTraveler(index, 'age', e.target.value)}
+                          placeholder="e.g. 28"
+                          required
+                        />
+                      </div>
+
+                      {/* Phone Number */}
+                      <div className="sm:col-span-6">
+                        <label className="label text-xs">Phone Number *</label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                          <input
+                            type="tel"
+                            className="input pl-9 text-sm"
+                            value={traveler.phone}
+                            onChange={e => handleUpdateTraveler(index, 'phone', e.target.value)}
+                            placeholder="e.g. +91 98765 43210"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Email Address */}
+                      <div className="sm:col-span-6">
+                        <label className="label text-xs">Email Address *</label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                          <input
+                            type="email"
+                            className="input pl-9 text-sm"
+                            value={traveler.email}
+                            onChange={e => handleUpdateTraveler(index, 'email', e.target.value)}
+                            placeholder="e.g. arjun@example.com"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-2.5 text-xs text-cyan-200">
+                <Lightbulb className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <span>
+                  These details will be securely shared with the certified expert you select for bookings, flight/train tickets, and local hotel concierge arrangements.
+                </span>
               </div>
             </div>
           </div>
@@ -681,6 +930,48 @@ const CreateTrip: React.FC = () => {
                   <span className="text-xs font-bold text-white mt-0.5 block">{val}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Traveler Details Review Roster */}
+            <div className="p-4 bg-surface-dark rounded-xl border border-border/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 uppercase font-semibold flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-cyan-400" /> Travelers Roster ({travelers.length} {travelers.length === 1 ? 'Traveler' : 'Travelers'})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer"
+                >
+                  Edit Travelers →
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {travelers.map((t, idx) => (
+                  <div key={idx} className="p-3 rounded-lg bg-surface border border-border text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </span>
+                        {t.name || `Traveler ${idx + 1}`}
+                      </span>
+                      <span className="text-[10px] text-slate-400 bg-surface-dark px-2 py-0.5 rounded border border-border">
+                        {t.gender || 'Not specified'}, Age {t.age || '—'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300 flex flex-col gap-1 pt-1.5 border-t border-border/50">
+                      <span className="flex items-center gap-1.5 text-slate-400">
+                        <Phone className="w-3 h-3 text-cyan-400 flex-shrink-0" /> {t.phone || 'Phone not provided'}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-slate-400 truncate">
+                        <Mail className="w-3 h-3 text-cyan-400 flex-shrink-0" /> {t.email || 'Email not provided'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {form.interests.length > 0 && (

@@ -3,6 +3,32 @@ import { Payment, PaymentStatus, EscrowStatus, BookingStatus, Prisma } from '@pr
 import { ConflictError, NotFoundError, BadRequestError } from '../utils/errors';
 
 export class PaymentRepository {
+  async findById(paymentId: string): Promise<Payment | null> {
+    return prisma.payment.findFirst({
+      where: {
+        OR: [
+          { id: paymentId },
+          { paypalOrderId: paymentId },
+          { paypalCaptureId: paymentId },
+          { bookingId: paymentId },
+        ],
+      },
+      include: {
+        booking: {
+          include: {
+            items: true,
+            itinerary: {
+              include: { destination: true, days: true },
+            },
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async findByOrderId(paypalOrderId: string): Promise<Payment | null> {
     return prisma.payment.findUnique({
       where: { paypalOrderId },
@@ -42,10 +68,20 @@ export class PaymentRepository {
     });
 
     if (existing) {
-      if (existing.paypalOrderId === paypalOrderId) {
-        return existing;
+      if (existing.status === PaymentStatus.CAPTURED) {
+        throw new ConflictError('A payment has already been captured and escrowed for this booking.');
       }
-      throw new ConflictError('A payment has already been initiated for this booking.');
+      // Re-use and update existing pending payment record with new PayPal order ID
+      return prisma.payment.update({
+        where: { id: existing.id },
+        data: {
+          paypalOrderId,
+          amount,
+          currency,
+          status: PaymentStatus.CREATED,
+          ...(idempKey && { idempKey }),
+        },
+      });
     }
 
     return prisma.payment.create({

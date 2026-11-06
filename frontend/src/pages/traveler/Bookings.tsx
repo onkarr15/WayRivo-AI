@@ -11,6 +11,7 @@ import {
   AlertCircle,
   ArrowRight,
   X,
+  PlaneTakeoff,
 } from 'lucide-react';
 import { useToast } from '../../components/ui/Toast';
 
@@ -143,18 +144,22 @@ const Bookings: React.FC = () => {
                       {b.itinerary?.title || `Reservation ${b.bookingReference}`}
                     </h3>
 
-                    <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      {b.departureLocation && (
+                        <span className="flex items-center gap-1 text-slate-300">
+                          <PlaneTakeoff className="w-3.5 h-3.5 text-cyan-400" />
+                          From: <strong className="text-white font-semibold">{b.departureLocation}</strong>
+                        </span>
+                      )}
                       <span className="flex items-center gap-1 text-slate-300">
-                        <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                        {b.itinerary?.destination?.name || 'India Circuit'}
+                        <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                        To: <strong className="text-white font-semibold">{b.destinationLocation || b.itinerary?.destination?.name || 'India'}</strong>
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {new Date(b.createdAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                        {b.itinerary?.startDate
+                          ? `Start: ${new Date(b.itinerary.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                          : `Booked: ${new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                       </span>
                       <span className="font-black text-cyan-300 text-sm">
                         ₹{Number(b.totalAmount).toLocaleString('en-IN')}

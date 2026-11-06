@@ -11,7 +11,9 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "tsx src/repositories/seed.ts"
+    "seed": "tsx src/repositories/seed.ts",
+    "test:proposal-flow": "tsx test-proposal-flow.ts",
+    "test:confirmed-booking": "tsx test-confirmed-proposal-booking.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

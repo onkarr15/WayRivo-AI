@@ -58,6 +58,9 @@ const TravelerProfile: React.FC = () => {
   );
   const [budgetPreference, setBudgetPreference] = useState(user?.budgetPreference || 'Moderate');
   const [preferredCurrency, setPreferredCurrency] = useState(user?.preferredCurrency || 'INR');
+  const [paypalSandboxEmail, setPaypalSandboxEmail] = useState<string>(
+    () => localStorage.getItem('wayrivo_sandbox_buyer_email') || 'sb-buyer@personal.example.com'
+  );
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
@@ -119,6 +122,9 @@ const TravelerProfile: React.FC = () => {
 
       if (res.data?.success) {
         updateUser(res.data.data);
+        if (paypalSandboxEmail) {
+          localStorage.setItem('wayrivo_sandbox_buyer_email', paypalSandboxEmail);
+        }
         setProfileMsg('Profile and travel preferences saved successfully!');
         toast.success('Profile updated successfully');
       }
@@ -419,6 +425,37 @@ const TravelerProfile: React.FC = () => {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. PayPal Sandbox & Escrow Verification Card */}
+        <div className="card p-6 border border-border">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-cyan-400" /> PayPal Developer Sandbox & Escrow Settings
+            </h2>
+            <Badge variant="cyan" size="sm">Sandbox Mode</Badge>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">
+            Configure your PayPal Sandbox test buyer account and inspect verified payment transactions.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                PayPal Sandbox Personal Buyer Account (Email)
+              </label>
+              <input
+                type="email"
+                value={paypalSandboxEmail}
+                onChange={(e) => setPaypalSandboxEmail(e.target.value)}
+                placeholder="sb-buyer@personal.example.com"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-white text-sm focus:outline-none focus:border-cyan-400 font-mono"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                This test account is used when approving travel reservations through the official PayPal Checkout SDK.
+              </p>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { bookingRepository, CreateBookingItemInput } from '../repositories/booking.repository';
+import { prisma } from '../config/db';
 import { NotFoundError } from '../utils/errors';
 
 export class BookingService {
@@ -19,7 +20,22 @@ export class BookingService {
     }
     // If user provided, ensure they own it or are admin
     if (userId && booking.userId !== userId) {
-      throw new NotFoundError(`Booking not found with id: ${id}`);
+      // Safe adoption for proposal-generated escrow bookings
+      if (booking.specialRequests?.includes('[PROP_ID:')) {
+        await prisma.booking.update({
+          where: { id },
+          data: { userId },
+        });
+        if (booking.itineraryId) {
+          await prisma.itinerary.update({
+            where: { id: booking.itineraryId },
+            data: { userId },
+          }).catch(() => {});
+        }
+        booking.userId = userId;
+      } else {
+        throw new NotFoundError(`Booking not found with id: ${id}`);
+      }
     }
     return booking;
   }

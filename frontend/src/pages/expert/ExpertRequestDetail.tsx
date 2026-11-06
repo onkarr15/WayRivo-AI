@@ -18,7 +18,8 @@ const ExpertRequestDetail: React.FC = () => {
   });
 
   useEffect(() => {
-    tripRequestService.getById(Number(id)).then(r => setRequest(r.data?.data)).catch(() => {}).finally(() => setLoading(false));
+    if (!id) return;
+    tripRequestService.getById(id).then(r => setRequest(r.data?.data)).catch(() => {}).finally(() => setLoading(false));
   }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +28,8 @@ const ExpertRequestDetail: React.FC = () => {
     setSubmitting(true);
     try {
       const payload = {
-        ...form, tripRequestId: Number(id),
+        ...form,
+        tripRequestId: id,
         totalPrice: parseFloat(form.totalPrice),
         pricePerPerson: form.pricePerPerson ? parseFloat(form.pricePerPerson) : null,
         validityDate: form.validityDate || null,

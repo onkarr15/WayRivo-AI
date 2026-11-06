@@ -1,4 +1,6 @@
 /// <reference types="node" />
+import { prisma } from './src/config/db';
+import crypto from 'crypto';
 
 async function runTests() {
   const baseUrl = 'http://localhost:8085/api/v1';
@@ -146,8 +148,6 @@ async function runTests() {
 
     // Secure design: reset token is NEVER returned in response.
     // For automated test verification, generate test token in database:
-    const { prisma } = await import('./src/config/db.js');
-    const crypto = await import('crypto');
     const user = await prisma.user.findUnique({ where: { email: testEmail } });
     if (!user) throw new Error('Test user not found in database');
 

@@ -27,7 +27,21 @@ const MyRequests: React.FC = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    const interval = setInterval(() => {
+      tripRequestService.getMy(page, 10).then(res => {
+        const data = res.data?.data;
+        if (data?.content) {
+          setRequests(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(data.content)) {
+              return data.content;
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [fetchRequests, page]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin" /></div>;
 
