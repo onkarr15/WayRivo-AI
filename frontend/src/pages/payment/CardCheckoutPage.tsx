@@ -15,6 +15,8 @@ import {
 import { bookingService, paymentService, itineraryIntelligenceService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
+import { PaymentCountdownTimer } from '../../components/payment/PaymentCountdownTimer';
+import { PaymentProcessingOverlay } from '../../components/payment/PaymentProcessingOverlay';
 
 interface TestCardPreset {
   label: string;
@@ -64,6 +66,10 @@ export const CardCheckoutPage: React.FC = () => {
   const [submitStage, setSubmitStage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
+  // 6-Minute Payment Countdown Session State
+  const [paymentSession, setPaymentSession] = useState<any>(null);
+  const [isSessionExpired, setIsSessionExpired] = useState<boolean>(false);
+
   // Form Fields
   const [cardholderName, setCardholderName] = useState<string>('');
   const [cardNumber, setCardNumber] = useState<string>('');
@@ -85,7 +91,7 @@ export const CardCheckoutPage: React.FC = () => {
 
   const currentBrand = detectCardBrand(cardNumber);
 
-  // Load Booking Details (with Itinerary Fallback)
+  // Load Booking Details & Authoritative 6-Minute Payment Session
   useEffect(() => {
     let isMounted = true;
     if (!bookingId) return;
@@ -93,17 +99,11 @@ export const CardCheckoutPage: React.FC = () => {
     const targetId = bookingId;
     async function loadBookingOrItinerary() {
       setLoading(true);
+      let loadedBooking: any = null;
       try {
         const bRes = await bookingService.getById(targetId);
         if (bRes.data?.data) {
-          const b = bRes.data.data;
-          if (isMounted) {
-            setBooking(b);
-            if (b?.user?.name || user?.name) {
-              setCardholderName(b?.user?.name || user?.name || '');
-            }
-          }
-          return;
+          loadedBooking = bRes.data.data;
         }
       } catch {
         // Fallback: If passed an itinerary ID, auto-resolve or create pending booking
@@ -115,14 +115,7 @@ export const CardCheckoutPage: React.FC = () => {
               itineraryId: itin.id,
               specialRequests: `Itinerary: ${itin.title}. Travelers: ${itin.travelersCount}`,
             });
-            const b = newBookingRes.data?.data;
-            if (isMounted) {
-              setBooking(b);
-              if (b?.user?.name || user?.name) {
-                setCardholderName(b?.user?.name || user?.name || '');
-              }
-            }
-            return;
+            loadedBooking = newBookingRes.data?.data;
           }
         } catch (err) {
           console.error('Failed to load booking or itinerary for card checkout:', err);
@@ -130,9 +123,32 @@ export const CardCheckoutPage: React.FC = () => {
             setError('Unable to load booking details for payment processing.');
           }
         }
-      } finally {
-        if (isMounted) setLoading(false);
       }
+
+      if (loadedBooking && isMounted) {
+        setBooking(loadedBooking);
+        if (loadedBooking?.user?.name || user?.name) {
+          setCardholderName(loadedBooking?.user?.name || user?.name || '');
+        }
+
+        // Initialize or resume authoritative 6-minute payment session
+        try {
+          const sessionRes = await paymentService.createSession({ bookingId: loadedBooking.id });
+          if (sessionRes.data?.data && isMounted) {
+            const s = sessionRes.data.data;
+            setPaymentSession(s);
+            if (s.remainingSeconds === 0 || s.status === 'EXPIRED') {
+              setIsSessionExpired(true);
+            } else {
+              setIsSessionExpired(false);
+            }
+          }
+        } catch (sErr) {
+          console.error('Failed to initialize 6-minute payment session:', sErr);
+        }
+      }
+
+      if (isMounted) setLoading(false);
     }
 
     loadBookingOrItinerary();
@@ -141,6 +157,41 @@ export const CardCheckoutPage: React.FC = () => {
       isMounted = false;
     };
   }, [bookingId, user]);
+
+  // Handle Session Expiration
+  const handleExpire = async () => {
+    setIsSessionExpired(true);
+    const effectiveBookingId = booking?.id || bookingId;
+    if (effectiveBookingId) {
+      try {
+        await paymentService.expireSession({ bookingId: effectiveBookingId });
+      } catch (err) {
+        console.warn('Backend expire call:', err);
+      }
+    }
+    toast.error('Payment session has expired. Booking reservation released.');
+  };
+
+  // Handle Start New Payment (Renews 6-Minute Session)
+  const handleRestart = async () => {
+    const effectiveBookingId = booking?.id || bookingId;
+    if (!effectiveBookingId) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const sessionRes = await paymentService.createSession({ bookingId: effectiveBookingId });
+      if (sessionRes.data?.data) {
+        setPaymentSession(sessionRes.data.data);
+        setIsSessionExpired(false);
+        toast.success('New 6-minute payment session initiated.');
+      }
+    } catch (err: any) {
+      console.error('Failed to restart payment session:', err);
+      toast.error('Unable to renew payment session. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Format Card Number (with spaces every 4 digits)
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,6 +229,12 @@ export const CardCheckoutPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
+    if (isSessionExpired) {
+      setError('Your 6-minute payment session has expired. Click "Start New Payment" above to renew.');
+      toast.error('Payment session has expired. Please restart your session.');
+      return;
+    }
+
     // Validation
     const cleanNum = cardNumber.replace(/\s+/g, '');
     if (!cardholderName.trim()) {
@@ -213,11 +270,14 @@ export const CardCheckoutPage: React.FC = () => {
       return;
     }
 
+    const processingStartTime = Date.now();
+    const TARGET_MIN_DISPLAY_MS = 5500;
+
     try {
       setSubmitting(true);
 
       // Step 1: Initialize PayPal Order
-      setSubmitStage('Initializing Secure PayPal Order...');
+      setSubmitStage('Waiting For The Successful Transaction...');
       const orderRes = await paymentService.createOrder({
         bookingId: effectiveBookingId,
         returnUrl: `${window.location.origin}/payment/success?bookingId=${effectiveBookingId}`,
@@ -230,7 +290,7 @@ export const CardCheckoutPage: React.FC = () => {
       }
 
       // Step 2: Capture Order with Verified Card Details
-      setSubmitStage('Verifying Card & Capturing into WayRivo Escrow...');
+      setSubmitStage('Waiting For The Successful Transaction...');
       const idempotencyKey = `card-${Date.now()}-${effectiveBookingId}`;
       const captureRes = await paymentService.captureOrder({
         bookingId: effectiveBookingId,
@@ -244,6 +304,14 @@ export const CardCheckoutPage: React.FC = () => {
       });
 
       const result = captureRes.data?.data;
+
+      // Enforce 5–6 seconds minimum display duration
+      const elapsedMs = Date.now() - processingStartTime;
+      const remainingWaitMs = Math.max(0, TARGET_MIN_DISPLAY_MS - elapsedMs);
+      if (remainingWaitMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remainingWaitMs));
+      }
+
       toast.success(
         result?.message || 'Payment successfully captured into WayRivo Escrow!'
       );
@@ -283,6 +351,14 @@ export const CardCheckoutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+      {/* 5–6 Second Payment Processing Overlay */}
+      <PaymentProcessingOverlay
+        isOpen={submitting}
+        amount={totalAmountUSD}
+        currency="USD"
+        stageMessage="Waiting For The Successful Transaction..."
+      />
+
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Navigation & Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
@@ -312,10 +388,23 @@ export const CardCheckoutPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
               <ShieldCheck className="w-4 h-4" />
-              <span className="font-bold">256-Bit SSL Encrypted</span>
+              <span className="font-bold">Sandbox Protected</span>
             </div>
           </div>
         </div>
+
+        {/* Server-Authoritative 6-Minute Payment Countdown Timer Banner */}
+        {paymentSession?.expiresAt && (
+          <PaymentCountdownTimer
+            expiresAt={paymentSession.expiresAt}
+            isExpired={isSessionExpired}
+            onExpire={handleExpire}
+            onRestart={handleRestart}
+            onReturnToBooking={() =>
+              navigate(`/traveler/booking-confirmation/${booking?.id || bookingId}`)
+            }
+          />
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -324,7 +413,7 @@ export const CardCheckoutPage: React.FC = () => {
             <div className="flex-1">
               <p className="font-bold">{error}</p>
               <p className="text-[11px] text-rose-400/80 mt-1">
-                Verify your card credentials or select one of the sandbox test card chips below.
+                Verify your card details or select one of the sandbox test card chips below.
               </p>
             </div>
             <button
@@ -522,13 +611,18 @@ export const CardCheckoutPage: React.FC = () => {
               <div className="pt-3">
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full py-4 px-6 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={submitting || isSessionExpired}
+                  className="w-full py-4 px-6 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
                       <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
                       <span>{submitStage || 'Processing Transaction...'}</span>
+                    </>
+                  ) : isSessionExpired ? (
+                    <>
+                      <AlertCircle className="w-4 h-4 text-rose-950" />
+                      <span>Payment Session Expired — Please Restart Session</span>
                     </>
                   ) : (
                     <>

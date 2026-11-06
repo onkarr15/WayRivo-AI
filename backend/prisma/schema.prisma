@@ -42,6 +42,8 @@ enum PaymentStatus {
   RELEASED
   REFUNDED
   FAILED
+  EXPIRED
+  CANCELLED
 }
 
 enum EscrowStatus {
@@ -428,29 +430,38 @@ model BookingItem {
 // 12. PAYMENT
 // -------------------------------------------------------------
 model Payment {
-  id              String        @id @default(cuid())
-  bookingId       String        @unique
-  paypalOrderId   String        @unique
-  paypalCaptureId String?       @unique
-  status          PaymentStatus @default(CREATED)
-  amount          Decimal       @db.Decimal(10, 2)
-  currency        String        @default("INR")
-  payerEmail      String?
-  payerName       String?
-  payerId         String?
-  escrowStatus    EscrowStatus  @default(HELD)
-  idempKey        String?       @unique
-  captureData     Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                     String        @id @default(cuid())
+  wayrivoTransactionId   String?       @unique
+  paymentSessionId       String?       @unique
+  bookingId              String        @unique
+  paypalOrderId          String        @unique
+  paypalCaptureId        String?       @unique
+  status                 PaymentStatus @default(CREATED)
+  amount                 Decimal       @db.Decimal(10, 2)
+  currency               String        @default("INR")
+  payerEmail             String?
+  payerName              String?
+  payerId                String?
+  paymentProvider        String?       @default("PayPal Sandbox")
+  escrowStatus           EscrowStatus  @default(HELD)
+  idempKey               String?       @unique
+  startedAt              DateTime?     @default(now())
+  expiresAt              DateTime?
+  transactionCompletedAt DateTime?
+  captureData            Json?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 
   // Relations
   booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
+  @@index([wayrivoTransactionId])
   @@index([paypalOrderId])
   @@index([paypalCaptureId])
+  @@index([paymentSessionId])
   @@index([status])
   @@index([idempKey])
+  @@index([expiresAt])
 }
 
 // -------------------------------------------------------------

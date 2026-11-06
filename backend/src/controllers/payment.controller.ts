@@ -13,6 +13,41 @@ export const getPaymentConfig = async (req: Request, res: Response, next: NextFu
   }
 };
 
+export const createPaymentSession = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await paymentService.createPaymentSession({
+      bookingId: req.body.bookingId,
+      userId: req.user!.id,
+    });
+    sendCreated(res, result, '6-minute payment session initialized successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPaymentSession = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const sessionId = req.params.sessionId;
+    const result = await paymentService.getPaymentSession(sessionId, req.user!.id);
+    sendSuccess(res, result, 'Active payment session retrieved');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const expirePaymentSession = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await paymentService.expirePaymentSession({
+      sessionId: req.body.sessionId || (req.params as any).sessionId,
+      bookingId: req.body.bookingId,
+      userId: req.user!.id,
+    });
+    sendSuccess(res, result, result.message);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createPaymentOrder = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const result = await paymentService.createPaymentOrder({
@@ -89,6 +124,16 @@ export const getPaymentById = async (req: AuthRequest, res: Response, next: Next
     const isAdmin = req.user?.role === 'ADMIN';
     const result = await paymentService.getPaymentDetails(req.params.paymentId, req.user!.id, isAdmin);
     sendSuccess(res, result, 'Verified PayPal payment details retrieved');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPaymentReceipt = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const isAdmin = req.user?.role === 'ADMIN';
+    const result = await paymentService.getPaymentReceipt(req.params.paymentId, req.user!.id, isAdmin);
+    sendSuccess(res, result, 'Verified payment receipt retrieved successfully');
   } catch (error) {
     next(error);
   }

@@ -15,9 +15,11 @@ const MainLayout: React.FC = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-navy-dark">
-      <Navbar />
-      <main className={`flex-1 ${location.pathname === '/' ? 'pt-0' : 'pt-24'}`}>
+    <div className="min-h-screen flex flex-col bg-navy-dark print:bg-white print:min-h-0 print:block">
+      <div className="print:hidden">
+        <Navbar />
+      </div>
+      <main className={`flex-1 ${location.pathname === '/' ? 'pt-0' : 'pt-24'} print:pt-0 print:p-0 print:m-0`}>
         <motion.div
           key={location.pathname}
           initial={{ opacity: 1 }}
@@ -26,7 +28,9 @@ const MainLayout: React.FC = () => {
           <Outlet />
         </motion.div>
       </main>
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   );
 };

@@ -220,12 +220,13 @@ export class BookingRepository {
     });
   }
 
-  async updateStatus(bookingId: string, status: BookingStatus, confirmedAt?: Date) {
+  async updateStatus(bookingId: string, status: BookingStatus, confirmedAt?: Date, specialRequests?: string) {
     return prisma.booking.update({
       where: { id: bookingId },
       data: {
         status,
         ...(confirmedAt && { confirmedAt }),
+        ...(specialRequests && { specialRequests }),
       },
     });
   }

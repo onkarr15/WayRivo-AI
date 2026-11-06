@@ -20,6 +20,146 @@ export class PaymentService {
   }
 
   /**
+   * Create or Retrieve Server-Authoritative 6-Minute Payment Session
+   */
+  async createPaymentSession(params: {
+    bookingId: string;
+    userId: string;
+    sessionTtlMinutes?: number;
+  }) {
+    const { bookingId, userId, sessionTtlMinutes = 6 } = params;
+
+    const booking = await bookingRepository.findById(bookingId);
+    if (!booking) {
+      throw new NotFoundError(`Booking not found with id: ${bookingId}`);
+    }
+
+    if (booking.userId !== userId) {
+      throw new ForbiddenError('You are not authorized to create a payment session for this booking.');
+    }
+
+    if (booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.ESCROW_HOLD) {
+      throw new BadRequestError('This booking is already paid and confirmed under WayRivo escrow protection.');
+    }
+
+    if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REFUNDED) {
+      throw new BadRequestError('Cannot initiate payment for a cancelled or refunded booking.');
+    }
+
+    const sessionResult = await paymentRepository.createOrGetPaymentSession({
+      bookingId: booking.id,
+      amount: booking.totalAmount,
+      currency: booking.currency,
+      sessionTtlMinutes,
+    });
+
+    return {
+      paymentSessionId: sessionResult.payment.paymentSessionId || sessionResult.payment.id,
+      bookingId: booking.id,
+      bookingReference: booking.bookingReference,
+      userId,
+      startedAt: sessionResult.payment.startedAt,
+      expiresAt: sessionResult.payment.expiresAt,
+      remainingSeconds: sessionResult.remainingSeconds,
+      status: sessionResult.payment.status,
+      totalAmount: booking.totalAmount,
+      currency: booking.currency,
+      isExisting: sessionResult.isExisting,
+    };
+  }
+
+  /**
+   * Get Server-Authoritative Payment Session Status & Accurate Remaining Time
+   */
+  async getPaymentSession(sessionIdOrBookingId: string, userId: string) {
+    const payment = await paymentRepository.findBySessionId(sessionIdOrBookingId);
+    if (!payment) {
+      throw new NotFoundError(`Payment session not found for identifier: ${sessionIdOrBookingId}`);
+    }
+
+    const booking = (payment as any).booking;
+    if (booking && booking.userId !== userId) {
+      throw new ForbiddenError('You are not authorized to inspect this payment session.');
+    }
+
+    const now = new Date();
+    const expiresAt = payment.expiresAt ? new Date(payment.expiresAt) : new Date(now.getTime() + 6 * 60 * 1000);
+    let remainingSeconds = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+    let currentStatus = payment.status;
+
+    // Automatically transition to EXPIRED on server if past deadline and not captured
+    if ((remainingSeconds === 0 || currentStatus === PaymentStatus.EXPIRED) && currentStatus !== PaymentStatus.CAPTURED) {
+      if (currentStatus !== PaymentStatus.EXPIRED) {
+        await paymentRepository.expirePaymentSession({ sessionId: payment.paymentSessionId || payment.id });
+        currentStatus = PaymentStatus.EXPIRED;
+      }
+      remainingSeconds = 0;
+    }
+
+    return {
+      paymentSessionId: payment.paymentSessionId || payment.id,
+      bookingId: payment.bookingId,
+      bookingReference: booking?.bookingReference,
+      userId,
+      startedAt: payment.startedAt,
+      expiresAt,
+      remainingSeconds,
+      status: currentStatus,
+      totalAmount: payment.amount,
+      currency: payment.currency,
+      isCaptured: currentStatus === PaymentStatus.CAPTURED,
+    };
+  }
+
+  /**
+   * Safely Mark Payment Session as Expired
+   * Protects already completed captures.
+   */
+  async expirePaymentSession(params: {
+    sessionId?: string;
+    bookingId?: string;
+    userId: string;
+  }) {
+    const { sessionId, bookingId, userId } = params;
+    const targetId = sessionId || bookingId;
+    if (!targetId) {
+      throw new BadRequestError('Either sessionId or bookingId is required to expire session.');
+    }
+
+    const payment = await paymentRepository.findBySessionId(targetId);
+    if (!payment) {
+      throw new NotFoundError(`Payment session not found for id: ${targetId}`);
+    }
+
+    const booking = (payment as any).booking;
+    if (booking && booking.userId !== userId) {
+      throw new ForbiddenError('Unauthorized attempt to expire another user session.');
+    }
+
+    // Never expire a captured payment!
+    if (payment.status === PaymentStatus.CAPTURED) {
+      return {
+        paymentSessionId: payment.paymentSessionId || payment.id,
+        bookingId: payment.bookingId,
+        status: PaymentStatus.CAPTURED,
+        message: 'Payment has already been captured and locked in escrow; cannot expire.',
+      };
+    }
+
+    const expiredPayment = await paymentRepository.expirePaymentSession({
+      sessionId: payment.paymentSessionId || undefined,
+      bookingId: payment.bookingId,
+    });
+
+    return {
+      paymentSessionId: expiredPayment?.paymentSessionId || payment.paymentSessionId,
+      bookingId: payment.bookingId,
+      status: PaymentStatus.EXPIRED,
+      message: 'Payment session has expired. Booking reservation released.',
+    };
+  }
+
+  /**
    * Initiate PayPal Order for Booking
    * Validates booking, prevents duplicate orders, handles currency conversion if needed.
    */
@@ -52,6 +192,18 @@ export class PaymentService {
     const existingPayment = await paymentRepository.findByBookingId(bookingId);
     if (existingPayment && existingPayment.status === PaymentStatus.CAPTURED) {
       throw new BadRequestError('This booking has already been paid and captured.');
+    }
+
+    if (
+      existingPayment &&
+      (existingPayment.status === PaymentStatus.EXPIRED ||
+        (existingPayment.expiresAt && new Date() > new Date(existingPayment.expiresAt))) &&
+      existingPayment.status !== PaymentStatus.CAPTURED
+    ) {
+      await paymentRepository.expirePaymentSession({ bookingId });
+      throw new BadRequestError(
+        'Payment session has expired. The 6-minute window has closed. Please initiate a new payment session.'
+      );
     }
 
     // Call PayPal Orders v2 API with currency conversion support
@@ -127,7 +279,9 @@ export class PaymentService {
     }
 
     // Check if payment was already captured (Prevent double captures)
-    const existingPayment = await paymentRepository.findByOrderId(paypalOrderId);
+    const existingPayment =
+      (await paymentRepository.findByOrderId(paypalOrderId)) ||
+      (await paymentRepository.findByBookingId(bookingId));
     if (existingPayment && existingPayment.status === PaymentStatus.CAPTURED) {
       return {
         payment: existingPayment,
@@ -135,6 +289,19 @@ export class PaymentService {
         bookingStatus: BookingStatus.ESCROW_HOLD,
         message: 'Order already captured. Returning verified receipt.',
       };
+    }
+
+    // Server-Authoritative Expiration Guard: Reject captures for expired sessions
+    if (
+      existingPayment &&
+      (existingPayment.status === PaymentStatus.EXPIRED ||
+        (existingPayment.expiresAt && new Date() > new Date(existingPayment.expiresAt))) &&
+      existingPayment.status !== PaymentStatus.CAPTURED
+    ) {
+      await paymentRepository.expirePaymentSession({ bookingId });
+      throw new BadRequestError(
+        'Payment session has expired. The 6-minute window has closed. You cannot capture an expired session. Please initiate a new payment session.'
+      );
     }
 
     // 2. Capture payment through PayPal Orders API
@@ -176,6 +343,7 @@ export class PaymentService {
 
     return {
       payment: updatedPayment,
+      wayrivoTransactionId: updatedPayment.wayrivoTransactionId,
       bookingReference: booking.bookingReference,
       bookingStatus: BookingStatus.ESCROW_HOLD,
       captureId: paypalCaptureId,
@@ -198,7 +366,10 @@ export class PaymentService {
 
     let payment = null;
     if (paymentId) {
-      payment = await paymentRepository.findByOrderId(paymentId);
+      payment = await paymentRepository.findById(paymentId);
+      if (!payment) {
+        payment = await paymentRepository.findByOrderId(paymentId);
+      }
       if (!payment) {
         payment = await paymentRepository.findByBookingId(paymentId);
       }
@@ -265,7 +436,7 @@ export class PaymentService {
     const note = `[Cancellation Requested on ${new Date().toISOString()}] Reason: ${reason || 'Traveler requested cancellation'}`;
     const updatedSpecialRequests = booking.specialRequests ? `${booking.specialRequests}\n${note}` : note;
 
-    await bookingRepository.updateStatus(bookingId, booking.status);
+    await bookingRepository.updateStatus(bookingId, booking.status, undefined, updatedSpecialRequests);
 
     return {
       success: true,
@@ -300,12 +471,30 @@ export class PaymentService {
     const cardBrand = captureData.cardDetails?.cardBrand || null;
     const cardLast4 = captureData.cardDetails?.last4 || null;
 
+    const completedAt = payment.transactionCompletedAt || payment.createdAt;
+    const dateIST = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(completedAt));
+
+    const timeIST = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(new Date(completedAt)) + ' IST';
+
     return {
       id: payment.id,
+      wayrivoTransactionId: payment.wayrivoTransactionId || null,
       bookingId: payment.bookingId,
       bookingReference: booking?.bookingReference || 'N/A',
       paypalOrderId: payment.paypalOrderId,
       paypalCaptureId: payment.paypalCaptureId || 'PENDING',
+      paymentProvider: payment.paymentProvider || 'PayPal Sandbox',
       status: payment.status,
       escrowStatus: payment.escrowStatus,
       paymentMethod,
@@ -320,9 +509,104 @@ export class PaymentService {
       payerName: payment.payerName || booking?.user?.name,
       payerId: payment.payerId,
       merchantName: 'WayRivo AI 2.0',
+      transactionCompletedAt: completedAt,
+      formattedDateIST: dateIST,
+      formattedTimeIST: timeIST,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
       booking,
+    };
+  }
+
+  /**
+   * Retrieve Official Verified Payment Receipt
+   * Strict verification: Only allowed for CAPTURED payments.
+   */
+  async getPaymentReceipt(paymentIdOrSessionOrOrderId: string, userId: string, isAdmin: boolean = false) {
+    const payment = await paymentRepository.findById(paymentIdOrSessionOrOrderId);
+    if (!payment) {
+      throw new NotFoundError(`Payment record not found for receipt: ${paymentIdOrSessionOrOrderId}`);
+    }
+
+    const booking = (payment as any).booking;
+    if (!isAdmin && booking && booking.userId !== userId) {
+      throw new ForbiddenError('You are not authorized to access this payment receipt.');
+    }
+
+    if (payment.status !== PaymentStatus.CAPTURED) {
+      throw new BadRequestError(
+        `Receipt unavailable. Payment is currently in ${payment.status} status. Only verified and completed payments have official receipts.`
+      );
+    }
+
+    const conversion = paypalClient.resolveTransactionCurrency(
+      payment.amount.toNumber(),
+      payment.currency
+    );
+
+    const captureData = (payment.captureData || {}) as any;
+    const paymentMethod = captureData.paymentMethod || (captureData.cardDetails ? 'CREDIT_DEBIT_CARD' : 'PAYPAL_WALLET');
+    const cardBrand = captureData.cardDetails?.cardBrand || null;
+    const cardLast4 = captureData.cardDetails?.last4 || null;
+
+    const completedAt = payment.transactionCompletedAt || payment.createdAt;
+    const dateIST = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(completedAt));
+
+    const timeIST = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(new Date(completedAt)) + ' IST';
+
+    return {
+      receiptNumber: `RCP-${payment.wayrivoTransactionId || payment.id.substring(0, 10).toUpperCase()}`,
+      wayrivoTransactionId: payment.wayrivoTransactionId,
+      paypalCaptureId: payment.paypalCaptureId,
+      paypalOrderId: payment.paypalOrderId,
+      paymentStatus: 'VERIFIED & COMPLETED',
+      rawStatus: payment.status,
+      escrowStatus: payment.escrowStatus,
+      paymentMethod,
+      cardBrand,
+      cardLast4,
+      amount: payment.amount.toNumber(),
+      currency: payment.currency,
+      chargeAmount: conversion.chargeAmount,
+      chargeCurrency: conversion.chargeCurrency,
+      exchangeRate: conversion.exchangeRate,
+      sender: {
+        fullName: payment.payerName || booking?.user?.name || 'Verified Traveler',
+        email: payment.payerEmail || booking?.user?.email || 'N/A',
+        userReference: booking?.userId || null,
+      },
+      merchant: {
+        name: 'WayRivo AI 2.0',
+        platform: 'Intelligent Travel Platform & Escrow Vault',
+        paymentProvider: payment.paymentProvider || 'PayPal Sandbox',
+        gateway: 'PayPal Developer Sandbox',
+      },
+      booking: {
+        id: booking?.id || payment.bookingId,
+        reference: booking?.bookingReference || 'N/A',
+        status: 'Confirmed',
+        escrowStatus: payment.escrowStatus,
+        escrowReleaseDate: booking?.escrowReleaseDate || null,
+        itineraryTitle: booking?.itinerary?.title || 'Custom Tour Package',
+        destination: booking?.itinerary?.destination?.name || 'Custom Destination',
+      },
+      timestamps: {
+        completedAtUTC: completedAt,
+        transactionDateIST: dateIST,
+        transactionTimeIST: timeIST,
+        receiptGeneratedAtUTC: new Date(),
+      },
     };
   }
 }

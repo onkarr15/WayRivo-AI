@@ -61,10 +61,10 @@ const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-navy-dark text-slate-100 flex">
+    <div className="min-h-screen bg-navy-dark text-slate-100 flex print:bg-white print:text-black print:min-h-0 print:block">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-navy border-r border-border/80 text-white transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-navy border-r border-border/80 text-white transform transition-transform duration-300 lg:translate-x-0 print:hidden ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -136,14 +136,14 @@ const DashboardLayout: React.FC = () => {
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-navy-dark/80 backdrop-blur-md z-30 lg:hidden"
+          className="fixed inset-0 bg-navy-dark/80 backdrop-blur-md z-30 lg:hidden print:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Workspace Area */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 bg-navy-dark">
-        <header className="sticky top-0 z-20 bg-navy-dark/80 backdrop-blur-xl border-b border-border/80 h-20 flex items-center px-4 sm:px-8">
+      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 bg-navy-dark print:ml-0 print:bg-white print:block">
+        <header className="sticky top-0 z-20 bg-navy-dark/80 backdrop-blur-xl border-b border-border/80 h-20 flex items-center px-4 sm:px-8 print:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-white rounded-xl"
@@ -165,7 +165,7 @@ const DashboardLayout: React.FC = () => {
           </div>
         </header>
 
-        <main className="p-4 sm:p-6 lg:p-8 flex-1">
+        <main className="p-4 sm:p-6 lg:p-8 flex-1 print:p-0 print:m-0 print:max-w-none">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 1 }}

@@ -96,8 +96,20 @@ const BookingConfirmationPage: React.FC = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (isPaid) {
+      navigate(`/payment/success?bookingId=${booking?.id}&paymentId=${booking?.payment?.id || booking?.payment?.paypalCaptureId || ''}&autoPrint=true`);
+    } else {
+      window.print();
+    }
   };
+
+  const isPaid = Boolean(
+    booking && (
+      booking.status === 'CONFIRMED' ||
+      booking.status === 'ESCROW_HOLD' ||
+      booking.payment?.status === 'CAPTURED'
+    )
+  );
 
   if (loading) {
     return (
@@ -124,11 +136,6 @@ const BookingConfirmationPage: React.FC = () => {
       </div>
     );
   }
-
-  const isPaid =
-    booking.status === 'CONFIRMED' ||
-    booking.status === 'ESCROW_HOLD' ||
-    booking.payment?.status === 'CAPTURED';
 
   const exchangeRate = payPalConfig?.exchangeRate || 83.5;
   const chargeCurrency = payPalConfig?.currency || 'USD';
@@ -188,19 +195,19 @@ const BookingConfirmationPage: React.FC = () => {
   const trip = getTripDetails();
 
   return (
-    <div className="max-w-5xl mx-auto pt-24 pb-20 px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto pt-24 pb-20 px-4 sm:px-6 print:pt-4 print:pb-4 print:px-0 print:max-w-none print:w-full">
       {/* 1. Status Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 mb-3">
+      <div className="text-center mb-8 print:mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 mb-3 print:hidden">
           <ShieldCheck className="w-4 h-4 text-cyan-400" /> PayPal Developer Sandbox Protected
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          {isPaid ? 'Booking Confirmed & Escrow Secured' : 'Review & Complete Your Booking'}
+        <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight print:text-2xl print:text-slate-900">
+          {isPaid ? 'Booking Confirmed & Escrow Secured' : 'Booking Reservation Summary'}
         </h1>
 
-        <p className="text-xs text-slate-400 mt-1">
-          Booking Reference: <span className="font-mono font-bold text-cyan-400">{booking.bookingReference}</span>
+        <p className="text-xs text-slate-400 mt-1 print:text-slate-600">
+          Booking Reference: <span className="font-mono font-bold text-cyan-400 print:text-slate-900">{booking.bookingReference}</span>
         </p>
       </div>
 
@@ -547,7 +554,7 @@ const BookingConfirmationPage: React.FC = () => {
         )}
 
         {/* 5. Currency Conversion & Sandbox Price Breakdown Box */}
-        <div className="my-6 p-5 rounded-2xl bg-cyan-950/20 border border-cyan-800/40 text-xs space-y-3">
+        <div className="my-6 p-5 rounded-2xl bg-cyan-950/20 border border-cyan-800/40 text-xs space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-cyan-400" />
@@ -578,7 +585,7 @@ const BookingConfirmationPage: React.FC = () => {
         </div>
 
         {/* 6. Cancellation Conditions Accordion */}
-        <div className="my-6 p-4 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs space-y-3">
+        <div className="my-6 p-4 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs space-y-3 print:hidden">
           <div className="flex items-center gap-2 text-white font-bold">
             <Info className="w-4 h-4 text-cyan-400" />
             <span>Cancellation Policy & Escrow Terms</span>
@@ -611,7 +618,7 @@ const BookingConfirmationPage: React.FC = () => {
 
         {/* 7. PayPal Checkout Execution */}
         {!isPaid ? (
-          <div className="my-6">
+          <div className="my-6 print:hidden">
             <PayPalCheckoutButton
               bookingId={booking.id}
               amount={booking.totalAmount}
@@ -690,7 +697,7 @@ const BookingConfirmationPage: React.FC = () => {
             onClick={handlePrint}
             className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
           >
-            <Printer className="w-4 h-4" /> Print / Save PDF Receipt
+            <Printer className="w-4 h-4" /> {isPaid ? 'Print / Save PDF Receipt' : 'Print Booking Summary'}
           </button>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">

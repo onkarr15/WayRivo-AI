@@ -317,7 +317,7 @@ const RegisterPage: React.FC = () => {
           {/* Escrow badge */}
           <div className="mt-6 pt-5 border-t border-border/80 flex items-center justify-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Protected by WayRivo Escrow & 256-bit SSL encryption</span>
+            <span>Protected by WayRivo Escrow Guarantee</span>
           </div>
         </div>
 

@@ -59,8 +59,8 @@ const LoginPage: React.FC = () => {
             role === 'ADMIN'
               ? '/admin/dashboard'
               : role === 'EXPERT'
-              ? '/expert/dashboard'
-              : '/traveler/dashboard';
+                ? '/expert/dashboard'
+                : '/traveler/dashboard';
           navigate(target, { replace: true });
         }
       } else {
@@ -69,8 +69,8 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       setError(
         err.response?.data?.error ||
-          err.response?.data?.message ||
-          'Invalid email or password. Please try again.'
+        err.response?.data?.message ||
+        'Invalid email or password. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -176,7 +176,7 @@ const LoginPage: React.FC = () => {
 
         {/* Footer Note */}
         <div className="text-xs text-slate-500 z-10">
-          WayRivo AI 2.0 • Secured with 256-bit encryption & PayPal Escrow
+          WayRivo AI 2.0 • PayPal Escrow Protected
         </div>
       </div>
 

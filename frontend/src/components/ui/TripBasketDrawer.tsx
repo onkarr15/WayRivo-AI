@@ -40,7 +40,7 @@ export const TripBasketDrawer: React.FC = () => {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-6 right-6 z-40"
+            className="fixed bottom-6 right-6 z-40 print:hidden"
           >
             <button
               onClick={() => setIsDrawerOpen(true)}
@@ -64,7 +64,7 @@ export const TripBasketDrawer: React.FC = () => {
       {/* Drawer Backdrop and Panel */}
       <AnimatePresence>
         {isDrawerOpen && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-hidden print:hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

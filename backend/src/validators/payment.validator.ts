@@ -28,3 +28,12 @@ export const refundPaymentSchema = z.object({
   amount: z.number().positive().optional(),
   reason: z.string().min(3, 'Refund reason is required').optional(),
 });
+
+export const createPaymentSessionSchema = z.object({
+  bookingId: z.string().min(1, 'bookingId is required'),
+});
+
+export const expirePaymentSessionSchema = z.object({
+  sessionId: z.string().optional(),
+  bookingId: z.string().optional(),
+});

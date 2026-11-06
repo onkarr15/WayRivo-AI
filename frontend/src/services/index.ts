@@ -116,9 +116,13 @@ export const bookingService = {
 
 export const paymentService = {
   getConfig: () => api.get('/payments/config'),
+  createSession: (data: { bookingId: string | number }) => api.post('/payments/create-session', data),
+  getSession: (sessionIdOrBookingId: string | number) => api.get(`/payments/session/${sessionIdOrBookingId}`),
+  expireSession: (data: { sessionId?: string; bookingId?: string | number }) => api.post('/payments/expire-session', data),
   createOrder: (data: { bookingId: string | number; returnUrl?: string; cancelUrl?: string }) => api.post('/payments/create-order', data),
   captureOrder: (data: { bookingId: string | number; paypalOrderId: string; idempotencyKey?: string; payerEmail?: string; payerName?: string; cardDetails?: any }) => api.post('/payments/capture-order', data),
   getPaymentDetails: (paymentId: string | number) => api.get(`/payments/${paymentId}`),
+  getReceipt: (paymentId: string | number) => api.get(`/payments/${paymentId}/receipt`),
   processRefund: (data: { bookingId?: string; paymentId?: string; amount?: number; reason?: string }) => api.post('/payments/refund', data),
   requestCancellation: (bookingId: string | number, reason?: string) => api.post(`/payments/cancel-request/${bookingId}`, { reason }),
   verifyPayment: (data: { bookingId: number | string; transactionReference?: string; paymentMethod?: string; notes?: string }) => api.post('/payments/verify-payment', data),

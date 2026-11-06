@@ -54,7 +54,7 @@ const AccountSettingsPage: React.FC = () => {
                   Current Browser Session <Badge variant="turquoise" size="sm">Active Now</Badge>
                 </p>
                 <p className="text-xs text-slate-400">
-                  HTTP-Only Cookie Authenticated • 256-Bit SSL Encrypted
+                  HTTP-Only Cookie Authenticated
                 </p>
               </div>
             </div>
@@ -145,7 +145,7 @@ const AccountSettingsPage: React.FC = () => {
           <Trash2 className="w-4 h-4 text-rose-400" /> Account Sessions & Deactivation
         </h2>
         <p className="text-xs text-slate-400 mb-4">
-          Terminating your session clears your secure HTTP-only cookies and local credentials.
+          Terminating your session clears your secure HTTP-only cookies and active session.
         </p>
 
         <div className="flex flex-wrap items-center gap-3">

@@ -6,6 +6,8 @@ import {
   AlertCircle,
   CreditCard,
 } from 'lucide-react';
+import { paymentService } from '../../services';
+import { PaymentRedirectLoader } from './PaymentRedirectLoader';
 
 interface PayPalCheckoutButtonProps {
   bookingId: string;
@@ -29,14 +31,33 @@ export const PayPalCheckoutButton: React.FC<PayPalCheckoutButtonProps> = ({
 }) => {
   const navigate = useNavigate();
   const [sdkError, setSdkError] = useState<string | null>(null);
+  const [isContinuingToPayPal, setIsContinuingToPayPal] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  const handlePayPalClick = () => {
-    if (disabled) return;
+  const handlePayPalClick = async () => {
+    if (disabled || isNavigating) return;
+    setIsNavigating(true);
+    setIsContinuingToPayPal(true);
+
+    try {
+      await paymentService.createSession({ bookingId });
+    } catch (e) {
+      console.warn('Session init on click:', e);
+    }
+  };
+
+  const handlePayPalLoaderComplete = () => {
     navigate(`/payment/paypal-login/${bookingId}`);
   };
 
-  const handleCardClick = () => {
-    if (disabled) return;
+  const handleCardClick = async () => {
+    if (disabled || isNavigating) return;
+    setIsNavigating(true);
+    try {
+      await paymentService.createSession({ bookingId });
+    } catch (e) {
+      console.warn('Session init on click:', e);
+    }
     navigate(`/payment/card-checkout/${bookingId}`);
   };
 
@@ -105,9 +126,9 @@ export const PayPalCheckoutButton: React.FC<PayPalCheckoutButtonProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px]">
+          <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>256-Bit SSL Encrypted</span>
+            <span>Secure Checkout</span>
           </div>
         </div>
 
@@ -116,7 +137,7 @@ export const PayPalCheckoutButton: React.FC<PayPalCheckoutButtonProps> = ({
           {/* Gold PayPal Button - Redirects to PayPal Sandbox Login Page */}
           <button
             type="button"
-            disabled={disabled}
+            disabled={disabled || isNavigating}
             onClick={handlePayPalClick}
             className="w-full h-12 rounded-md bg-[#ffc439] hover:bg-[#f4bb36] active:bg-[#e0ab30] flex items-center justify-center transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-amber-400/40"
             title="Log in to PayPal Sandbox and Pay"
@@ -130,7 +151,7 @@ export const PayPalCheckoutButton: React.FC<PayPalCheckoutButtonProps> = ({
           {/* Dedicated Debit or Credit Card Button - Redirects to Card Details Page */}
           <button
             type="button"
-            disabled={disabled}
+            disabled={disabled || isNavigating}
             onClick={handleCardClick}
             className="w-full h-12 mt-2.5 rounded-md bg-[#2c2e2f] hover:bg-[#1a1b1c] active:bg-black text-white font-medium flex items-center justify-center gap-2.5 transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700/20"
             title="Pay with Credit or Debit Card"
@@ -150,9 +171,19 @@ export const PayPalCheckoutButton: React.FC<PayPalCheckoutButtonProps> = ({
         {/* Card Trust Footer */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-500 text-center">
           <Lock className="w-3 h-3 text-slate-400 shrink-0" />
-          <span>PayPal Sandbox buyer protection active. Credentials are never shared with WayRivo AI.</span>
+          <span>PayPal Sandbox buyer protection active</span>
         </div>
       </div>
+
+      {/* Stage 1 Navigation Buffering Overlay */}
+      <PaymentRedirectLoader
+        isOpen={isContinuingToPayPal}
+        title="Continuing To PayPal Sandbox..."
+        description="Please wait while we securely connect you to PayPal Sandbox."
+        supportingText="Connecting to PayPal Developer Sandbox securely."
+        minimumDisplayDuration={2500}
+        onComplete={handlePayPalLoaderComplete}
+      />
     </div>
   );
 };

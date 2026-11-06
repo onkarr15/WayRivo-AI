@@ -11,6 +11,10 @@ const testSuites = [
   { name: 'Traveler & Admin Analytics Portals', file: 'test-dashboards.ts' },
   { name: 'Complete End-to-End User Journey', file: 'test-e2e-journey.ts' },
   { name: 'Debit/Credit Card & PayPal Sandbox Redirect Flow', file: 'test-card-and-paypal-redirect.ts' },
+  { name: 'Server-Authoritative 6-Minute Payment Countdown Timer', file: 'test-payment-timer.ts' },
+  { name: '5–6s Payment Processing Animation & Capture Verification', file: 'test-payment-processing-animation.ts' },
+  { name: 'Payment Success Page & PDF Receipt with 12-Digit TxID & PayPal Logo', file: 'test-payment-success-receipt.ts' },
+  { name: 'PayPal Buffering Animations & 6-Minute Countdown Visibility', file: 'test-payment-buffering-countdown.ts' },
 ];
 
 console.log('\n======================================================================');
