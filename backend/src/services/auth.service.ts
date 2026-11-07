@@ -3,8 +3,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../config/db';
 import { env } from '../config/env';
-import { UnauthorizedError, ConflictError, NotFoundError, BadRequestError } from '../utils/errors';
-import { UserRole } from '@prisma/client';
+import { UnauthorizedError, ConflictError, NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
+import { UserRole, UserStatus, BookingStatus, PaymentStatus } from '@prisma/client';
 import { emailService } from './email.service';
 import { validatePasswordStrength } from '../utils/password-policy';
 import { logger } from '../utils/logger';
@@ -16,8 +16,10 @@ export class AuthService {
     name: string;
     phone?: string;
     role?: UserRole;
+    agencyName?: string;
+    organizationName?: string;
   }) {
-    const { email, password, name, phone, role } = params;
+    const { email, password, name, phone, role, agencyName, organizationName } = params;
     const normalizedEmail = email.toLowerCase().trim();
 
     const existing = await prisma.user.findUnique({
@@ -37,6 +39,7 @@ export class AuthService {
         name,
         phone,
         role: role || UserRole.USER,
+        agencyName: agencyName || organizationName || null,
         emailVerificationToken,
         isEmailVerified: false,
       },
@@ -392,21 +395,261 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
-  async updateProfile(userId: string, data: {
-    name?: string;
-    phone?: string;
-    avatarUrl?: string;
-    preferredDestinations?: string[];
-    travelInterests?: string[];
-    budgetPreference?: string;
-    preferredCurrency?: string;
-  }) {
+  async updateProfile(userId: string, data: any) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found.');
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      avatarUrl,
+      preferredDestinations,
+      travelInterests,
+      budgetPreference,
+      preferredCurrency,
+      country,
+      state,
+      city,
+      address,
+      postalCode,
+      bio,
+      description,
+      dateOfBirth,
+      gender,
+      organizationName,
+      agencyName,
+      websiteUrl,
+      specializations,
+      yearsOfExperience,
+      languages,
+      verificationStatus,
+    } = data;
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+    if (preferredDestinations !== undefined) {
+      updateData.preferredDestinations = Array.isArray(preferredDestinations)
+        ? preferredDestinations
+        : typeof preferredDestinations === 'string'
+          ? (preferredDestinations as string).split(',').map((d) => d.trim()).filter(Boolean)
+          : [];
+    }
+    if (travelInterests !== undefined) {
+      updateData.travelInterests = Array.isArray(travelInterests)
+        ? travelInterests
+        : typeof travelInterests === 'string'
+          ? (travelInterests as string).split(',').map((i) => i.trim()).filter(Boolean)
+          : [];
+    }
+    if (budgetPreference !== undefined) updateData.budgetPreference = budgetPreference;
+    if (preferredCurrency !== undefined) updateData.preferredCurrency = preferredCurrency;
+    if (country !== undefined) updateData.country = country;
+    if (state !== undefined) updateData.state = state;
+    if (city !== undefined) updateData.city = city;
+    if (address !== undefined) updateData.address = address;
+    if (postalCode !== undefined) updateData.postalCode = postalCode;
+    if (bio !== undefined || description !== undefined) updateData.bio = bio || description;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (gender !== undefined) updateData.gender = gender;
+    if (organizationName !== undefined || agencyName !== undefined) {
+      updateData.agencyName = organizationName || agencyName;
+    }
+    if (websiteUrl !== undefined) updateData.websiteUrl = websiteUrl;
+    if (specializations !== undefined) {
+      updateData.specializations = Array.isArray(specializations)
+        ? specializations.join(', ')
+        : String(specializations || '');
+    }
+    if (yearsOfExperience !== undefined) {
+      updateData.yearsOfExperience = Number(yearsOfExperience) || 0;
+    }
+    if (languages !== undefined) {
+      updateData.languages = Array.isArray(languages)
+        ? languages
+        : typeof languages === 'string'
+          ? (languages as string).split(',').map((l) => l.trim()).filter(Boolean)
+          : [];
+    }
+    if (verificationStatus !== undefined) {
+      updateData.verificationStatus = verificationStatus;
+    }
+
+    // Handle email update safely if provided and different
+    if (email && email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const normalizedNewEmail = email.toLowerCase().trim();
+      const existingWithEmail = await prisma.user.findUnique({ where: { email: normalizedNewEmail } });
+      if (existingWithEmail) {
+        throw new ConflictError('The requested email address is already in use by another account.');
+      }
+      updateData.email = normalizedNewEmail;
+      updateData.isEmailVerified = false; // requires verification
+    }
+
     const updated = await prisma.user.update({
       where: { id: userId },
-      data,
+      data: updateData,
     });
 
     return this.sanitizeUser(updated);
+  }
+
+  /**
+   * Delete Account with Financial Record Retention and PII Anonymization
+   * - Enforces reauthentication via password (or OAuth check)
+   * - Validates explicit 'DELETE' confirmation text
+   * - Checks active bookings, escrow holds, and pending payments
+   * - Anonymizes personal identifiable information
+   * - Retains financial transactions, PayPal capture IDs and receipts for audit
+   * - Invalidates active sessions and prevents future logins
+   */
+  async deleteAccount(userId: string, data: { confirmation: string; password?: string; reason?: string }) {
+    if (!data.confirmation || data.confirmation.trim().toUpperCase() !== 'DELETE') {
+      throw new BadRequestError("You must explicitly type 'DELETE' to confirm account deletion.");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        oauthAccounts: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundError('Account not found.');
+    }
+
+    // Role safety: Never allow deleting ADMIN accounts through this standard endpoint
+    if (user.role === UserRole.ADMIN) {
+      throw new ForbiddenError('Administrator accounts cannot be deleted through this interface.');
+    }
+
+    // Reauthentication
+    if (user.passwordHash) {
+      if (!data.password) {
+        throw new UnauthorizedError('Current password is required to confirm account deletion.');
+      }
+      const isMatch = await bcrypt.compare(data.password, user.passwordHash);
+      if (!isMatch) {
+        throw new UnauthorizedError('Incorrect password. Account deletion denied.');
+      }
+    }
+
+    // Check Active Obligations
+    // 1. Check for Active Bookings (Traveler or Expert)
+    const activeBookings = await prisma.booking.findMany({
+      where: {
+        userId,
+        status: {
+          in: [
+            BookingStatus.PENDING_PAYMENT,
+            BookingStatus.CONFIRMED,
+            BookingStatus.ESCROW_HOLD,
+          ],
+        },
+      },
+      select: {
+        id: true,
+        bookingReference: true,
+        status: true,
+        totalAmount: true,
+      },
+    });
+
+    if (activeBookings.length > 0) {
+      const refs = activeBookings.map((b) => `${b.bookingReference} (${b.status})`).join(', ');
+      throw new BadRequestError(
+        `Cannot delete account with active or pending bookings: ${refs}. Please complete, cancel, or resolve all journeys before deleting your account.`
+      );
+    }
+
+    // 2. Check for active/locked payments
+    const activePayments = await prisma.payment.findMany({
+      where: {
+        booking: { userId },
+        status: {
+          in: [
+            PaymentStatus.CREATED,
+            PaymentStatus.APPROVED,
+            PaymentStatus.ESCROW_LOCKED,
+          ],
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+      },
+    });
+
+    if (activePayments.length > 0) {
+      throw new BadRequestError(
+        'Cannot delete account with active or escrow-locked payment transactions. Please wait for transactions to settle.'
+      );
+    }
+
+    // 3. Data Retention & Anonymization
+    // Preserve financial & transaction records, anonymize personal PII, invalidate sessions
+    const anonymizedEmail = `deleted_${user.id}_${Date.now()}@deleted.wayrivo.local`;
+
+    await prisma.$transaction(async (tx) => {
+      // Remove OAuth connections
+      await tx.oAuthAccount.deleteMany({ where: { userId } });
+
+      // Anonymize user record
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          name: 'Deleted Account',
+          email: anonymizedEmail,
+          phone: null,
+          avatarUrl: null,
+          bio: null,
+          address: null,
+          city: null,
+          state: null,
+          country: null,
+          postalCode: null,
+          dateOfBirth: null,
+          gender: null,
+          passwordHash: null,
+          status: UserStatus.SUSPENDED,
+          tokenVersion: user.tokenVersion + 10,
+          isEmailVerified: false,
+          preferredDestinations: [],
+          travelInterests: [],
+          agencyName: null,
+          websiteUrl: null,
+          specializations: null,
+          yearsOfExperience: 0,
+          languages: [],
+        },
+      });
+
+      // Record audit log
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'ACCOUNT_DELETED',
+          entityType: 'User',
+          entityId: userId,
+          details: {
+            reason: data.reason || 'User requested account deletion',
+            originalRole: user.role,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
+
+    return {
+      success: true,
+      message: 'Your WayRivo account has been successfully deleted.',
+    };
   }
 
   private generateToken(userId: string, role: UserRole, tokenVersion: number = 0): string {

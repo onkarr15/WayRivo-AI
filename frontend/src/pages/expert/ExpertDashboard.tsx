@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { proposalService, tripRequestService } from '../../services';
 import {
   FileText,
@@ -20,9 +20,12 @@ import {
   CheckCircle2,
   BadgePercent,
   Search,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge, type BadgeVariant } from '../../components/ui/Badge';
+import { DeleteAccountModal } from '../../components/account/DeleteAccountModal';
 
 interface OpenRequestItem {
   id: string;
@@ -81,6 +84,8 @@ const ExpertDashboard: React.FC = () => {
   const [myProposals, setMyProposals] = useState<ProposalItem[]>([]);
   const [activeTab, setActiveTab] = useState<'requests' | 'proposals' | 'escrow'>('requests');
   const [loading, setLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -713,6 +718,69 @@ const ExpertDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 6. ACCOUNT MANAGEMENT (NO Danger Zone heading) */}
+      <div className="card p-6 border border-border/80 bg-surface/80 space-y-5">
+        <div>
+          <h3 className="font-heading font-extrabold text-lg text-white">Account Management</h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Manage your Travel Expert Agency profile or request permanent account deletion.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Option 1: Edit Profile */}
+          <div className="p-4 rounded-xl bg-surface-dark/90 border border-border/80 flex flex-col justify-between space-y-4">
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Profile
+              </h4>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Update your agency credentials, expert details, and travel specializations.
+              </p>
+            </div>
+            <div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('/expert/profile?edit=true')}
+              >
+                Edit Profile
+              </Button>
+            </div>
+          </div>
+
+          {/* Option 2: Delete Account (Exact label "Delete Account", NO Danger Zone) */}
+          <div className="p-4 rounded-xl bg-surface-dark/90 border border-border/80 flex flex-col justify-between space-y-4">
+            <div>
+              <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-rose-400" /> Delete Account
+              </h4>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Request permanent deletion of your Travel Expert Agency account and associated eligible personal information.
+              </p>
+            </div>
+            <div>
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={() => setIsDeleteModalOpen(true)}
+              >
+                Delete Account
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Account Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        accountType="expert"
+      />
     </div>
   );
 };

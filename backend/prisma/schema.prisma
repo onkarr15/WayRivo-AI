@@ -127,6 +127,24 @@ model User {
   budgetPreference       String?      @default("Moderate")
   preferredCurrency      String       @default("INR")
 
+  // Address & Extended Personal Information
+  country                String?      @default("India")
+  state                  String?
+  city                   String?
+  address                String?
+  postalCode             String?
+  bio                    String?      @db.Text
+  dateOfBirth            String?
+  gender                 String?
+
+  // Travel Expert Agency Specific Fields
+  agencyName             String?
+  websiteUrl             String?
+  specializations        String?
+  yearsOfExperience      Int?         @default(0)
+  languages              String[]     @default([])
+  verificationStatus     String?      @default("VERIFIED")
+
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
 

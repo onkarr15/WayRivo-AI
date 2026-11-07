@@ -41,10 +41,34 @@ export const changePasswordSchema = z.object({
 
 export const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
-  phone: z.string().optional(),
-  avatarUrl: z.string().url().optional().or(z.literal('')),
+  email: z.string().email().optional(),
+  phone: z.string().optional().nullable(),
+  avatarUrl: z.string().url().optional().or(z.literal('')).nullable(),
   preferredDestinations: z.array(z.string()).optional(),
   travelInterests: z.array(z.string()).optional(),
   budgetPreference: z.string().optional(),
   preferredCurrency: z.string().length(3).optional(),
+  // Address Information
+  country: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  postalCode: z.string().optional().nullable(),
+  bio: z.string().optional().nullable(),
+  dateOfBirth: z.string().optional().nullable(),
+  gender: z.string().optional().nullable(),
+  // Agency / Expert Information
+  organizationName: z.string().optional().nullable(),
+  agencyName: z.string().optional().nullable(),
+  websiteUrl: z.string().optional().nullable(),
+  specializations: z.string().optional().nullable(),
+  yearsOfExperience: z.coerce.number().optional().nullable(),
+  description: z.string().optional().nullable(),
+  languages: z.array(z.string()).optional(),
+});
+
+export const deleteAccountSchema = z.object({
+  confirmation: z.string().min(1, "Please type 'DELETE' to confirm"),
+  password: z.string().optional(),
+  reason: z.string().optional(),
 });

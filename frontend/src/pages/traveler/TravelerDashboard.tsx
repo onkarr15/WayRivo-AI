@@ -29,8 +29,11 @@ import {
   Receipt,
   Check,
   Lock,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { useToast } from '../../components/ui/Toast';
+import { DeleteAccountModal } from '../../components/account/DeleteAccountModal';
 
 const statusBadgeStyles: Record<string, string> = {
   CONFIRMED: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
@@ -76,6 +79,7 @@ const TravelerDashboard: React.FC = () => {
   const [prefBudget, setPrefBudget] = useState<string>('Moderate');
   const [prefCurrency, setPrefCurrency] = useState<string>('INR');
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -1222,8 +1226,63 @@ const TravelerDashboard: React.FC = () => {
               </div>
             </form>
           </div>
+
+          {/* Account Management Card (NO Danger Zone heading) */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-white tracking-tight">Account Management</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Manage your personal profile information or request permanent account deletion.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-3">
+                <div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Profile
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Update your personal and account information.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/traveler/profile?edit=true')}
+                  className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Edit Profile
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" /> Delete Account
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Request permanent deletion of your WayRivo account and associated eligible personal information.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="w-full py-2 px-3 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Delete Account Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        accountType="traveler"
+      />
 
       {/* BOOKING DETAILS MODAL */}
       {detailModalBooking && (

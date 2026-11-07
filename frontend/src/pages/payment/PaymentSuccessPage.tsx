@@ -15,6 +15,7 @@ import {
   Hash,
   Compass,
   Check,
+  Loader2,
 } from 'lucide-react';
 import { paymentService, bookingService } from '../../services';
 import { useToast } from '../../components/ui/Toast';
@@ -34,6 +35,7 @@ export const PaymentSuccessPage: React.FC = () => {
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -96,7 +98,7 @@ export const PaymentSuccessPage: React.FC = () => {
   useEffect(() => {
     if (!loading && (receiptData || payment) && searchParams.get('autoPrint') === 'true') {
       const timer = setTimeout(() => {
-        handlePrintOrDownload('print');
+        handlePrint();
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -111,8 +113,8 @@ export const PaymentSuccessPage: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  // Trigger print / save as PDF
-  const handlePrintOrDownload = (action: 'print' | 'download') => {
+  // Dedicated physical print / print-to-PDF dialog
+  const handlePrint = () => {
     const originalTitle = document.title;
     const txId =
       receiptData?.wayrivoTransactionId ||
@@ -126,9 +128,78 @@ export const PaymentSuccessPage: React.FC = () => {
     setTimeout(() => {
       document.title = originalTitle;
     }, 1000);
+  };
 
-    if (action === 'download') {
-      toast.info('Select "Save as PDF" in your print dialogue to download the official receipt.');
+  // Dedicated cross-device binary PDF download handler
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf) return;
+
+    const targetId =
+      receiptData?.id ||
+      payment?.id ||
+      paymentIdParam ||
+      orderIdParam ||
+      bookingIdParam;
+
+    if (!targetId) {
+      toast.error('Unable to locate verified payment record for PDF receipt.');
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+
+    try {
+      const response = await paymentService.downloadReceiptPdf(targetId);
+
+      // Verify valid PDF response
+      if (!response.data || !(response.data instanceof Blob)) {
+        throw new Error('Invalid binary PDF received from server.');
+      }
+
+      const txId =
+        receiptData?.wayrivoTransactionId ||
+        payment?.wayrivoTransactionId ||
+        'Official';
+      const fileName = `WayRivo_Payment_Receipt_${txId}.pdf`;
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+
+      // iOS Safari detection
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      // Cross-Device standard download via blob object URL & hidden anchor
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      link.target = '_self';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+
+      // Fallback for iOS Safari if automatic download is blocked
+      if (isIOS) {
+        setTimeout(() => {
+          window.open(blobUrl, '_blank');
+        }, 300);
+      }
+
+      // Cleanup object URL
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        window.URL.revokeObjectURL(blobUrl);
+      }, 2500);
+
+      toast.success('Your payment receipt is ready.');
+    } catch (err: any) {
+      console.error('Failed to download PDF receipt:', err);
+      toast.error('Unable to generate the receipt. Please try again.');
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -473,17 +544,27 @@ export const PaymentSuccessPage: React.FC = () => {
             {/* Action 1: Download PDF Receipt */}
             <button
               type="button"
-              onClick={() => handlePrintOrDownload('download')}
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              disabled={isDownloadingPdf}
+              onClick={handleDownloadPdf}
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
             >
-              <Download className="w-4 h-4 text-white" />
-              <span>Download PDF Receipt</span>
+              {isDownloadingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  <span>Generating Receipt...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-white" />
+                  <span>Download PDF Receipt</span>
+                </>
+              )}
             </button>
 
             {/* Action 2: Print Receipt */}
             <button
               type="button"
-              onClick={() => handlePrintOrDownload('print')}
+              onClick={handlePrint}
               className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4 text-cyan-400" />

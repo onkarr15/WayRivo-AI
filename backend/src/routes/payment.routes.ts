@@ -37,6 +37,8 @@ router.post('/expire-session', authenticate, validate(expirePaymentSessionSchema
 router.post('/create-order', authenticate, validate(createPaymentOrderSchema), createPaymentOrder);
 router.post('/capture-order', authenticate, validate(capturePaymentOrderSchema), capturePaymentOrder);
 router.get('/:paymentId/receipt', authenticate, getPaymentReceipt);
+router.get('/:paymentId/receipt/pdf', authenticate, getPaymentReceipt);
+router.get('/:paymentId/receipt/download', authenticate, getPaymentReceipt);
 router.get('/:paymentId', authenticate, getPaymentById);
 
 // 3. Administrator-controlled refund workflow (Part D)

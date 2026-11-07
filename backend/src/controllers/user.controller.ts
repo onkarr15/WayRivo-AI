@@ -32,6 +32,16 @@ export const changePassword = async (req: AuthRequest, res: Response, next: Next
   }
 };
 
+export const deleteAccount = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.deleteAccount(req.user!.id, req.body);
+    res.clearCookie('wayrivo_token');
+    sendSuccess(res, result, result.message);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getUserDashboard = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
@@ -84,6 +94,21 @@ export const getUserDashboard = async (req: AuthRequest, res: Response, next: Ne
           name: true,
           email: true,
           role: true,
+          phone: true,
+          country: true,
+          state: true,
+          city: true,
+          address: true,
+          postalCode: true,
+          bio: true,
+          dateOfBirth: true,
+          gender: true,
+          agencyName: true,
+          websiteUrl: true,
+          specializations: true,
+          yearsOfExperience: true,
+          languages: true,
+          verificationStatus: true,
           preferredDestinations: true,
           travelInterests: true,
           budgetPreference: true,

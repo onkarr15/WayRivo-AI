@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   Shield,
   Bell,
   Trash2,
   Laptop,
+  Edit3,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { useToast } from '../../components/ui/Toast';
+import { DeleteAccountModal } from '../../components/account/DeleteAccountModal';
 
 const AccountSettingsPage: React.FC = () => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [escrowAlerts, setEscrowAlerts] = useState(true);
   const [marketingOffers, setMarketingOffers] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleSavePreferences = () => {
     setSavingSettings(true);
@@ -139,26 +145,85 @@ const AccountSettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Account Actions / Sign Out */}
-      <div className="card p-6 border border-rose-500/20 bg-rose-500/5">
-        <h2 className="text-base font-bold text-rose-300 mb-2 flex items-center gap-2">
-          <Trash2 className="w-4 h-4 text-rose-400" /> Account Sessions & Deactivation
-        </h2>
-        <p className="text-xs text-slate-400 mb-4">
-          Terminating your session clears your secure HTTP-only cookies and active session.
-        </p>
+      {/* 3. Account Management (NO Danger Zone heading) */}
+      <div className="card p-6 border border-border space-y-5">
+        <div>
+          <h2 className="text-base font-bold text-white tracking-tight">Account Management</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Manage your personal profile information or request permanent account deletion.
+          </p>
+        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Option 1: Edit Profile */}
+          <div className="p-4 rounded-xl bg-surface-dark border border-border flex flex-col justify-between space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Profile
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Update your personal and account information.
+              </p>
+            </div>
+            <div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('/traveler/profile?edit=true')}
+              >
+                Edit Profile
+              </Button>
+            </div>
+          </div>
+
+          {/* Option 2: Delete Account (Exact label "Delete Account", NO Danger Zone) */}
+          <div className="p-4 rounded-xl bg-surface-dark border border-border flex flex-col justify-between space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-rose-400" /> Delete Account
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Request permanent deletion of your WayRivo account and associated eligible personal information.
+              </p>
+            </div>
+            <div>
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={() => setIsDeleteModalOpen(true)}
+              >
+                Delete Account
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Sign Out Option */}
+        <div className="pt-3 border-t border-border flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-white">Active Session</p>
+            <p className="text-[11px] text-slate-400">Sign out of your active browser session</p>
+          </div>
           <Button
             type="button"
-            variant="danger"
-            size="md"
+            variant="ghost"
+            size="sm"
             onClick={logout}
+            leftIcon={<LogOut className="w-3.5 h-3.5 mr-1" />}
           >
-            Sign Out of All Devices
+            Sign Out
           </Button>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        accountType="traveler"
+      />
     </div>
   );
 };

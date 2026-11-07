@@ -1,8 +1,12 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { checkDatabaseConnection, prisma } from '../config/db';
-import { optionalAuthenticate } from '../middleware/auth.middleware';
+import { optionalAuthenticate, authenticate } from '../middleware/auth.middleware';
+import { validate } from '../middleware/validate';
 import { AuthRequest } from '../types';
-import { BookingStatus, BookingItemType, PaymentStatus, EscrowStatus, Prisma } from '@prisma/client';
+import { BookingStatus, BookingItemType, PaymentStatus, EscrowStatus, Prisma, UserRole, UserStatus } from '@prisma/client';
+import { deleteAccount } from '../controllers/user.controller';
+import { deleteAccountSchema, updateProfileSchema } from '../validators/auth.validator';
+import { authService } from '../services/auth.service';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
 import destinationRoutes from './destination.routes';
@@ -35,7 +39,7 @@ router.get('/health', async (_req, res) => {
 // -------------------------------------------------------------
 // Public Statistics & AI Insights
 // -------------------------------------------------------------
-const getStatsHandler = async (_req: any, res: any) => {
+const getStatsHandler = async (_req: Request, res: Response) => {
   try {
     const [destCount, userCount, packageCount] = await Promise.all([
       prisma.destination.count(),
@@ -61,7 +65,7 @@ const getStatsHandler = async (_req: any, res: any) => {
 router.get('/statistics', getStatsHandler);
 router.get('/public/statistics', getStatsHandler);
 
-router.get('/public/ai-insights', async (req, res) => {
+router.get('/public/ai-insights', async (req: Request, res: Response) => {
   const destination = (req.query.destination as string) || 'Goa';
   const style = (req.query.style as string) || 'Comfortable';
   const days = Number(req.query.days) || 5;
@@ -82,7 +86,7 @@ router.get('/public/ai-insights', async (req, res) => {
   });
 });
 
-router.get('/public/recommendations', async (_req, res) => {
+router.get('/public/recommendations', async (_req: Request, res: Response) => {
   try {
     const destinations = await prisma.destination.findMany({
       where: { isActive: true },
@@ -98,11 +102,11 @@ router.get('/public/recommendations', async (_req, res) => {
 // -------------------------------------------------------------
 // Notifications & Messages Endpoints
 // -------------------------------------------------------------
-router.get('/notifications/unread-count', (_req, res) => {
+router.get('/notifications/unread-count', (_req: Request, res: Response) => {
   res.json({ success: true, data: { count: 0 } });
 });
 
-router.get('/notifications', (_req, res) => {
+router.get('/notifications', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -115,23 +119,23 @@ router.get('/notifications', (_req, res) => {
   });
 });
 
-router.patch(['/notifications/:id/read', '/notifications/read-all'], (_req, res) => {
+router.patch(['/notifications/:id/read', '/notifications/read-all'], (_req: Request, res: Response) => {
   res.json({ success: true, data: { updated: true } });
 });
 
-router.get('/messages/unread-count', (_req, res) => {
+router.get('/messages/unread-count', (_req: Request, res: Response) => {
   res.json({ success: true, data: { count: 0 } });
 });
 
-router.get('/messages/conversations', (_req, res) => {
+router.get('/messages/conversations', (_req: Request, res: Response) => {
   res.json({ success: true, data: [] });
 });
 
-router.get('/messages/conversation/:partnerId', (_req, res) => {
+router.get('/messages/conversation/:partnerId', (_req: Request, res: Response) => {
   res.json({ success: true, data: [] });
 });
 
-router.post('/messages', (req, res) => {
+router.post('/messages', (req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -582,7 +586,7 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
 
     if (!userId) {
       const defaultUser = (await prisma.user.findFirst({
-        where: { role: 'TRAVELER' },
+        where: { role: UserRole.TRAVELER },
       })) || (await prisma.user.findFirst());
 
       if (defaultUser) {
@@ -591,8 +595,8 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
           id: defaultUser.id,
           name: defaultUser.name,
           email: defaultUser.email,
-          role: defaultUser.role as any,
-          status: defaultUser.status as any,
+          role: defaultUser.role,
+          status: defaultUser.status,
         };
       }
     }
@@ -768,7 +772,41 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
   }
 });
 
-router.get('/experts/featured', async (_req, res) => {
+router.get('/experts/featured', async (_req: Request, res: Response) => {
+  try {
+    const dbExperts = await prisma.user.findMany({
+      where: {
+        role: UserRole.EXPERT,
+        status: UserStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+        name: true,
+        agencyName: true,
+        avatarUrl: true,
+        verificationStatus: true,
+      },
+      take: 6,
+    });
+
+    if (dbExperts.length > 0) {
+      return res.json({
+        success: true,
+        data: dbExperts.map((exp) => ({
+          id: exp.id,
+          name: exp.name,
+          agencyName: exp.agencyName || exp.name,
+          avatarUrl: exp.avatarUrl,
+          rating: 4.9,
+          reviewsCount: 52,
+          verified: exp.verificationStatus === 'VERIFIED',
+        })),
+      });
+    }
+  } catch {
+    // fallback to demo data if query fails
+  }
+
   res.json({
     success: true,
     data: [
@@ -784,29 +822,118 @@ router.get('/experts/featured', async (_req, res) => {
   });
 });
 
-router.get('/experts/profile', async (_req, res) => {
+router.get('/experts/profile', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
+  if (req.user) {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (user && user.status === UserStatus.ACTIVE) {
+      return res.json({
+        success: true,
+        data: {
+          id: user.id,
+          name: user.name,
+          organizationName: user.agencyName || user.name,
+          agencyName: user.agencyName || user.name,
+          description: user.bio || '',
+          yearsOfExperience: user.yearsOfExperience || 0,
+          city: user.city || '',
+          state: user.state || '',
+          country: user.country || 'India',
+          address: user.address || '',
+          postalCode: user.postalCode || '',
+          specializations: user.specializations || '',
+          languages: user.languages || [],
+          websiteUrl: user.websiteUrl || '',
+          phone: user.phone || '',
+          email: user.email,
+          verificationStatus: user.verificationStatus || 'VERIFIED',
+          rating: 4.9,
+          totalReviews: 24,
+          destinations: user.preferredDestinations.length > 0 ? user.preferredDestinations : ['Rajasthan', 'Kerala', 'Ladakh', 'Goa', 'Varanasi'],
+        },
+      });
+    }
+  }
+
   res.json({
     success: true,
     data: {
       id: 'exp_01',
       name: 'Vikram Singh Rathore',
       agencyName: 'Royal Rajasthan & Kerala Journeys',
+      organizationName: 'Royal Rajasthan & Kerala Journeys',
+      description: 'Over 8 years crafting authentic Himalayan treks, cultural immersion tours in Himachal and Ladakh, and luxury resort stays.',
+      yearsOfExperience: 8,
       licenseNumber: 'IN-TOUR-EXP-2024-8902',
-      experienceYears: 14,
       verificationStatus: 'VERIFIED',
       rating: 4.9,
       reviewsCount: 52,
+      totalReviews: 24,
       completedTrips: 184,
+      city: 'Manali',
+      state: 'Himachal Pradesh',
+      country: 'India',
+      specializations: 'Himachal, Ladakh, Trekking, Honeymoon, Luxury Resorts',
+      languages: ['English', 'Hindi', 'Punjabi'],
       destinations: ['Rajasthan', 'Kerala', 'Ladakh', 'Goa', 'Varanasi'],
     },
   });
 });
 
-router.get('/experts/:id', async (_req, res) => {
+const handleUpdateExpertProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const updated = await authService.updateProfile(req.user!.id, req.body);
+    res.json({
+      success: true,
+      data: updated,
+      message: 'Expert agency profile updated successfully',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+router.put('/experts/profile', authenticate, validate(updateProfileSchema), handleUpdateExpertProfile);
+router.patch('/experts/profile', authenticate, validate(updateProfileSchema), handleUpdateExpertProfile);
+
+router.delete('/account', authenticate, validate(deleteAccountSchema), deleteAccount);
+router.post('/account/delete', authenticate, validate(deleteAccountSchema), deleteAccount);
+
+router.get('/experts/:id', async (req: Request, res: Response) => {
+  const targetId = String(req.params.id);
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: targetId },
+    });
+    if (user && user.status === UserStatus.ACTIVE) {
+      return res.json({
+        success: true,
+        data: {
+          id: user.id,
+          name: user.name,
+          agencyName: user.agencyName || user.name,
+          organizationName: user.agencyName || user.name,
+          description: user.bio || '',
+          yearsOfExperience: user.yearsOfExperience || 8,
+          rating: 4.9,
+          reviewsCount: 52,
+          verificationStatus: user.verificationStatus || 'VERIFIED',
+          city: user.city || 'Manali',
+          state: user.state || 'Himachal Pradesh',
+          country: user.country || 'India',
+          specializations: user.specializations || 'Himachal, Ladakh, Trekking, Honeymoon, Luxury Resorts',
+          languages: user.languages || ['English', 'Hindi'],
+          destinations: user.preferredDestinations.length > 0 ? user.preferredDestinations : ['Rajasthan', 'Kerala', 'Ladakh', 'Goa', 'Varanasi'],
+        },
+      });
+    }
+  } catch {
+    // fallback
+  }
+
   res.json({
     success: true,
     data: {
-      id: 'exp_01',
+      id: targetId,
       name: 'Vikram Singh Rathore',
       agencyName: 'Royal Rajasthan & Kerala Journeys',
       rating: 4.9,

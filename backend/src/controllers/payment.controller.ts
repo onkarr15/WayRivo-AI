@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { paymentService } from '../services/payment.service';
+import { receiptPdfService } from '../services/receipt-pdf.service';
 import { sendCreated, sendSuccess } from '../utils/response';
 import { AuthRequest } from '../types';
 import { ForbiddenError } from '../utils/errors';
@@ -133,6 +134,29 @@ export const getPaymentReceipt = async (req: AuthRequest, res: Response, next: N
   try {
     const isAdmin = req.user?.role === 'ADMIN';
     const result = await paymentService.getPaymentReceipt(req.params.paymentId, req.user!.id, isAdmin);
+
+    const wantsPdf =
+      req.query.format === 'pdf' ||
+      req.query.download === 'true' ||
+      req.headers.accept?.includes('application/pdf') ||
+      req.path.endsWith('/pdf') ||
+      req.path.endsWith('/download');
+
+    if (wantsPdf) {
+      const pdfBuffer = await receiptPdfService.generateReceiptPdf(result as any);
+      const txId = result.wayrivoTransactionId || result.receiptNumber.replace(/^RCP-/, '') || 'Receipt';
+      const filename = `WayRivo_Payment_Receipt_${txId}.pdf`;
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      return res.status(200).send(pdfBuffer);
+    }
+
     sendSuccess(res, result, 'Verified payment receipt retrieved successfully');
   } catch (error) {
     next(error);

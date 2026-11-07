@@ -32,6 +32,11 @@ export const authenticate = async (
       }
     }
 
+    // 3. Fall back to query parameter token (for mobile / direct download links)
+    if (!token && typeof req.query.token === 'string') {
+      token = req.query.token;
+    }
+
     if (!token) {
       throw new UnauthorizedError('Authentication token missing or expired. Please sign in.');
     }
@@ -62,13 +67,13 @@ export const authenticate = async (
       throw new UnauthorizedError('User account not found');
     }
 
-    if (user.status === 'SUSPENDED') {
-      throw new ForbiddenError('Account is suspended. Please contact WayRivo security support.');
-    }
-
     // Session revocation check: reject if tokenVersion is older than current database tokenVersion
     if (decoded.tokenVersion !== undefined && decoded.tokenVersion < user.tokenVersion) {
-      throw new UnauthorizedError('Your session has been invalidated due to a password reset. Please sign in again.');
+      throw new UnauthorizedError('Your session has been invalidated. Please sign in again.');
+    }
+
+    if (user.status === 'SUSPENDED') {
+      throw new UnauthorizedError('Account has been deactivated or deleted.');
     }
 
     req.user = user as AuthenticatedUser;

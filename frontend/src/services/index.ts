@@ -12,6 +12,7 @@ export const authService = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: any) => api.patch('/users/profile', data),
   changePassword: (data: { currentPassword: string; newPassword: string }) => api.put('/users/change-password', data),
+  deleteAccount: (data: { confirmation: string; password?: string; reason?: string }) => api.delete('/users/account', { data }),
 };
 
 export const destinationService = {
@@ -123,6 +124,13 @@ export const paymentService = {
   captureOrder: (data: { bookingId: string | number; paypalOrderId: string; idempotencyKey?: string; payerEmail?: string; payerName?: string; cardDetails?: any }) => api.post('/payments/capture-order', data),
   getPaymentDetails: (paymentId: string | number) => api.get(`/payments/${paymentId}`),
   getReceipt: (paymentId: string | number) => api.get(`/payments/${paymentId}/receipt`),
+  downloadReceiptPdf: (paymentId: string | number) =>
+    api.get(`/payments/${paymentId}/receipt?format=pdf`, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/pdf',
+      },
+    }),
   processRefund: (data: { bookingId?: string; paymentId?: string; amount?: number; reason?: string }) => api.post('/payments/refund', data),
   requestCancellation: (bookingId: string | number, reason?: string) => api.post(`/payments/cancel-request/${bookingId}`, { reason }),
   verifyPayment: (data: { bookingId: number | string; transactionReference?: string; paymentMethod?: string; notes?: string }) => api.post('/payments/verify-payment', data),
@@ -183,6 +191,7 @@ export const userService = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: any) => api.patch('/users/profile', data),
   changePassword: (data: any) => api.put('/users/change-password', data),
+  deleteAccount: (data: { confirmation: string; password?: string; reason?: string }) => api.delete('/users/account', { data }),
 };
 
 export const adminService = {

@@ -14,6 +14,20 @@ export interface User {
   travelInterests?: string[];
   budgetPreference?: string;
   preferredCurrency?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  address?: string;
+  postalCode?: string;
+  bio?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  agencyName?: string;
+  websiteUrl?: string;
+  specializations?: string;
+  yearsOfExperience?: number;
+  languages?: string[];
+  verificationStatus?: string;
 }
 
 interface AuthContextType {
@@ -70,6 +84,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         travelInterests: u.travelInterests || [],
         budgetPreference: u.budgetPreference || 'Moderate',
         preferredCurrency: u.preferredCurrency || 'INR',
+        country: u.country || 'India',
+        state: u.state,
+        city: u.city,
+        address: u.address,
+        postalCode: u.postalCode,
+        bio: u.bio,
+        dateOfBirth: u.dateOfBirth,
+        gender: u.gender,
+        agencyName: u.agencyName,
+        websiteUrl: u.websiteUrl,
+        specializations: u.specializations,
+        yearsOfExperience: u.yearsOfExperience,
+        languages: u.languages || [],
+        verificationStatus: u.verificationStatus || 'VERIFIED',
       };
 
       setToken(authToken);
@@ -101,6 +129,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           travelInterests: u.travelInterests || [],
           budgetPreference: u.budgetPreference || 'Moderate',
           preferredCurrency: u.preferredCurrency || 'INR',
+          country: u.country || 'India',
+          state: u.state,
+          city: u.city,
+          address: u.address,
+          postalCode: u.postalCode,
+          bio: u.bio,
+          dateOfBirth: u.dateOfBirth,
+          gender: u.gender,
+          agencyName: u.agencyName,
+          websiteUrl: u.websiteUrl,
+          specializations: u.specializations,
+          yearsOfExperience: u.yearsOfExperience,
+          languages: u.languages || [],
+          verificationStatus: u.verificationStatus || 'VERIFIED',
         };
         setUser(userData);
         localStorage.setItem('wayrivo_user', JSON.stringify(userData));
@@ -160,6 +202,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           travelInterests: u.travelInterests || [],
           budgetPreference: u.budgetPreference || 'Moderate',
           preferredCurrency: u.preferredCurrency || 'INR',
+          country: u.country || 'India',
+          state: u.state,
+          city: u.city,
+          address: u.address,
+          postalCode: u.postalCode,
+          bio: u.bio,
+          dateOfBirth: u.dateOfBirth,
+          gender: u.gender,
+          agencyName: u.agencyName,
+          websiteUrl: u.websiteUrl,
+          specializations: u.specializations,
+          yearsOfExperience: u.yearsOfExperience,
+          languages: u.languages || [],
+          verificationStatus: u.verificationStatus || 'VERIFIED',
         };
         setUser(updated);
         localStorage.setItem('wayrivo_user', JSON.stringify(updated));
