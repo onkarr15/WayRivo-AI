@@ -10,7 +10,7 @@ import {
   Eye,
   EyeOff,
   User,
-  Sparkles,
+  Globe,
   Wallet,
   Building2,
   Info,
@@ -51,9 +51,9 @@ export const PayPalLoginPage: React.FC = () => {
   // 'review' = Review amount, funding source & click Complete Purchase
   const [step, setStep] = useState<'login' | 'review'>('login');
 
-  // Login Form Fields
-  const [identifier, setIdentifier] = useState<string>('sb-buyer2026@personal.example.com');
-  const [password, setPassword] = useState<string>('SandboxPass2026!');
+  // Login Form Fields - Starts empty; credentials must be manually entered
+  const [identifier, setIdentifier] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [stayLoggedIn, setStayLoggedIn] = useState<boolean>(true);
 
@@ -167,13 +167,6 @@ export const PayPalLoginPage: React.FC = () => {
     }
   };
 
-  // Handle Quick-Fill Test Account
-  const handleQuickFill = (email: string, pass: string, name: string) => {
-    setIdentifier(email);
-    setPassword(pass);
-    setBuyerName(name);
-    toast.success(`Applied ${name} PayPal Sandbox credentials`);
-  };
 
   // Step 1: Submit Login
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -431,6 +424,7 @@ export const PayPalLoginPage: React.FC = () => {
           </div>
         )}
 
+
         {/* Main PayPal Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200 text-center">
           {/* Authentic PayPal Logo */}
@@ -478,55 +472,6 @@ export const PayPalLoginPage: React.FC = () => {
                 </p>
               </div>
 
-              {/* Sandbox Quick-Fill Chips */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
-                  <span className="font-bold flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    Sandbox Test Credentials
-                  </span>
-                  <span>1-Click Auto-Fill</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickFill(
-                        'sb-buyer2026@personal.example.com',
-                        'SandboxPass2026!',
-                        'Alex J. Johnson'
-                      )
-                    }
-                    className="text-left px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-[#0070ba] text-xs transition-colors flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="font-mono text-slate-700 text-[11px]">
-                      sb-buyer2026@personal.example.com
-                    </span>
-                    <span className="text-[10px] font-bold text-[#0070ba]">
-                      Use
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleQuickFill(
-                        user?.email || 'traveler.sandbox@wayrivo.ai',
-                        'Traveler2026!',
-                        user?.name || 'Arjun K. Sharma'
-                      )
-                    }
-                    className="text-left px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-[#0070ba] text-xs transition-colors flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="font-mono text-slate-700 text-[11px]">
-                      {user?.email || 'traveler.sandbox@wayrivo.ai'}
-                    </span>
-                    <span className="text-[10px] font-bold text-[#0070ba]">
-                      Use
-                    </span>
-                  </button>
-                </div>
-              </div>
-
               <form onSubmit={handleLoginSubmit} className="space-y-4 pt-1">
                 {/* Email or Mobile Number */}
                 <div>
@@ -538,7 +483,7 @@ export const PayPalLoginPage: React.FC = () => {
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="sb-buyer@personal.example.com"
+                    placeholder="Email or mobile number"
                     className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-[#0070ba] focus:ring-1 focus:ring-[#0070ba] text-slate-900 text-sm outline-none transition-all placeholder:text-slate-400 font-mono"
                   />
                 </div>
@@ -596,6 +541,48 @@ export const PayPalLoginPage: React.FC = () => {
                 >
                   {isSessionExpired ? 'Payment Session Expired' : isLoggingIn ? 'Connecting...' : 'Log In to PayPal Sandbox'}
                 </button>
+
+                {/* Official PayPal Terms & Legal Links below Log In to PayPal Sandbox */}
+                <div className="pt-4 border-t border-slate-100 mt-4 text-center">
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-slate-500 font-medium">
+                    <a
+                      href="https://www.paypal.com/smarthelp/contact-us"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#0070ba] hover:underline transition-colors cursor-pointer"
+                    >
+                      Contact us
+                    </a>
+                    <span className="text-slate-300">•</span>
+                    <a
+                      href="https://www.paypal.com/webapps/mpp/ua/privacy-full"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#0070ba] hover:underline transition-colors cursor-pointer"
+                    >
+                      Privacy
+                    </a>
+                    <span className="text-slate-300">•</span>
+                    <a
+                      href="https://www.paypal.com/webapps/mpp/ua/legalhub-full"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#0070ba] hover:underline transition-colors cursor-pointer"
+                    >
+                      Legal
+                    </a>
+                    <span className="text-slate-300">•</span>
+                    <a
+                      href="https://www.paypal.com/webapps/mpp/country-worldwide"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#0070ba] hover:underline transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-slate-400" />
+                      Worldwide
+                    </a>
+                  </div>
+                </div>
               </form>
             </div>
           ) : (

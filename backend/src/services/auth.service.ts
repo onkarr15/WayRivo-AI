@@ -263,22 +263,33 @@ export class AuthService {
 
     // Atomic transaction for token verification, consumption, password update, and session revocation
     await prisma.$transaction(async (tx) => {
-      const resetToken = await tx.passwordResetToken.findUnique({
+      // 1. Atomically claim the token to prevent concurrent race conditions
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { usedAt: new Date() },
+      });
+
+      if (claimed.count === 0) {
+        const existing = await tx.passwordResetToken.findUnique({
+          where: { tokenHash },
+        });
+        if (!existing) {
+          throw new BadRequestError('This password reset link is invalid or has expired.');
+        }
+        if (existing.usedAt !== null) {
+          throw new BadRequestError('This password reset link has already been used. Please request a new one.');
+        }
+        throw new BadRequestError('This password reset link has expired. Please request a new one.');
+      }
+
+      const resetToken = await tx.passwordResetToken.findUniqueOrThrow({
         where: { tokenHash },
         include: { user: true },
       });
-
-      if (!resetToken) {
-        throw new BadRequestError('This password reset link is invalid or has expired.');
-      }
-
-      if (resetToken.usedAt !== null) {
-        throw new BadRequestError('This password reset link has already been used. Please request a new one.');
-      }
-
-      if (resetToken.expiresAt < new Date()) {
-        throw new BadRequestError('This password reset link has expired. Please request a new one.');
-      }
 
       if (resetToken.user.status === 'SUSPENDED') {
         throw new BadRequestError('This account is suspended. Please contact customer support.');
@@ -296,12 +307,6 @@ export class AuthService {
           passwordResetToken: null,
           passwordResetExpires: null,
         },
-      });
-
-      // Mark the current token as used
-      await tx.passwordResetToken.update({
-        where: { id: resetToken.id },
-        data: { usedAt: new Date() },
       });
 
       // Invalidate any other outstanding password reset tokens for this user

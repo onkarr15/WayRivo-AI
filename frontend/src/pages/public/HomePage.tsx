@@ -35,7 +35,6 @@ import {
   staggerItem,
   wordStaggerContainer,
   wordStaggerItem,
-  floatingElement,
   viewportTrigger,
 } from '../../utils/animations';
 
@@ -297,40 +296,6 @@ const HomePage: React.FC = () => {
           <div className="absolute top-16 right-16 w-80 h-80 bg-amber-400/10 rounded-full blur-[140px] pointer-events-none" />
         </motion.div>
 
-        {/* Ambient Floating Travel Badges (Desktop) */}
-        {!shouldReduceMotion && (
-          <>
-            <motion.div
-              variants={floatingElement}
-              animate="animate"
-              custom={4.2}
-              className="hidden xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-surface/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/50 absolute top-40 left-12 z-20 pointer-events-none"
-            >
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="text-left">
-                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Budget Intelligence</span>
-                <span className="text-xs font-black text-white">₹24,000 Trip Optimized</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              variants={floatingElement}
-              animate="animate"
-              custom={5.4}
-              className="hidden xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-surface/80 backdrop-blur-xl border border-teal-500/30 shadow-2xl shadow-teal-950/50 absolute top-52 right-12 z-20 pointer-events-none"
-            >
-              <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold">
-                <Shield className="w-4 h-4" />
-              </div>
-              <div className="text-left">
-                <span className="text-[10px] text-teal-300 font-bold uppercase tracking-wider block">PayPal Sandbox</span>
-                <span className="text-xs font-black text-white">100% Escrow Protection</span>
-              </div>
-            </motion.div>
-          </>
-        )}
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Intelligent Travel Badge Pill */}

@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { PaymentCountdownTimer } from '../../components/payment/PaymentCountdownTimer';
 import { PaymentProcessingOverlay } from '../../components/payment/PaymentProcessingOverlay';
+import { CardBrandLogo } from '../../components/payment/CardLogos';
 
 interface TestCardPreset {
   label: string;
@@ -441,7 +442,7 @@ export const CardCheckoutPage: React.FC = () => {
                 <span className="text-[10px] text-slate-400">1-Click Auto-Fill</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {TEST_CARDS.map((tc) => (
                   <button
                     key={tc.brand}
@@ -450,17 +451,26 @@ export const CardCheckoutPage: React.FC = () => {
                     disabled={submitting}
                     className="p-2.5 rounded-xl bg-slate-950/80 hover:bg-cyan-950/30 border border-slate-800 hover:border-cyan-500/40 text-left transition-all cursor-pointer group disabled:opacity-50"
                   >
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-white group-hover:text-cyan-300">
-                        {tc.brand}
-                      </span>
+                    <div className="flex items-center justify-between text-[11px] mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <CardBrandLogo
+                          brand={tc.brand}
+                          className="h-4.5 w-auto rounded shadow-sm shrink-0"
+                        />
+                        <span className="font-bold text-white group-hover:text-cyan-300">
+                          {tc.brand}
+                        </span>
+                      </div>
                       <span className="text-[10px] text-slate-400 font-mono">
                         •• {tc.number.slice(-4)}
                       </span>
                     </div>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">
-                      Exp: {tc.exp}
-                    </span>
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 pl-8">
+                      <span>Exp: {tc.exp}</span>
+                      <span className="text-[9px] text-cyan-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity uppercase">
+                        Select
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -477,17 +487,20 @@ export const CardCheckoutPage: React.FC = () => {
                 </span>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all ${
                       currentBrand === 'Visa'
-                        ? 'bg-blue-950 text-blue-300 border-blue-500/40'
+                        ? 'bg-blue-950/80 text-blue-200 border-blue-500/40'
                         : currentBrand === 'Mastercard'
-                        ? 'bg-amber-950 text-amber-300 border-amber-500/40'
+                        ? 'bg-amber-950/80 text-amber-200 border-amber-500/40'
                         : currentBrand === 'American Express'
-                        ? 'bg-cyan-950 text-cyan-300 border-cyan-500/40'
+                        ? 'bg-cyan-950/80 text-cyan-200 border-cyan-500/40'
                         : 'bg-slate-800 text-slate-400 border-slate-700'
                     }`}
                   >
-                    {currentBrand}
+                    {currentBrand !== 'Card' && (
+                      <CardBrandLogo brand={currentBrand} className="h-3.5 w-auto rounded shrink-0" />
+                    )}
+                    <span>{currentBrand}</span>
                   </span>
                 </div>
               </div>
@@ -522,9 +535,15 @@ export const CardCheckoutPage: React.FC = () => {
                     placeholder="4012 8888 8888 1881"
                     maxLength={19}
                     disabled={submitting}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-white font-mono text-sm tracking-widest outline-none transition-all placeholder:text-slate-600 disabled:opacity-50"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-white font-mono text-sm tracking-widest outline-none transition-all placeholder:text-slate-600 disabled:opacity-50"
                   />
-                  <CreditCard className="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5 pointer-events-none" />
+                  <div className="absolute left-3 top-3 pointer-events-none flex items-center justify-center">
+                    {currentBrand !== 'Card' ? (
+                      <CardBrandLogo brand={currentBrand} className="h-5 w-auto rounded shrink-0" />
+                    ) : (
+                      <CreditCard className="w-5 h-5 text-slate-500" />
+                    )}
+                  </div>
                 </div>
               </div>
 

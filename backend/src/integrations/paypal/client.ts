@@ -128,6 +128,30 @@ export class PayPalClient {
   }
 
   /**
+   * Retrieve PayPal Order details by ID
+   */
+  async getOrder(paypalOrderId: string): Promise<{ id: string; status: string; intent?: string }> {
+    if (this.clientId && this.clientSecret && !this.clientId.startsWith('AY_Demo')) {
+      try {
+        const token = await this.getAccessToken();
+        const response = await fetch(`${this.apiBase}/v2/checkout/orders/${paypalOrderId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          return (await response.json()) as any;
+        }
+      } catch (err) {
+        logger.warn(`Failed to fetch PayPal order ${paypalOrderId}:`, err);
+      }
+    }
+    return { id: paypalOrderId, status: 'CREATED', intent: 'CAPTURE' };
+  }
+
+  /**
    * Create PayPal Order v2 with Escrow Intent
    */
   async createOrder(params: {

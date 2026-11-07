@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services';
 import { Star, User } from 'lucide-react';
 
+// Fallback demo reviews defined outside component scope
+const FALLBACK_REVIEWS = [
+  { id: 1, travelerName: 'Arjun Sharma', expertName: 'Vikram Mehta', organizationName: 'Himalayan Journeys', rating: 5, comment: 'Vikram crafted an incredible Manali itinerary! The private riverside stay and camp bonfire were unforgettable.', createdAt: '2026-08-15' },
+  { id: 2, travelerName: 'Priya Patel', expertName: 'Ananya Sharma', organizationName: 'Kerala Bliss', rating: 5, comment: 'Flawless houseboat booking in Alleppey and great local dining recommendations. Highly recommended!', createdAt: '2026-08-14' },
+  { id: 3, travelerName: 'Rahul Verma', expertName: 'Suresh Rao', organizationName: 'Royal Rajasthan Tours', rating: 4, comment: 'Great heritage tour in Jaipur and Udaipur. Driver was very punctual and knowledgeable.', createdAt: '2026-08-12' },
+];
+
 const AdminReviews: React.FC = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
-
-  // Fallback demo reviews
-  const fallbackReviews = [
-    { id: 1, travelerName: 'Arjun Sharma', expertName: 'Vikram Mehta', organizationName: 'Himalayan Journeys', rating: 5, comment: 'Vikram crafted an incredible Manali itinerary! The private riverside stay and camp bonfire were unforgettable.', createdAt: '2026-08-15' },
-    { id: 2, travelerName: 'Priya Patel', expertName: 'Ananya Sharma', organizationName: 'Kerala Bliss', rating: 5, comment: 'Flawless houseboat booking in Alleppey and great local dining recommendations. Highly recommended!', createdAt: '2026-08-14' },
-    { id: 3, travelerName: 'Rahul Verma', expertName: 'Suresh Rao', organizationName: 'Royal Rajasthan Tours', rating: 4, comment: 'Great heritage tour in Jaipur and Udaipur. Driver was very punctual and knowledgeable.', createdAt: '2026-08-12' },
-  ];
 
   const fetchReviews = React.useCallback(async () => {
     setLoading(true);
@@ -24,10 +24,10 @@ const AdminReviews: React.FC = () => {
         setReviews(data.content);
         setTotalPages(data.totalPages || 1);
       } else {
-        setReviews(fallbackReviews);
+        setReviews(FALLBACK_REVIEWS);
       }
     } catch {
-      setReviews(fallbackReviews);
+      setReviews(FALLBACK_REVIEWS);
     }
     setLoading(false);
   }, [page]);

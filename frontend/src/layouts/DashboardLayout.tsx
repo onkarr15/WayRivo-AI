@@ -45,6 +45,7 @@ const adminLinks = [
   { to: '/admin/requests', icon: FileText, label: 'Trip Requests' },
   { to: '/admin/bookings', icon: Briefcase, label: 'Bookings' },
   { to: '/admin/reviews', icon: Star, label: 'Reviews' },
+  { to: '/admin/profile', icon: User, label: 'Profile' },
 ];
 
 const DashboardLayout: React.FC = () => {

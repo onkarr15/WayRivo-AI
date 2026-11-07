@@ -11,12 +11,21 @@ import {
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  Phone,
+  Mail,
+  MapPin,
+  Briefcase,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import { wayrivoAgGridTheme } from '../../utils/agGridTheme';
 import { useToast } from '../../components/ui/Toast';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
 
 // Register AG Grid Community Modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -37,6 +46,12 @@ const AdminUsers: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
+
+  // Detailed User Profile Modal State
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState<boolean>(false);
+  const [userProfileData, setUserProfileData] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -70,9 +85,41 @@ const AdminUsers: React.FC = () => {
     try {
       await adminService.updateUserRole(id, newRole);
       toast.success(`User role updated to ${newRole}`);
+      if (userProfileData && userProfileData.id === id) {
+        setUserProfileData({ ...userProfileData, role: newRole });
+      }
       fetchUsers();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to update user role.');
+    }
+  };
+
+  const handleOpenProfile = async (u: any) => {
+    setSelectedUser(u);
+    setUserProfileData(null);
+    setIsProfileModalOpen(true);
+    setLoadingProfile(true);
+    try {
+      const res = await adminService.getUserProfile(u.id);
+      setUserProfileData(res.data?.data || u);
+    } catch {
+      setUserProfileData(u);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleToggleSuspended = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+      await adminService.updateUserStatus(id, newStatus);
+      toast.success(`User account status updated to ${newStatus}.`);
+      if (userProfileData && userProfileData.id === id) {
+        setUserProfileData({ ...userProfileData, status: newStatus });
+      }
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to update account status.');
     }
   };
 
@@ -203,6 +250,22 @@ const AdminUsers: React.FC = () => {
       valueFormatter: (params: any) =>
         params.value ? new Date(params.value).toLocaleDateString('en-IN') : 'N/A',
       cellClass: 'text-slate-400 text-xs',
+    },
+    {
+      headerName: 'Actions',
+      width: 140,
+      cellRenderer: (params: any) => {
+        const data = params.data;
+        if (!data) return null;
+        return (
+          <button
+            onClick={() => handleOpenProfile(data)}
+            className="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 font-semibold border border-cyan-500/30 flex items-center gap-1 cursor-pointer transition-colors mt-1"
+          >
+            <Eye className="w-3.5 h-3.5" /> View Profile
+          </button>
+        );
+      },
     },
   ], []);
 
@@ -356,6 +419,7 @@ const AdminUsers: React.FC = () => {
                     <th className="p-3.5 text-center">Bookings</th>
                     <th className="p-3.5 text-right">Total Spent</th>
                     <th className="p-3.5">Joined Date</th>
+                    <th className="p-3.5 text-center">Profile</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -428,6 +492,16 @@ const AdminUsers: React.FC = () => {
                         <td className="p-3.5 text-slate-400 text-xs">
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN') : 'N/A'}
                         </td>
+
+                        {/* Profile Action */}
+                        <td className="p-3.5 text-center">
+                          <button
+                            onClick={() => handleOpenProfile(u)}
+                            className="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 font-semibold border border-cyan-500/30 flex items-center gap-1 mx-auto cursor-pointer transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -484,6 +558,198 @@ const AdminUsers: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Detailed User Profile Inspection Modal */}
+      <Modal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        title={selectedUser?.name ? `User Profile: ${selectedUser.name}` : 'User Profile'}
+        subtitle="Comprehensive account telemetry, permissions, preferences, and booking records."
+      >
+        {loadingProfile ? (
+          <div className="flex flex-col items-center justify-center p-12 space-y-3">
+            <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-slate-400 font-medium">Loading user telemetry...</p>
+          </div>
+        ) : !userProfileData ? (
+          <div className="p-8 text-center text-xs text-slate-400">Unable to retrieve user profile.</div>
+        ) : (
+          <div className="space-y-6 text-xs pt-2">
+            {/* Identity Card */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black text-lg flex items-center justify-center shrink-0 shadow-md">
+                  {userProfileData.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white">{userProfileData.name || 'Unnamed User'}</h3>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${
+                        roleBadgeColors[userProfileData.role || 'USER']
+                      }`}
+                    >
+                      {userProfileData.role || 'USER'}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 font-mono text-[11px] mt-0.5 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-slate-500" /> {userProfileData.email}
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-0.5 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-slate-500" /> {userProfileData.phone || '+91 98765 43210 (Default)'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Controls */}
+              <div className="flex flex-wrap sm:flex-col items-start sm:items-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleToggleVerified(userProfileData.id, userProfileData.isEmailVerified)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors ${
+                    userProfileData.isEmailVerified
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                      : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                  }`}
+                >
+                  {userProfileData.isEmailVerified ? (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5" /> Email Verified
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-3.5 h-3.5" /> Unverified Email
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleSuspended(userProfileData.id, userProfileData.status || 'ACTIVE')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors ${
+                    userProfileData.status === 'SUSPENDED'
+                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
+                      : 'bg-slate-800 text-slate-300 border border-slate-700 hover:text-rose-300'
+                  }`}
+                >
+                  {userProfileData.status === 'SUSPENDED' ? (
+                    <>
+                      <ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> Account Suspended
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Account Active
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Account Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 uppercase font-bold">Total Bookings</span>
+                <p className="text-base font-black text-cyan-400 font-mono">
+                  {userProfileData.totalBookings || userProfileData._count?.bookings || 0}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 uppercase font-bold">Total Spent</span>
+                <p className="text-base font-black text-emerald-400 font-mono">
+                  ₹{Number(userProfileData.totalSpent || 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 uppercase font-bold">Budget Tier</span>
+                <p className="text-xs font-bold text-white mt-1">
+                  {userProfileData.budgetPreference || 'Moderate'}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <span className="text-[10px] text-slate-400 uppercase font-bold">Currency</span>
+                <p className="text-xs font-bold text-white mt-1">
+                  {userProfileData.preferredCurrency || 'INR (₹)'}
+                </p>
+              </div>
+            </div>
+
+            {/* Travel Preferences */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <h4 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
+                <MapPin className="w-3.5 h-3.5 text-cyan-400" /> Travel Interests & Preferred Destinations
+              </h4>
+
+              <div className="space-y-2">
+                <div>
+                  <span className="text-[10px] text-slate-400 block mb-1">Destinations of Interest:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(userProfileData.preferredDestinations?.length
+                      ? userProfileData.preferredDestinations
+                      : ['Kerala', 'Himachal Pradesh', 'Rajasthan']
+                    ).map((d: string) => (
+                      <span key={d} className="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[11px]">
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-slate-400 block mb-1">Travel Themes:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(userProfileData.travelInterests?.length
+                      ? userProfileData.travelInterests
+                      : ['Backwaters', 'Heritage Tours', 'Luxury Stays']
+                    ).map((t: string) => (
+                      <span key={t} className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[11px]">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Booking History */}
+            {userProfileData.bookings && userProfileData.bookings.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
+                  <Briefcase className="w-3.5 h-3.5 text-cyan-400" /> Recent Bookings Under Escrow
+                </h4>
+                <div className="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
+                  {userProfileData.bookings.slice(0, 4).map((b: any) => (
+                    <div key={b.id} className="p-2.5 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-mono font-bold text-cyan-400 block">{b.bookingReference}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {b.createdAt ? new Date(b.createdAt).toLocaleDateString() : 'Recent'}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-white block">
+                          ₹{Number(b.totalAmount || 0).toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-[10px] text-emerald-400 font-bold uppercase">{b.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Footer with Metadata & Dismiss */}
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-slate-400 text-[11px]">
+              <span>ID: <code className="text-slate-300 font-mono text-[10px]">{userProfileData.id}</code></span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsProfileModalOpen(false)}
+              >
+                Close Profile
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

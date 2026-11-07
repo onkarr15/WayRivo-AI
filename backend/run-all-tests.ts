@@ -15,6 +15,7 @@ const testSuites = [
   { name: '5–6s Payment Processing Animation & Capture Verification', file: 'test-payment-processing-animation.ts' },
   { name: 'Payment Success Page & PDF Receipt with 12-Digit TxID & PayPal Logo', file: 'test-payment-success-receipt.ts' },
   { name: 'PayPal Buffering Animations & 6-Minute Countdown Visibility', file: 'test-payment-buffering-countdown.ts' },
+  { name: 'Enhanced Admin Dashboard & Financial Telemetry', file: 'test-admin-dashboard-enhancements.ts' },
 ];
 
 console.log('\n======================================================================');

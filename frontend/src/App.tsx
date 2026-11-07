@@ -59,6 +59,7 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminTripRequests from './pages/admin/AdminTripRequests';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminReviews from './pages/admin/AdminReviews';
+import AdminProfile from './pages/admin/AdminProfile';
 
 function App() {
   return (
@@ -157,6 +158,7 @@ function App() {
                 <Route path="/admin/requests" element={<AdminTripRequests />} />
                 <Route path="/admin/bookings" element={<AdminBookings />} />
                 <Route path="/admin/reviews" element={<AdminReviews />} />
+                <Route path="/admin/profile" element={<AdminProfile />} />
               </Route>
 
               {/* Fallback */}

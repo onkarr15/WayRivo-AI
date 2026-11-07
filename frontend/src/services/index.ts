@@ -192,6 +192,7 @@ export const adminService = {
   getAuditLogs: (limit = 50) => api.get(`/admin/audit-logs?limit=${limit}`),
   getUsers: (page = 0, size = 10, search = '', role = '') =>
     api.get(`/admin/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}&role=${role}`),
+  getUserProfile: (id: string) => api.get(`/admin/users/${id}/profile`),
   updateUserRole: (id: string, role: string) => api.patch(`/admin/users/${id}/role`, { role }),
   updateUserStatus: (id: number | string, status: string) => api.patch(`/admin/users/${id}/status?status=${status}`),
   getBookings: (page = 0, size = 10, search = '', status = '') =>
@@ -203,6 +204,24 @@ export const adminService = {
   updateExpertVerification: (id: number | string, status: string) => api.patch(`/admin/experts/${id}/verification?status=${status}`),
   getTripRequests: (page = 0, size = 10) => api.get(`/admin/trip-requests?page=${page}&size=${size}`),
   getReviews: (page = 0, size = 10) => api.get(`/admin/reviews?page=${page}&size=${size}`),
+  // Enhanced Financial & Trip Analytics APIs
+  getDashboardOverview: () => api.get('/admin/dashboard/overview'),
+  getRecentTrips: (page = 0, size = 10, search = '', status = '', startDate = '', endDate = '') =>
+    api.get(`/admin/trips/recent?page=${page}&size=${size}&search=${encodeURIComponent(search)}&status=${status}&startDate=${startDate}&endDate=${endDate}`),
+  getRecentPayments: (page = 0, size = 10, search = '', status = '', startDate = '', endDate = '') =>
+    api.get(`/admin/payments/recent?page=${page}&size=${size}&search=${encodeURIComponent(search)}&status=${status}&startDate=${startDate}&endDate=${endDate}`),
+  getPendingPayments: (page = 0, size = 10, search = '', status = '') =>
+    api.get(`/admin/payments/pending?page=${page}&size=${size}&search=${encodeURIComponent(search)}&status=${status}`),
+  getPaymentDetail: (paymentId: string) => api.get(`/admin/payments/${paymentId}`),
+  reconcilePayment: (paymentId: string) => api.post(`/admin/payments/${paymentId}/reconcile`),
+  getRevenueOverview: () => api.get('/admin/revenue/overview'),
+  getMonthlyRevenue: (year = new Date().getFullYear()) => api.get(`/admin/revenue/monthly?year=${year}`),
+  getTravellerRevenue: (page = 0, size = 10, search = '') =>
+    api.get(`/admin/revenue/by-traveller?page=${page}&size=${size}&search=${encodeURIComponent(search)}`),
+  getTravellerRevenueProfile: (travellerId: string) => api.get(`/admin/travellers/${travellerId}/revenue`),
+  getPaymentReports: (status = '', startDate = '', endDate = '') =>
+    api.get(`/admin/reports/payments?status=${status}&startDate=${startDate}&endDate=${endDate}`),
+  getRevenueReports: () => api.get('/admin/reports/revenue'),
 };
 
 export const itineraryIntelligenceService = {

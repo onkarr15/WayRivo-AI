@@ -245,6 +245,21 @@ async function runTests() {
   // 12. Admin Auth & RBAC Guard
   let adminToken = '';
   await test('POST /api/v1/auth/login (Admin Role)', async () => {
+    // Ensure admin user exists with password123
+    const bcrypt = await import('bcryptjs');
+    const hash = await bcrypt.default.hash('password123', 10);
+    await prisma.user.upsert({
+      where: { email: 'admin@wayrivo.com' },
+      update: { passwordHash: hash, role: 'ADMIN', isEmailVerified: true },
+      create: {
+        name: 'System Admin',
+        email: 'admin@wayrivo.com',
+        passwordHash: hash,
+        role: 'ADMIN',
+        isEmailVerified: true,
+      },
+    });
+
     const res = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
