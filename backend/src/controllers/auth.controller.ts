@@ -139,7 +139,7 @@ export const googleAuth = async (req: Request, res: Response, next: NextFunction
  * Handles the Google OAuth 2.0 redirect callback
  */
 export const googleCallback = async (req: Request, res: Response) => {
-  const frontendUrl = env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = (env.FRONTEND_URL || 'http://localhost:5173').trim().replace(/\/+$/, '');
 
   try {
     // Check if user cancelled authentication on Google consent screen

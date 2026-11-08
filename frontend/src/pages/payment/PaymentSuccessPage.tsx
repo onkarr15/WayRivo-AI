@@ -21,6 +21,7 @@ import { paymentService, bookingService } from '../../services';
 import { useToast } from '../../components/ui/Toast';
 import { AnimatedGreenCheckmark } from '../../components/payment/AnimatedGreenCheckmark';
 import { PayPalOfficialLogo } from '../../components/payment/PayPalOfficialLogo';
+import { WayRivoLogo } from '../../components/branding';
 
 export const PaymentSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -324,15 +325,17 @@ export const PaymentSuccessPage: React.FC = () => {
       `}</style>
 
       <div className="w-full max-w-xl print:max-w-none print:w-full space-y-4 print:space-y-2">
-        {/* Brand Header */}
-        <div className="text-center print:mb-1.5">
-          <div className="inline-flex items-center gap-1.5 text-2xl font-black tracking-wider text-slate-900 print:text-xl">
-            WAY<span className="text-cyan-600">RIVO</span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-cyan-100 text-cyan-800 border border-cyan-200">
-              AI 2.0
-            </span>
-          </div>
-          <p className="text-[11px] font-medium text-slate-500 mt-0.5 uppercase tracking-widest print:text-[10px]">
+        {/* Brand Header with Official Aero W Logo */}
+        <div className="text-center print:mb-1.5 flex flex-col items-center">
+          <WayRivoLogo
+            variant="horizontal"
+            size="lg"
+            theme="light"
+            withVersion={true}
+            href="/"
+            className="justify-center"
+          />
+          <p className="text-[11px] font-semibold text-slate-500 mt-1 uppercase tracking-widest print:text-[10px]">
             Official Electronic Payment & Escrow Receipt
           </p>
         </div>

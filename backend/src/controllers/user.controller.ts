@@ -4,6 +4,7 @@ import { sendSuccess } from '../utils/response';
 import { AuthRequest } from '../types';
 import { prisma } from '../config/db';
 import { BookingStatus, PaymentStatus } from '@prisma/client';
+import { enrichBookingMeta } from './booking.controller';
 
 export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -153,6 +154,9 @@ export const getUserDashboard = async (req: AuthRequest, res: Response, next: Ne
       .filter((b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.ESCROW_HOLD || b.payment?.status === PaymentStatus.CAPTURED)
       .reduce((sum, b) => sum + Number(b.totalAmount), 0);
 
+    // Enrich all bookings with destination, departure and expert metadata
+    bookings.forEach(enrichBookingMeta);
+
     sendSuccess(res, {
       overview: {
         totalTrips,
@@ -164,6 +168,7 @@ export const getUserDashboard = async (req: AuthRequest, res: Response, next: Ne
       },
       upcomingTrips,
       completedTrips,
+      pendingTrips: pendingBookings,
       bookings,
       savedItineraries,
       conversations: conversations.map((c) => ({

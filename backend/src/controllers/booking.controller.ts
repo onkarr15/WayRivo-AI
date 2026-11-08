@@ -2,6 +2,9 @@ import { Response, NextFunction } from 'express';
 import { bookingService } from '../services/booking.service';
 import { sendCreated, sendSuccess } from '../utils/response';
 import { AuthRequest } from '../types';
+import { prisma } from '../config/db';
+import { BookingStatus } from '@prisma/client';
+import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 
 export const createBooking = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -18,7 +21,7 @@ export const createBooking = async (req: AuthRequest, res: Response, next: NextF
   }
 };
 
-const enrichBookingMeta = (b: any) => {
+export const enrichBookingMeta = (b: any) => {
   if (!b) return b;
   const reqText = b.specialRequests || '';
   const fromMatch = reqText.match(/\[FROM:(.*?)\]/);
@@ -54,6 +57,32 @@ export const getUserBookings = async (req: AuthRequest, res: Response, next: Nex
       bookings.forEach(enrichBookingMeta);
     }
     sendSuccess(res, bookings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cancelUnpaidBooking = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!booking) {
+      throw new NotFoundError('Booking not found');
+    }
+    if (booking.userId !== req.user!.id && req.user?.role !== 'ADMIN') {
+      throw new ForbiddenError('Unauthorized to cancel this booking');
+    }
+    if (booking.status !== BookingStatus.PENDING_PAYMENT) {
+      throw new BadRequestError(
+        'Only unpaid pending bookings can be directly cancelled. For confirmed bookings, please submit an escrow cancellation request.'
+      );
+    }
+    const updated = await prisma.booking.update({
+      where: { id: req.params.id },
+      data: { status: BookingStatus.CANCELLED },
+    });
+    sendSuccess(res, enrichBookingMeta(updated), 'Unpaid booking cancelled successfully');
   } catch (error) {
     next(error);
   }

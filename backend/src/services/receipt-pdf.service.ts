@@ -79,22 +79,64 @@ export class ReceiptPdfService {
         const headerHeight = 90;
         doc
           .roundedRect(margin, margin, contentWidth, headerHeight, 10)
-          .fillAndStroke('#090d16', '#1e293b');
+          .fillAndStroke('#071B33', '#1e293b');
 
-        // WayRivo AI 2.0 Brand Logo / Text
+        // Official Aero W Brand Vector Symbol inside Header
+        const logoX = margin + 18;
+        const logoY = margin + 22;
+        const logoBadgeSize = 46;
+
+        doc
+          .roundedRect(logoX, logoY, logoBadgeSize, logoBadgeSize, 10)
+          .fillAndStroke('#0B1E38', '#35D6E8');
+
+        // Draw Aero W Vector Mark in PDFKit
+        doc.save();
+        doc.translate(logoX + 4, logoY + 4);
+        doc.scale(0.316); // 120 * 0.316 = ~38px
+
+        // Left Outer Fin
+        doc
+          .path(
+            'M 18 25 C 18 21.5, 22.5 19, 27 19 L 34 19 C 38 19, 41 21.5, 42.5 25.5 L 54 68 C 55.5 72.5, 52 77, 47.5 77 L 40 77 C 36.5 77, 33.5 74.5, 32 71.5 L 18.8 28.5 C 18.2 27.5, 18 26.2, 18 25 Z'
+          )
+          .fill('#1677D2');
+
+        // Right Outer Fin
+        doc
+          .path(
+            'M 102 25 C 102 21.5, 97.5 19, 93 19 L 86 19 C 82 19, 79 21.5, 77.5 25.5 L 66 68 C 64.5 72.5, 68 77, 72.5 77 L 80 77 C 83.5 77, 86.5 74.5, 88 71.5 L 101.2 28.5 C 101.8 27.5, 102 26.2, 102 25 Z'
+          )
+          .fill('#1677D2');
+
+        // Central Jet Monogram
+        doc
+          .path(
+            'M 60 11 C 61.2 11, 62.4 12.2, 63 14 L 66.5 36 L 94 54 C 96 55.5, 95 58.5, 92.5 58.5 L 68 57.2 L 66 80.5 L 72 82 C 73.5 82.5, 73.5 84.5, 72 84.5 L 63 84.5 L 60 88 L 57 84.5 L 48 84.5 C 46.5 84.5, 46.5 82.5, 48 82 L 54 80.5 L 52 57.2 L 27.5 58.5 C 25 58.5, 24 55.5, 26 54 L 53.5 36 L 57 14 C 57.6 12.2, 58.8 11, 60 11 Z'
+          )
+          .fill('#35D6E8');
+
+        // Flight Orbit Trajectory Arc
+        doc
+          .path('M 16 70 C 32 87, 88 87, 104 70 C 88 81, 32 81, 16 70 Z')
+          .fill('#35D6E8');
+
+        doc.restore();
+
+        // WayRivo AI 2.0 Brand Logo / Wordmark
         doc
           .font('Helvetica-Bold')
-          .fontSize(20)
-          .fillColor('#06b6d4')
-          .text('WAYRIVO', margin + 20, margin + 22, { continued: true })
+          .fontSize(19)
+          .fillColor('#35D6E8')
+          .text('WAYRIVO', margin + 74, margin + 26, { continued: true })
           .fillColor('#ffffff')
           .text(' AI 2.0');
 
         doc
-          .font('Helvetica')
-          .fontSize(9)
+          .font('Helvetica-Bold')
+          .fontSize(8)
           .fillColor('#94a3b8')
-          .text('Autonomous Travel Ecosystem & Escrow Protection', margin + 20, margin + 48);
+          .text('TRAVEL SMARTER. EXPLORE FURTHER.', margin + 74, margin + 49);
 
         // Header Right: Title & Receipt Number
         doc

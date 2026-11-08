@@ -27,6 +27,7 @@ const Bookings: React.FC = () => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
 
   // Cancellation Modal State
   const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
@@ -64,6 +65,19 @@ const Bookings: React.FC = () => {
     }
   };
 
+  const handleCancelUnpaid = async (bookingId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this unpaid reservation? You can re-book anytime.')) {
+      return;
+    }
+    try {
+      await bookingService.cancelUnpaid(bookingId);
+      toast.success('Unpaid reservation cancelled successfully.');
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to cancel unpaid booking.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -71,6 +85,19 @@ const Bookings: React.FC = () => {
       </div>
     );
   }
+
+  const pendingBookings = bookings.filter((b) => b.status === 'PENDING_PAYMENT');
+  const confirmedBookings = bookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'ESCROW_HOLD');
+  const otherBookings = bookings.filter((b) => b.status === 'CANCELLED' || b.status === 'REFUNDED');
+
+  const filteredBookings =
+    filter === 'pending'
+      ? pendingBookings
+      : filter === 'confirmed'
+      ? confirmedBookings
+      : filter === 'cancelled'
+      ? otherBookings
+      : bookings;
 
   return (
     <div className="space-y-6">
@@ -92,6 +119,80 @@ const Bookings: React.FC = () => {
         </Link>
       </div>
 
+      {/* Action Required Callout for Pending Bookings */}
+      {pendingBookings.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/20 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <AlertCircle className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                Action Required • {pendingBookings.length} {pendingBookings.length === 1 ? 'Booking' : 'Bookings'} Awaiting Checkout
+              </span>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Complete your PayPal deposit to confirm reservation details and lock in specialist escrow coverage.
+              </p>
+            </div>
+          </div>
+          {filter !== 'pending' && (
+            <button
+              onClick={() => setFilter('pending')}
+              className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shrink-0 self-start sm:self-auto cursor-pointer shadow-md shadow-amber-400/20"
+            >
+              Filter Pending ({pendingBookings.length})
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+            filter === 'all'
+              ? 'bg-cyan-500 text-slate-950 font-bold'
+              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          All ({bookings.length})
+        </button>
+        <button
+          onClick={() => setFilter('pending')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors ${
+            filter === 'pending'
+              ? 'bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-400/20'
+              : 'bg-amber-500/10 text-amber-400 hover:text-amber-300 border border-amber-500/20'
+          }`}
+        >
+          <AlertCircle className="w-3.5 h-3.5" />
+          Pending Payment ({pendingBookings.length})
+        </button>
+        <button
+          onClick={() => setFilter('confirmed')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+            filter === 'confirmed'
+              ? 'bg-cyan-500 text-slate-950 font-bold'
+              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          Confirmed & Escrow ({confirmedBookings.length})
+        </button>
+        {otherBookings.length > 0 && (
+          <button
+            onClick={() => setFilter('cancelled')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+              filter === 'cancelled'
+                ? 'bg-cyan-500 text-slate-950 font-bold'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            Cancelled / Refunded ({otherBookings.length})
+          </button>
+        )}
+      </div>
+
       {bookings.length === 0 ? (
         <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800">
           <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-3" />
@@ -106,17 +207,32 @@ const Bookings: React.FC = () => {
             Explore AI Travel Planner
           </Link>
         </div>
+      ) : filteredBookings.length === 0 ? (
+        <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400">
+          <p className="text-xs font-semibold">No bookings match the selected filter ({filter}).</p>
+          <button
+            onClick={() => setFilter('all')}
+            className="mt-3 px-3 py-1.5 rounded-lg bg-slate-800 text-cyan-300 text-xs font-semibold"
+          >
+            Show All Bookings
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {bookings.map((b: any) => {
+          {filteredBookings.map((b: any) => {
             const isConfirmed = b.status === 'CONFIRMED' || b.status === 'ESCROW_HOLD';
             const isPending = b.status === 'PENDING_PAYMENT';
             const isRefunded = b.status === 'REFUNDED';
+            const isCancelled = b.status === 'CANCELLED';
 
             return (
               <div
                 key={b.id}
-                className="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all shadow-lg"
+                className={`p-5 sm:p-6 rounded-2xl transition-all shadow-lg ${
+                  isPending
+                    ? 'bg-slate-900/95 border-2 border-amber-500/40 shadow-amber-500/5'
+                    : 'bg-slate-900 border border-slate-800 hover:border-slate-700'
+                }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="space-y-2">
@@ -191,12 +307,20 @@ const Bookings: React.FC = () => {
                     </Link>
 
                     {isPending && (
-                      <Link
-                        to={`/traveler/booking-confirmation/${b.id}`}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-md shadow-amber-400/20 flex items-center gap-1.5"
-                      >
-                        <CreditCard className="w-3.5 h-3.5" /> Complete PayPal Deposit
-                      </Link>
+                      <>
+                        <button
+                          onClick={() => handleCancelUnpaid(b.id)}
+                          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-red-950/40 text-slate-400 hover:text-red-400 font-semibold text-xs border border-slate-700 hover:border-red-500/30 cursor-pointer transition-colors"
+                        >
+                          Cancel Booking
+                        </button>
+                        <Link
+                          to={`/traveler/booking-confirmation/${b.id}`}
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-md shadow-amber-400/20 flex items-center gap-1.5"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" /> Complete PayPal Deposit
+                        </Link>
+                      </>
                     )}
 
                     {isConfirmed && (
@@ -209,6 +333,12 @@ const Bookings: React.FC = () => {
                       >
                         Request Cancellation
                       </button>
+                    )}
+
+                    {isCancelled && (
+                      <span className="px-3 py-1.5 rounded-xl bg-red-950/30 text-red-400 text-xs font-semibold border border-red-800/40">
+                        Cancelled
+                      </span>
                     )}
 
                     {isRefunded && (

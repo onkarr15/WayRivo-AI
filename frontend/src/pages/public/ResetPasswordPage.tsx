@@ -3,7 +3,6 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { authService } from '../../services';
 import {
-  Bot,
   Lock,
   Eye,
   EyeOff,
@@ -16,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { WayRivoLogo } from '../../components/branding';
 
 // Password strength evaluator
 interface PasswordStrength {
@@ -179,14 +179,15 @@ const ResetPasswordPage: React.FC = () => {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2.5 mb-3 group focus:outline-none focus:ring-2 focus:ring-cyan-400 rounded-xl p-1">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-heading font-extrabold text-2xl text-white tracking-tight">
-              WayRivo <span className="text-cyan-400">AI</span>
-            </span>
-          </Link>
+          <div className="inline-flex justify-center mb-3">
+            <WayRivoLogo
+              variant="horizontal"
+              size="lg"
+              withVersion={true}
+              href="/"
+              glow={true}
+            />
+          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Set New Password</h1>
           <p className="text-slate-400 text-sm mt-2">
             Establish a secure password of at least 12 characters

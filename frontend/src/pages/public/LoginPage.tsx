@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { Bot, Sparkles, Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Sparkles, Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { WayRivoLogo } from '../../components/branding';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 
 const LoginPage: React.FC = () => {
@@ -92,19 +93,15 @@ const LoginPage: React.FC = () => {
         <div className="absolute bottom-10 right-0 w-80 h-80 bg-gold-400/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Brand */}
-        <Link to="/" className="flex items-center gap-2.5 z-10 group w-fit">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-            <Bot className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-heading font-extrabold text-xl text-white tracking-tight flex items-center gap-1.5">
-              WayRivo <span className="text-cyan-400">AI</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                2.0
-              </span>
-            </span>
-          </div>
-        </Link>
+        <div className="z-10 w-fit">
+          <WayRivoLogo
+            variant="horizontal"
+            size="lg"
+            withVersion={true}
+            href="/"
+            glow={true}
+          />
+        </div>
 
         {/* Cinematic Headline & Copy */}
         <div className="max-w-md z-10 my-auto py-8">
@@ -189,15 +186,14 @@ const LoginPage: React.FC = () => {
           className="w-full max-w-md"
         >
           {/* Mobile Header */}
-          <div className="lg:hidden flex items-center gap-2 mb-6 justify-center">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-heading font-extrabold text-xl text-white">
-                WayRivo <span className="text-cyan-400">AI</span>
-              </span>
-            </Link>
+          <div className="lg:hidden flex items-center justify-center mb-6">
+            <WayRivoLogo
+              variant="horizontal"
+              size="md"
+              withVersion={true}
+              href="/"
+              glow={true}
+            />
           </div>
 
           <div className="text-left mb-6">

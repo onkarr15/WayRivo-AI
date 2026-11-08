@@ -191,8 +191,8 @@ export class PayPalClient {
             brand_name: 'WayRivo AI 2.0',
             landing_page: 'NO_PREFERENCE',
             user_action: 'PAY_NOW',
-            return_url: returnUrl || 'http://localhost:5173/traveler/bookings',
-            cancel_url: cancelUrl || 'http://localhost:5173/traveler/bookings',
+            return_url: returnUrl || `${(env.FRONTEND_URL || 'http://localhost:5173').trim().replace(/\/+$/, '')}/traveler/bookings`,
+            cancel_url: cancelUrl || `${(env.FRONTEND_URL || 'http://localhost:5173').trim().replace(/\/+$/, '')}/traveler/bookings`,
           },
         }),
       });

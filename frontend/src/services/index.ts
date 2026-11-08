@@ -113,6 +113,7 @@ export const bookingService = {
   getById: (id: number | string) => api.get(`/bookings/${id}`),
   create: (data: any) => api.post('/bookings', data),
   updateStatus: (id: number | string, status: string) => api.patch(`/bookings/${id}/status?status=${status}`),
+  cancelUnpaid: (id: number | string) => api.patch(`/bookings/${id}/cancel`),
 };
 
 export const paymentService = {

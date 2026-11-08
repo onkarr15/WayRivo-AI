@@ -11,12 +11,12 @@ import {
   LogOut,
   User,
   LayoutDashboard,
-  MapPin,
   Sparkles,
   Bot,
   Settings,
 } from 'lucide-react';
 import { notificationService, messageService } from '../services';
+import { WayRivoLogo } from './branding';
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -113,29 +113,14 @@ const Navbar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
-          {/* 1. WayRivo AI Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:shadow-cyan-400/40 transition-shadow"
-            >
-              <MapPin className="w-5 h-5 text-slate-950 font-black" />
-            </motion.div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-black tracking-wider text-white">
-                  WAY<span className="text-gradient-cyan">RIVO</span>
-                </span>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                  AI 2.0
-                </span>
-              </div>
-              <span className="text-[9px] font-medium text-slate-400 -mt-1 tracking-tight">
-                Intelligent Travel Platform
-              </span>
-            </div>
-          </Link>
+          {/* 1. Official WayRivo AI Aero W Logo */}
+          <WayRivoLogo
+            variant="horizontal"
+            size="md"
+            withVersion={true}
+            href="/"
+            glow={true}
+          />
 
           {/* Desktop Navigation Links */}
           <div className="hidden lg:flex items-center gap-7">

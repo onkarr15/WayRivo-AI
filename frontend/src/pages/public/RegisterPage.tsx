@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import {
-  Bot,
   User,
   Mail,
   Lock,
@@ -16,6 +15,7 @@ import {
   Building,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { WayRivoLogo } from '../../components/branding';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 
 const RegisterPage: React.FC = () => {
@@ -105,17 +105,15 @@ const RegisterPage: React.FC = () => {
       >
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2.5 mb-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-heading font-extrabold text-2xl text-white tracking-tight">
-              WayRivo <span className="text-cyan-400">AI</span>
-              <span className="text-[10px] ml-1.5 font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                2.0
-              </span>
-            </span>
-          </Link>
+          <div className="inline-flex justify-center mb-3">
+            <WayRivoLogo
+              variant="horizontal"
+              size="lg"
+              withVersion={true}
+              href="/"
+              glow={true}
+            />
+          </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Create your account</h1>
           <p className="text-slate-400 text-sm mt-1">
             Join the autonomous AI travel planning & escrow booking network

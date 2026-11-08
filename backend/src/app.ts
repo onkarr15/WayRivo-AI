@@ -19,8 +19,8 @@ app.use(cookieParser());
 
 // CORS Configuration
 const allowedOrigins = [
-  ...env.CORS_ORIGIN.split(',').map((o) => o.trim()),
-  ...(env.FRONTEND_URL ? [env.FRONTEND_URL.trim()] : []),
+  ...env.CORS_ORIGIN.split(',').map((o) => o.trim().replace(/\/+$/, '')),
+  ...(env.FRONTEND_URL ? [env.FRONTEND_URL.trim().replace(/\/+$/, '')] : []),
 ].filter(Boolean);
 
 app.use(
@@ -34,10 +34,12 @@ app.use(
       }
 
       // Production mode: allow configured origins and all Vercel deployment domains
+      const sanitizedOrigin = origin.trim().replace(/\/+$/, '');
       const isAllowed =
         allowedOrigins.includes('*') ||
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app');
+        allowedOrigins.includes(sanitizedOrigin) ||
+        sanitizedOrigin.endsWith('.vercel.app') ||
+        /^https:\/\/[\w-]+\.vercel\.app$/.test(sanitizedOrigin);
 
       if (isAllowed) {
         callback(null, true);

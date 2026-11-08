@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   Users,
   FileText,
@@ -28,6 +28,7 @@ import { FAQSection } from '../../components/ui/FAQSection';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { CinematicIntroAnimation } from '../../components/ui/CinematicIntroAnimation';
 import {
   fadeUp,
   scaleReveal,
@@ -41,6 +42,31 @@ import {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
+
+  // Cinematic Intro Animation State
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('intro') === 'false') return false;
+      if (searchParams.get('intro') === 'true') return true;
+
+      const hasSeen = sessionStorage.getItem('wayrivo_cinematic_intro_shown');
+      return !hasSeen;
+    } catch {
+      return false;
+    }
+  });
+
+  const handleIntroComplete = useCallback(() => {
+    try {
+      sessionStorage.setItem('wayrivo_cinematic_intro_shown', 'true');
+    } catch {}
+    setShowIntro(false);
+  }, []);
+
+  const handleReplayIntro = useCallback(() => {
+    setShowIntro(true);
+  }, []);
 
   const [stats, setStats] = useState<any>({});
   const [destinations, setDestinations] = useState<any[]>([]);
@@ -276,8 +302,19 @@ const HomePage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-navy-dark min-h-screen text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* 2. HERO SECTION WITH CINEMATIC PARALLAX & WORD STAGGER */}
+    <>
+      {/* 1. CINEMATIC ENTRANCE ANIMATION OVERLAY */}
+      <AnimatePresence mode="wait">
+        {showIntro && (
+          <CinematicIntroAnimation
+            key="wayrivo-cinematic-intro"
+            onComplete={handleIntroComplete}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="bg-navy-dark min-h-screen text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
+        {/* 2. HERO SECTION WITH CINEMATIC PARALLAX & WORD STAGGER */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36 overflow-hidden">
         {/* Background Travel Photography with Smooth Depth Parallax */}
         <motion.div
@@ -364,6 +401,16 @@ const HomePage: React.FC = () => {
                 Plan with AI
               </Button>
             </Link>
+
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleReplayIntro}
+              leftIcon={<Sparkles className="w-4 h-4 text-cyan-400" />}
+              title="Experience WayRivo AI 2.0 Cinematic Intro Animation"
+            >
+              Watch Intro
+            </Button>
           </motion.div>
 
           {/* 3. AI TRAVEL SEARCH FLOATING PANEL */}
@@ -812,6 +859,7 @@ const HomePage: React.FC = () => {
         </motion.div>
       </section>
     </div>
+  </>
   );
 };
 

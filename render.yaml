@@ -1,14 +1,14 @@
 services:
-  # WayRivo AI 2.0 Backend Express API
+  # WayRivo AI 2.0 Backend Express API on Render
   - type: web
-    name: wayrivo-backend-api
+    name: wayrivo-api
     runtime: node
     plan: starter
     region: oregon
     rootDir: backend
-    buildCommand: npm install && npm run build
-    startCommand: npx prisma db push --skip-generate && npm start
-    healthCheckPath: /api/v1/health
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -19,19 +19,27 @@ services:
         sync: false
       - key: DIRECT_URL
         sync: false
+      - key: FRONTEND_URL
+        value: https://wayrivo.vercel.app
       - key: CORS_ORIGIN
-        value: https://wayrivo.vercel.app,http://localhost:5173
+        value: https://wayrivo.vercel.app,https://*.vercel.app
+      - key: BACKEND_URL
+        value: https://wayrivo-api.onrender.com
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
       - key: COOKIE_SECRET
         generateValue: true
       - key: GEMINI_API_KEY
         sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
       - key: PAYPAL_CLIENT_ID
         sync: false
       - key: PAYPAL_CLIENT_SECRET
         sync: false
-      - key: PAYPAL_BASE_URL
+      - key: PAYPAL_API_BASE
         value: https://api-m.sandbox.paypal.com
       - key: PAYPAL_CURRENCY
         value: USD
@@ -39,4 +47,13 @@ services:
         value: "83.5"
       - key: PAYPAL_WEBHOOK_ID
         sync: false
-
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        value: https://wayrivo-api.onrender.com/api/v1/auth/google/callback
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: WayRivo AI <onboarding@resend.dev>

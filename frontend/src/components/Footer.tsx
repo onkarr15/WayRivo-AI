@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Mail, Phone, Lock, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, Lock, ShieldCheck } from 'lucide-react';
+import { WayRivoLogo } from './branding';
 
 const Footer: React.FC = () => {
   const handleScrollToFeature = (featureId?: string) => {
@@ -29,19 +30,16 @@ const Footer: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
         {/* Brand Column */}
         <div className="lg:col-span-2">
-          <Link to="/" className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
-              <MapPin className="w-5 h-5 text-slate-950 font-black" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-wider text-white">
-                WAY<span className="text-gradient-cyan">RIVO</span>
-              </span>
-              <span className="text-[10px] font-medium text-slate-400 -mt-1 tracking-tight">
-                AI Travel Platform
-              </span>
-            </div>
-          </Link>
+          <div className="mb-4">
+            <WayRivoLogo
+              variant="horizontal"
+              size="md"
+              withVersion={true}
+              showTagline={true}
+              href="/"
+              glow={true}
+            />
+          </div>
 
           <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
             WayRivo AI 2.0 combines intelligent Google Gemini travel agents with verified destination specialists and secure PayPal Escrow protection.

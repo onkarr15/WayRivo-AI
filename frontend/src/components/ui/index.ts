@@ -16,3 +16,4 @@ export * from './AnimatedCounter';
 export * from './AITravelSearchPanel';
 export * from './FAQSection';
 export * from './AIAssistantPromotion';
+export * from './CinematicIntroAnimation';

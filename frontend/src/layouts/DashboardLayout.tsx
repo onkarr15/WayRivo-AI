@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { WayRivoLogo } from '../components/branding';
 import {
   LayoutDashboard,
   MapPin,
@@ -70,19 +71,13 @@ const DashboardLayout: React.FC = () => {
         }`}
       >
         <div className="flex items-center justify-between h-20 px-6 border-b border-border/80">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-cyan-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
-              <MapPin className="w-4 h-4 text-slate-950 font-black" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-black text-lg tracking-wider text-white">
-                WAY<span className="text-gradient-cyan">RIVO</span>
-              </span>
-              <span className="text-[9px] font-bold text-amber-300 uppercase tracking-widest -mt-1">
-                AI 2.0 PORTAL
-              </span>
-            </div>
-          </Link>
+          <WayRivoLogo
+            variant="horizontal"
+            size="sm"
+            withVersion={true}
+            href="/"
+            glow={true}
+          />
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg"

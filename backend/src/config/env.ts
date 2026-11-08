@@ -15,7 +15,7 @@ const envSchema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().default(10),
   PAYPAL_CLIENT_ID: z.string().default(''),
   PAYPAL_CLIENT_SECRET: z.string().default(''),
-  PAYPAL_API_BASE: z.string().default('https://api-m.sandbox.paypal.com'),
+  PAYPAL_API_BASE: z.string().default(process.env.PAYPAL_API_BASE || process.env.PAYPAL_BASE_URL || 'https://api-m.sandbox.paypal.com'),
   PAYPAL_WEBHOOK_ID: z.string().default(''),
   PAYPAL_CURRENCY: z.string().default('USD'),
   PAYPAL_EXCHANGE_RATE: z.coerce.number().default(83.5),

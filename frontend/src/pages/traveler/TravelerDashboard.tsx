@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { userService, paymentService } from '../../services';
+import { userService, paymentService, bookingService } from '../../services';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { staggerContainer, staggerItem } from '../../utils/animations';
 import {
@@ -12,6 +12,8 @@ import {
   Clock,
   DollarSign,
   AlertCircle,
+  AlertTriangle,
+  PlaneTakeoff,
   MapPin,
   Bot,
   Compass,
@@ -52,7 +54,7 @@ const TravelerDashboard: React.FC = () => {
     'overview' | 'trips' | 'itineraries' | 'conversations' | 'payments' | 'preferences'
   >('overview');
 
-  const [tripFilter, setTripFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [tripFilter, setTripFilter] = useState<'all' | 'pending' | 'upcoming' | 'completed'>('all');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -117,6 +119,19 @@ const TravelerDashboard: React.FC = () => {
       toast.error(err.response?.data?.error || 'Failed to submit cancellation request.');
     } finally {
       setSubmittingCancel(false);
+    }
+  };
+
+  const handleCancelUnpaidBooking = async (bookingId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this unpaid reservation? You can plan a new trip anytime.')) {
+      return;
+    }
+    try {
+      await bookingService.cancelUnpaid(bookingId);
+      toast.success('Unpaid booking cancelled successfully.');
+      fetchDashboard();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to cancel unpaid booking.');
     }
   };
 
@@ -197,6 +212,7 @@ const TravelerDashboard: React.FC = () => {
   const upcomingTrips = data?.upcomingTrips || [];
   const completedTrips = data?.completedTrips || [];
   const bookings = data?.bookings || [];
+  const pendingTrips = data?.pendingTrips || bookings.filter((b: any) => b.status === 'PENDING_PAYMENT');
   const savedItineraries = data?.savedItineraries || [];
   const conversations = data?.conversations || [];
   const payments = data?.payments || [];
@@ -325,18 +341,25 @@ const TravelerDashboard: React.FC = () => {
           variants={staggerItem}
           whileHover={{ y: -4 }}
           transition={{ duration: 0.2 }}
-          className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-colors shadow-md col-span-2 sm:col-span-1"
+          onClick={() => {
+            setActiveTab('trips');
+            setTripFilter('pending');
+          }}
+          className="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30 hover:border-amber-400/60 transition-all shadow-md col-span-2 sm:col-span-1 cursor-pointer group"
+          title="Click to view all pending payment bookings"
         >
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Pending Payments</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
-              <AlertCircle className="w-4 h-4" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">Pending Payments</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 group-hover:bg-amber-500/25 flex items-center justify-center text-amber-400 transition-colors">
+              <AlertCircle className="w-4 h-4 animate-pulse" />
             </div>
           </div>
           <p className="text-2xl font-black text-amber-400 font-mono">
-            <AnimatedCounter value={overview.pendingPaymentsCount || 0} />
+            <AnimatedCounter value={pendingTrips.length || overview.pendingPaymentsCount || 0} />
           </p>
-          <span className="text-[10px] text-amber-300/80">Awaiting PayPal checkout</span>
+          <span className="text-[10px] text-amber-300/80 flex items-center gap-1 group-hover:text-amber-200 transition-colors">
+            Awaiting PayPal checkout <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
+          </span>
         </motion.div>
       </motion.div>
 
@@ -377,6 +400,84 @@ const TravelerDashboard: React.FC = () => {
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Action Required: Pending Payments Banner */}
+          {pendingTrips.length > 0 && (
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/20 border border-amber-500/40 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                    <AlertTriangle className="w-4 h-4 animate-bounce" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+                      Action Required • {pendingTrips.length} {pendingTrips.length === 1 ? 'Booking' : 'Bookings'} Awaiting Checkout
+                    </span>
+                    <h3 className="text-sm font-bold text-white">
+                      Complete your PayPal deposit to confirm your itinerary and secure escrow protection
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveTab('trips');
+                    setTripFilter('pending');
+                  }}
+                  className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 shrink-0 self-start sm:self-auto cursor-pointer"
+                >
+                  View all pending ({pendingTrips.length}) <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                {pendingTrips.slice(0, 2).map((trip: any) => (
+                  <div
+                    key={trip.id}
+                    className="p-4 rounded-xl bg-slate-950/90 border border-amber-500/20 flex flex-col justify-between gap-3"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                          {trip.bookingReference}
+                        </span>
+                        <span className="text-xs font-black text-white">
+                          ₹{Number(trip.totalAmount).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-white line-clamp-1">
+                        {trip.itinerary?.title || `Trip to ${trip.tripDestination || trip.destinationLocation || trip.itinerary?.destination?.name || 'India'}`}
+                      </h4>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-cyan-400" />
+                          {trip.tripDestination || trip.destinationLocation || trip.itinerary?.destination?.name || 'India'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          {new Date(trip.createdAt).toLocaleDateString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-900">
+                      <button
+                        onClick={() => handleCancelUnpaidBooking(trip.id)}
+                        className="text-[11px] font-semibold text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <Link
+                        to={`/traveler/booking-confirmation/${trip.id}`}
+                        className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-400/20 cursor-pointer"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" /> Pay Now with PayPal
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Upcoming Trip Spotlight */}
           {upcomingTrips.length > 0 ? (
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-lg">
@@ -738,6 +839,17 @@ const TravelerDashboard: React.FC = () => {
                   All ({bookings.length})
                 </button>
                 <button
+                  onClick={() => setTripFilter('pending')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 ${
+                    tripFilter === 'pending'
+                      ? 'bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-400/20'
+                      : 'text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20'
+                  }`}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  Pending Payment ({pendingTrips.length})
+                </button>
+                <button
                   onClick={() => setTripFilter('upcoming')}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
                     tripFilter === 'upcoming' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
@@ -774,7 +886,9 @@ const TravelerDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {(tripFilter === 'upcoming'
+              {(tripFilter === 'pending'
+                ? pendingTrips
+                : tripFilter === 'upcoming'
                 ? upcomingTrips
                 : tripFilter === 'completed'
                 ? completedTrips
@@ -788,7 +902,11 @@ const TravelerDashboard: React.FC = () => {
                 return (
                   <div
                     key={b.id}
-                    className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all space-y-3"
+                    className={`p-5 rounded-2xl transition-all space-y-3 ${
+                      isPending
+                        ? 'bg-slate-900/95 border-2 border-amber-500/40 shadow-lg shadow-amber-500/5'
+                        : 'bg-slate-900 border border-slate-800 hover:border-slate-700'
+                    }`}
                   >
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div className="space-y-2">
@@ -817,9 +935,15 @@ const TravelerDashboard: React.FC = () => {
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                          {b.departureLocation && (
+                            <span className="flex items-center gap-1 text-slate-300">
+                              <PlaneTakeoff className="w-3.5 h-3.5 text-cyan-400" />
+                              From: <strong className="text-white font-semibold">{b.departureLocation}</strong>
+                            </span>
+                          )}
                           <span className="flex items-center gap-1 text-slate-300">
                             <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                            {b.itinerary?.destination?.name || 'India'}
+                            To: <strong className="text-white font-semibold">{b.tripDestination || b.destinationLocation || b.itinerary?.destination?.name || 'India'}</strong>
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -845,12 +969,21 @@ const TravelerDashboard: React.FC = () => {
                         </button>
 
                         {isPending && (
-                          <Link
-                            to={`/traveler/booking-confirmation/${b.id}`}
-                            className="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold shadow-md cursor-pointer"
-                          >
-                            Pay with PayPal
-                          </Link>
+                          <>
+                            <Link
+                              to={`/traveler/booking-confirmation/${b.id}`}
+                              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 text-xs font-black shadow-md shadow-amber-400/20 flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" /> Pay Now with PayPal
+                            </Link>
+
+                            <button
+                              onClick={() => handleCancelUnpaidBooking(b.id)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-red-950/40 text-slate-400 hover:text-red-400 text-xs font-semibold border border-slate-700 hover:border-red-500/30 cursor-pointer transition-colors"
+                            >
+                              Cancel Booking
+                            </button>
+                          </>
                         )}
 
                         {isConfirmed && (
