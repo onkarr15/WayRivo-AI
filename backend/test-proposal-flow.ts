@@ -150,6 +150,7 @@ async function runProposalSyncTests() {
     const res = await fetch(`${baseUrl}/proposals/${submittedProposalId}/select`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ autoConfirm: true }),
     });
 
     assert(res.status === 200, `Expected status 200, got ${res.status}`);

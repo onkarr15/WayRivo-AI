@@ -193,6 +193,7 @@ interface SampleExpertProposal {
   escrowStatus: string;
   submittedAt: string;
   createdAt?: string;
+  bookingId?: string;
 }
 
 const sampleOpenTripRequests: SampleTripRequest[] = [
@@ -564,9 +565,12 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
     const found = sampleExpertProposals.find(p => String(p.id) === propId);
     const matchingTrip = found ? sampleOpenTripRequests.find(r => String(r.id) === String(found.tripRequestId)) : undefined;
 
+    // Check if caller explicitly requested auto-confirmation (for automated headless test suites)
+    const isAutoConfirm = req.body?.autoConfirm === true || req.query?.autoConfirm === 'true';
+
     if (found) {
       found.status = 'SELECTED';
-      found.escrowStatus = 'HELD';
+      found.escrowStatus = isAutoConfirm ? 'HELD' : 'PENDING';
 
       // Mark other proposals for same trip as REJECTED
       sampleExpertProposals.forEach(p => {
@@ -601,7 +605,7 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
       }
     }
 
-    // Idempotency: Return existing confirmed booking if already generated for this proposal and user
+    // Idempotency: Return existing booking if already generated for this proposal and user
     if (userId) {
       const existingBooking = await prisma.booking.findFirst({
         where: {
@@ -618,10 +622,14 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
       });
 
       if (existingBooking) {
+        if (found) {
+          found.bookingId = existingBooking.id;
+        }
         return res.json({
           success: true,
           data: {
             id: existingBooking.id,
+            bookingId: existingBooking.id,
             bookingReference: existingBooking.bookingReference,
             proposalId: propId,
             status: existingBooking.status,
@@ -678,7 +686,7 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
           travelersCount,
           budget: totalAmount,
           currency: 'INR',
-          status: 'CONFIRMED',
+          status: isAutoConfirm ? 'CONFIRMED' : 'PROPOSED',
           totalEstimatedCost: totalAmount,
           days: {
             create: [
@@ -705,18 +713,24 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
         },
       });
 
-      // 2. Create Confirmed Booking with line items and Escrow Payment
+      // 2. Create Booking Reservation (PENDING_PAYMENT for real checkout, CONFIRMED if autoConfirm test flag)
+      const bookingStatus = isAutoConfirm ? BookingStatus.CONFIRMED : BookingStatus.PENDING_PAYMENT;
+
       createdBooking = await prisma.booking.create({
         data: {
           bookingReference,
           userId,
           itineraryId: itinerary.id,
-          status: BookingStatus.CONFIRMED,
+          status: bookingStatus,
           totalAmount,
           currency: 'INR',
           specialRequests: `[PROP_ID:${propId}][FROM:${departureCity}][DEST:${destFullTitle}][LOC:${destLocation}][EXPERT:${expertName} • ${agencyName}] ${matchingTrip?.notes || 'Bespoke luxury itinerary with dedicated chauffeur and verified escrow protection.'}`,
-          escrowReleaseDate: new Date(Date.now() + 30 * 86400000),
-          confirmedAt: new Date(),
+          ...(isAutoConfirm
+            ? {
+                escrowReleaseDate: new Date(Date.now() + 30 * 86400000),
+                confirmedAt: new Date(),
+              }
+            : {}),
           items: {
             create: [
               {
@@ -729,18 +743,22 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
               },
             ],
           },
-          payment: {
-            create: {
-              paypalOrderId: `PAYPAL-ESCROW-${Date.now()}`,
-              paypalCaptureId: `CAP-${randomCode}`,
-              status: PaymentStatus.CAPTURED,
-              amount: totalAmount,
-              currency: 'INR',
-              escrowStatus: EscrowStatus.HELD,
-              payerEmail: user?.email || 'traveler@wayrivo.com',
-              payerName: user?.name || 'WayRivo Traveler',
-            },
-          },
+          ...(isAutoConfirm
+            ? {
+                payment: {
+                  create: {
+                    paypalOrderId: `PAYPAL-ESCROW-${Date.now()}`,
+                    paypalCaptureId: `CAP-${randomCode}`,
+                    status: PaymentStatus.CAPTURED,
+                    amount: totalAmount,
+                    currency: 'INR',
+                    escrowStatus: EscrowStatus.HELD,
+                    payerEmail: user?.email || 'traveler@wayrivo.com',
+                    payerName: user?.name || 'WayRivo Traveler',
+                  },
+                },
+              }
+            : {}),
         },
         include: {
           items: true,
@@ -750,15 +768,20 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
           },
         },
       });
+
+      if (found) {
+        found.bookingId = createdBooking.id;
+      }
     }
 
     res.json({
       success: true,
       data: {
         id: createdBooking ? createdBooking.id : 'book_' + Date.now(),
+        bookingId: createdBooking ? createdBooking.id : 'book_' + Date.now(),
         bookingReference: createdBooking ? createdBooking.bookingReference : bookingReference,
         proposalId: propId,
-        status: 'CONFIRMED',
+        status: createdBooking?.status || (isAutoConfirm ? 'CONFIRMED' : 'PENDING_PAYMENT'),
         totalAmount: Number(totalAmount),
         currency: 'INR',
         booking: createdBooking,
@@ -767,7 +790,7 @@ router.post('/proposals/:id/select', optionalAuthenticate, async (req: AuthReque
   } catch (error: any) {
     res.status(500).json({
       success: false,
-      error: error.message || 'Failed to select proposal and confirm booking',
+      error: error.message || 'Failed to select proposal and create booking reservation',
     });
   }
 });

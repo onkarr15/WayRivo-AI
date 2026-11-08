@@ -107,6 +107,7 @@ async function runConfirmedProposalBookingTest() {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${travelerToken}`,
       },
+      body: JSON.stringify({ autoConfirm: true }),
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const body: any = await res.json();

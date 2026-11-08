@@ -22,7 +22,7 @@ import {
   Award,
   Receipt,
 } from 'lucide-react';
-import { bookingService, paymentService, itineraryIntelligenceService } from '../../services';
+import { bookingService, paymentService, itineraryIntelligenceService, proposalService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import PayPalCheckoutButton from '../../components/payment/PayPalCheckoutButton';
@@ -77,9 +77,31 @@ const BookingConfirmationPage: React.FC = () => {
             specialRequests: `Itinerary: ${itin.title}. Travelers: ${itin.travelersCount}`,
           });
           setBooking(newBookingRes.data?.data);
+          setLoading(false);
+          return;
         }
       } catch (err) {
-        console.error('Failed to load booking or itinerary:', err);
+        console.warn('Not an itinerary ID, checking proposal resolution:', err);
+      }
+
+      // 3. If not an itinerary, check if it's a proposal ID
+      try {
+        const propRes = await proposalService.getById(id);
+        const propData = propRes.data?.data;
+        if (propData) {
+          const selectRes = await proposalService.select(id);
+          const bookingId = selectRes.data?.data?.bookingId || selectRes.data?.data?.id;
+          if (bookingId) {
+            const bRes2 = await bookingService.getById(bookingId);
+            if (bRes2.data?.data) {
+              setBooking(bRes2.data.data);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (propErr) {
+        console.error('Failed to resolve proposal for booking reservation:', propErr);
       }
     }
     setLoading(false);
@@ -205,6 +227,12 @@ const BookingConfirmationPage: React.FC = () => {
         <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight print:text-2xl print:text-slate-900">
           {isPaid ? 'Booking Confirmed & Escrow Secured' : 'Booking Reservation Summary'}
         </h1>
+
+        <p className="text-xs text-slate-400 mt-1 print:text-slate-600">
+          {isPaid
+            ? 'Your journey is confirmed and protected by WayRivo Escrow.'
+            : 'Review your bespoke itinerary and traveler details to complete payment via PayPal Sandbox.'}
+        </p>
 
         <p className="text-xs text-slate-400 mt-1 print:text-slate-600">
           Booking Reference: <span className="font-mono font-bold text-cyan-400 print:text-slate-900">{booking.bookingReference}</span>

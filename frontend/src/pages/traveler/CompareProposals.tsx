@@ -14,7 +14,8 @@ import {
   Hotel,
   Car,
   Compass,
-  FileText
+  FileText,
+  CreditCard,
 } from 'lucide-react';
 
 const CompareProposals: React.FC = () => {
@@ -44,12 +45,13 @@ const CompareProposals: React.FC = () => {
   }, [fetchData]);
 
   const handleSelect = async (proposalId: string | number) => {
-    if (!confirm('Confirm selection of this proposal? Other competing proposals will be automatically rejected and your booking confirmation will be generated.')) return;
+    if (!confirm('Accept this bespoke proposal and proceed to the Booking Reservation Summary for payment? Other proposals will be declined.')) return;
     setSelecting(proposalId);
     try {
       const res = await proposalService.select(proposalId);
       if (res.data?.success) {
-        navigate(`/traveler/booking-confirmation/${res.data.data.id}`);
+        const targetBookingId = res.data.data.bookingId || res.data.data.id;
+        navigate(`/traveler/booking-confirmation/${targetBookingId}`);
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to select proposal');
@@ -265,14 +267,20 @@ const CompareProposals: React.FC = () => {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            <CheckCircle className="w-4 h-4" /> Select This Proposal
+                            <CheckCircle className="w-4 h-4" /> Accept Proposal & Proceed to Payment
                           </>
                         )}
                       </button>
                     ) : isSelected ? (
-                      <Link to="/traveler/bookings" className="btn-success w-full py-2.5 text-xs font-bold text-center block">
-                        View Confirmed Booking
-                      </Link>
+                      <button
+                        onClick={() => {
+                          const targetId = p.bookingId || p.id;
+                          navigate(`/traveler/booking-confirmation/${targetId}`);
+                        }}
+                        className="btn-primary w-full py-2.5 text-xs font-bold text-center flex items-center justify-center gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 shadow-md cursor-pointer"
+                      >
+                        <CreditCard className="w-4 h-4" /> Go to Reservation Summary & Pay →
+                      </button>
                     ) : (
                       <span className="badge-neutral w-full py-2 text-center block font-semibold text-xs">
                         {p.status}

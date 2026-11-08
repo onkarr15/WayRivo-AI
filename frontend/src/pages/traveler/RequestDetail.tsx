@@ -18,6 +18,7 @@ import {
   Briefcase,
   Phone,
   Mail,
+  CreditCard,
 } from 'lucide-react';
 
 const lifecycleStages = [
@@ -84,12 +85,13 @@ const RequestDetail: React.FC = () => {
   }, [fetchData, id]);
 
   const handleSelect = async (proposalId: string | number) => {
-    if (!confirm('Confirm selection of this bespoke proposal? Other proposals will be automatically declined and your booking will be created.')) return;
+    if (!confirm('Accept this bespoke proposal and proceed to the Booking Reservation Summary for payment? Other proposals will be declined.')) return;
     setSelecting(proposalId);
     try {
       const res = await proposalService.select(proposalId);
       if (res.data?.success) {
-        navigate(`/traveler/booking-confirmation/${res.data.data.id}`);
+        const targetBookingId = res.data.data.bookingId || res.data.data.id;
+        navigate(`/traveler/booking-confirmation/${targetBookingId}`);
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to select proposal');
@@ -452,7 +454,7 @@ const RequestDetail: React.FC = () => {
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            <CheckCircle2 className="w-4 h-4" /> Select This Proposal
+                            <CheckCircle2 className="w-4 h-4" /> Accept Proposal & Proceed to Payment
                           </>
                         )}
                       </button>
@@ -460,10 +462,13 @@ const RequestDetail: React.FC = () => {
 
                     {p.status === 'SELECTED' && (
                       <button
-                        onClick={() => navigate('/traveler/bookings')}
-                        className="btn-secondary text-xs w-full py-2.5"
+                        onClick={() => {
+                          const targetId = p.bookingId || p.id;
+                          navigate(`/traveler/booking-confirmation/${targetId}`);
+                        }}
+                        className="btn-primary text-xs w-full py-2.5 flex items-center justify-center gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold shadow-lg shadow-cyan-500/20 cursor-pointer"
                       >
-                        View Confirmed Booking →
+                        <CreditCard className="w-4 h-4" /> Go to Reservation Summary & Pay →
                       </button>
                     )}
                   </div>
