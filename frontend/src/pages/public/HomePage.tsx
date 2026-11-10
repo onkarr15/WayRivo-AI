@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   Users,
@@ -41,11 +41,13 @@ import {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
 
   // Cinematic Intro Animation State
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
+      if (typeof window !== 'undefined' && window.location.hash) return false;
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get('intro') === 'false') return false;
       if (searchParams.get('intro') === 'true') return true;
@@ -67,6 +69,20 @@ const HomePage: React.FC = () => {
   const handleReplayIntro = useCallback(() => {
     setShowIntro(true);
   }, []);
+
+  // Hash-based smooth navigation
+  useEffect(() => {
+    if (location.hash) {
+      const sectionId = location.hash.replace('#', '');
+      const timer = setTimeout(() => {
+        const elem = document.getElementById(sectionId);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash, showIntro]);
 
   const [stats, setStats] = useState<any>({});
   const [destinations, setDestinations] = useState<any[]>([]);
@@ -386,9 +402,9 @@ const HomePage: React.FC = () => {
             custom={4}
             className="flex flex-wrap items-center justify-center gap-4 mt-8"
           >
-            <Link to="/explore">
+            <Link to="/destinations">
               <Button variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Explore Destinations
+                Explore Featured Destinations
               </Button>
             </Link>
 
@@ -477,22 +493,36 @@ const HomePage: React.FC = () => {
             </p>
           </div>
 
-          {/* Carousel Arrows */}
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <button
-              onClick={() => scrollCarousel('left')}
-              className="w-10 h-10 rounded-xl bg-surface border border-border-light flex items-center justify-center text-slate-300 hover:text-cyan-400 hover:border-cyan-400/40 transition-all cursor-pointer"
-              aria-label="Previous destination"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => scrollCarousel('right')}
-              className="w-10 h-10 rounded-xl bg-surface border border-border-light flex items-center justify-center text-slate-300 hover:text-cyan-400 hover:border-cyan-400/40 transition-all cursor-pointer"
-              aria-label="Next destination"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          {/* Action Buttons: View All & Carousel Arrows */}
+          <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
+            <Link to="/destinations">
+              <Button
+                variant="outline"
+                size="sm"
+                rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                className="hover:border-cyan-400 hover:text-cyan-300"
+              >
+                View All Destinations
+              </Button>
+            </Link>
+
+            {/* Carousel Arrows */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => scrollCarousel('left')}
+                className="w-10 h-10 rounded-xl bg-surface border border-border-light flex items-center justify-center text-slate-300 hover:text-cyan-400 hover:border-cyan-400/40 transition-all cursor-pointer"
+                aria-label="Previous destination"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scrollCarousel('right')}
+                className="w-10 h-10 rounded-xl bg-surface border border-border-light flex items-center justify-center text-slate-300 hover:text-cyan-400 hover:border-cyan-400/40 transition-all cursor-pointer"
+                aria-label="Next destination"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </motion.div>
 
@@ -705,21 +735,34 @@ const HomePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {['All', 'Heritage & Luxury', 'Backwaters', 'Adventure', 'Beach'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    selectedCategory === cat
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                      : 'bg-surface border border-border-light text-slate-400 hover:text-white'
-                  }`}
+            {/* Action Buttons & Category Filter Pills */}
+            <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+              <Link to="/packages">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                  className="hover:border-amber-400 hover:text-amber-300 whitespace-nowrap"
                 >
-                  {cat}
-                </button>
-              ))}
+                  View All Curated Packages
+                </Button>
+              </Link>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {['All', 'Heritage & Luxury', 'Backwaters', 'Adventure', 'Beach'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      selectedCategory === cat
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                        : 'bg-surface border border-border-light text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
           </motion.div>
 

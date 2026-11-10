@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -95,27 +95,8 @@ export const PaymentSuccessPage: React.FC = () => {
     };
   }, [paymentIdParam, bookingIdParam, orderIdParam]);
 
-  // Handle autoPrint query parameter
-  useEffect(() => {
-    if (!loading && (receiptData || payment) && searchParams.get('autoPrint') === 'true') {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, receiptData, payment, searchParams]);
-
-  // Copy transaction ID to clipboard
-  const handleCopy = (text: string, label: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedId(label);
-    toast.success(`${label} copied to clipboard!`);
-    setTimeout(() => setCopiedId(null), 2500);
-  };
-
   // Dedicated physical print / print-to-PDF dialog
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     const originalTitle = document.title;
     const txId =
       receiptData?.wayrivoTransactionId ||
@@ -129,6 +110,25 @@ export const PaymentSuccessPage: React.FC = () => {
     setTimeout(() => {
       document.title = originalTitle;
     }, 1000);
+  }, [receiptData, payment]);
+
+  // Handle autoPrint query parameter
+  useEffect(() => {
+    if (!loading && (receiptData || payment) && searchParams.get('autoPrint') === 'true') {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, receiptData, payment, searchParams, handlePrint]);
+
+  // Copy transaction ID to clipboard
+  const handleCopy = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedId(label);
+    toast.success(`${label} copied to clipboard!`);
+    setTimeout(() => setCopiedId(null), 2500);
   };
 
   // Dedicated cross-device binary PDF download handler
@@ -268,26 +268,33 @@ export const PaymentSuccessPage: React.FC = () => {
     bookingIdParam;
 
   // Actual transaction date & time in IST
+  const rawTxTimestamp = payment?.transactionCompletedAt || payment?.createdAt;
+  const txDateObj = rawTxTimestamp ? new Date(rawTxTimestamp) : new Date(0);
+
   const transactionDate =
     receiptData?.timestamps?.transactionDateIST ||
     payment?.formattedDateIST ||
-    new Intl.DateTimeFormat('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date(payment?.transactionCompletedAt || payment?.createdAt || Date.now()));
+    (rawTxTimestamp
+      ? new Intl.DateTimeFormat('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+        }).format(txDateObj)
+      : 'Recently Confirmed');
 
   const transactionTime =
     receiptData?.timestamps?.transactionTimeIST ||
     payment?.formattedTimeIST ||
-    new Intl.DateTimeFormat('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    }).format(new Date(payment?.transactionCompletedAt || payment?.createdAt || Date.now())) + ' IST';
+    (rawTxTimestamp
+      ? new Intl.DateTimeFormat('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        }).format(txDateObj) + ' IST'
+      : 'Completed');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 py-10 px-4 sm:px-6 flex items-center justify-center print:bg-white print:py-0 print:px-0 print:min-h-0 print:h-auto print:block">

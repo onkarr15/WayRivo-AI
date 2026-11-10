@@ -1,4 +1,4 @@
-import { z } from 'zod';
+ import { z } from 'zod';
 import { UserRole } from '@prisma/client';
 
 export const registerSchema = z.object({
@@ -43,7 +43,23 @@ export const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
   phone: z.string().optional().nullable(),
-  avatarUrl: z.string().url().optional().or(z.literal('')).nullable(),
+  avatarUrl: z
+    .string()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        return (
+          val.startsWith('http://') ||
+          val.startsWith('https://') ||
+          val.startsWith('data:image/') ||
+          val.startsWith('/')
+        );
+      },
+      { message: 'Avatar must be a valid image URL or image data URI' }
+    )
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
   preferredDestinations: z.array(z.string()).optional(),
   travelInterests: z.array(z.string()).optional(),
   budgetPreference: z.string().optional(),

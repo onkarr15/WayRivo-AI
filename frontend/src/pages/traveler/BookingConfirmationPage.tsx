@@ -182,12 +182,13 @@ const BookingConfirmationPage: React.FC = () => {
     ));
     const expertDetails = booking.expertDetails || (expertMatch ? expertMatch[1] : 'Vikram Singh Rathore • Royal Kerala Luxury Journeys');
 
+    const refTime = booking?.createdAt ? new Date(booking.createdAt).getTime() : 0;
     const startDate = booking.itinerary?.startDate
       ? new Date(booking.itinerary.startDate)
-      : new Date(Date.now() + 14 * 86400000);
+      : new Date(refTime + 14 * 86400000);
     const endDate = booking.itinerary?.endDate
       ? new Date(booking.itinerary.endDate)
-      : new Date(Date.now() + 20 * 86400000);
+      : new Date(refTime + 20 * 86400000);
 
     const totalDays = booking.itinerary?.numberOfDays || 6;
     const totalNights = Math.max(1, totalDays - 1);

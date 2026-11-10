@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { proposalService, tripRequestService } from '../../services';
 import {
   FileText,
@@ -20,8 +21,8 @@ import {
   CheckCircle2,
   BadgePercent,
   Search,
-  Edit3,
   Trash2,
+  Camera,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge, type BadgeVariant } from '../../components/ui/Badge';
@@ -66,6 +67,7 @@ const statusBadgeVariant: Record<string, BadgeVariant> = {
 };
 
 const ExpertDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<any>({
     totalProposals: 18,
     acceptedProposals: 12,
@@ -280,31 +282,51 @@ const ExpertDashboard: React.FC = () => {
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight flex items-center gap-2">
-                <Building2 className="w-6 h-6 text-cyan-400" />
-                {stats.agencyName || 'Royal Rajasthan & Kerala Journeys'}
-              </span>
-              <Badge variant="success" size="sm" icon={<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />}>
-                Verified Destination Specialist
-              </Badge>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* Agency Avatar with Profile Photo / Camera */}
+            <div className="relative group shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-cyan-500/15 text-cyan-300 font-extrabold flex items-center justify-center text-3xl shadow-lg border-2 border-cyan-400/40 overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user?.name || stats.agencyName || 'Agency'} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{(user?.name || stats.agencyName || 'E').charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <Link
+                to="/expert/profile?edit=true"
+                className="absolute -bottom-1 -right-1 p-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 hover:brightness-110 shadow-lg cursor-pointer transition-all border border-cyan-300/40"
+                title="Change agency profile photo"
+              >
+                <Camera className="w-3.5 h-3.5 text-slate-950" />
+              </Link>
             </div>
 
-            <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-              Managed by <strong className="text-white">{stats.specialistName || 'Vikram Singh Rathore'}</strong> • Certified WayRivo Platinum Partner since {stats.memberSince || '2024'}. Verified licensing, direct traveler escrow settlements, and AI-assisted proposal generator active.
-            </p>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight flex items-center gap-2">
+                  <Building2 className="w-6 h-6 text-cyan-400" />
+                  {user?.agencyName || stats.agencyName || 'Royal Rajasthan & Kerala Journeys'}
+                </span>
+                <Badge variant="success" size="sm" icon={<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />}>
+                  Verified Destination Specialist
+                </Badge>
+              </div>
 
-            <div className="flex flex-wrap gap-4 text-xs text-slate-400 pt-1">
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <Shield className="w-3.5 h-3.5 text-cyan-400" /> License: <code className="text-cyan-300">IN-TOUR-EXP-2024-8902</code>
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> {stats.rating || '4.9'} rating ({stats.totalReviews || 52} reviews)
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <Clock className="w-3.5 h-3.5 text-emerald-400" /> Average response time: <strong className="text-white">~1.4 hrs</strong>
-              </span>
+              <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
+                Managed by <strong className="text-white">{user?.name || stats.specialistName || 'Vikram Singh Rathore'}</strong> • Certified WayRivo Platinum Partner since {stats.memberSince || '2024'}. Verified licensing, direct traveler escrow settlements, and AI-assisted proposal generator active.
+              </p>
+
+              <div className="flex flex-wrap gap-4 text-xs text-slate-400 pt-1">
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Shield className="w-3.5 h-3.5 text-cyan-400" /> License: <code className="text-cyan-300">IN-TOUR-EXP-2024-8902</code>
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> {stats.rating || '4.9'} rating ({stats.totalReviews || 52} reviews)
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Clock className="w-3.5 h-3.5 text-emerald-400" /> Average response time: <strong className="text-white">~1.4 hrs</strong>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -314,9 +336,9 @@ const ExpertDashboard: React.FC = () => {
                 Browse Open Requests ({openRequests.length})
               </Button>
             </Link>
-            <Link to="/expert/profile">
-              <Button variant="outline" size="md">
-                Agency Profile
+            <Link to="/expert/profile?edit=true">
+              <Button variant="outline" size="md" leftIcon={<Camera className="w-4 h-4 mr-1 text-cyan-400" />}>
+                Edit Profile & Photo
               </Button>
             </Link>
           </div>
@@ -729,14 +751,14 @@ const ExpertDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Option 1: Edit Profile */}
+          {/* Option 1: Edit Profile & Photo */}
           <div className="p-4 rounded-xl bg-surface-dark/90 border border-border/80 flex flex-col justify-between space-y-4">
             <div>
               <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-cyan-400" /> Edit Profile
+                <Camera className="w-4 h-4 text-cyan-400" /> Edit Profile & Photo
               </h4>
               <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                Update your agency credentials, expert details, and travel specializations.
+                Update your agency credentials, expert details, profile photo from device library, and travel specializations.
               </p>
             </div>
             <div>
@@ -746,7 +768,7 @@ const ExpertDashboard: React.FC = () => {
                 size="sm"
                 onClick={() => navigate('/expert/profile?edit=true')}
               >
-                Edit Profile
+                Edit Profile & Photo
               </Button>
             </div>
           </div>

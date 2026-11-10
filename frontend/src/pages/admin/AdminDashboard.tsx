@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { adminService } from '../../services';
 import {
   Users,
@@ -22,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   PieChart as PieIcon,
+  Camera,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
@@ -72,6 +74,7 @@ const tripStatusStyles: Record<string, { label: string; variant: 'cyan' | 'gold'
 const PIE_COLORS = ['#10B981', '#F59E0B', '#00F2FE', '#EF4444', '#64748B', '#8B5CF6'];
 
 export const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
@@ -232,7 +235,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const res = await adminService.getTravellerRevenueProfile(travellerId);
       setSelectedTravellerProfile(res.data?.data);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to load traveller financial dossier.');
     } finally {
       setLoadingProfile(false);
@@ -471,19 +474,45 @@ export const AdminDashboard: React.FC = () => {
       {/* 1. Header & Live Status */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 border border-slate-800 p-6 sm:p-8 shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> Platform Security & Financial Intelligence
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* Admin Avatar with Photo Upload Shortcut */}
+            <div className="relative group shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-purple-500/20 border border-purple-400/40 overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user?.name || 'Administrator'} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{user?.name?.charAt(0).toUpperCase() || 'A'}</span>
+                )}
+              </div>
+              <Link
+                to="/admin/profile"
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:brightness-110 shadow-lg cursor-pointer transition-all border border-purple-300/40"
+                title="Change admin profile photo"
+              >
+                <Camera className="w-3.5 h-3.5 text-white" />
+              </Link>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Executive Admin & <span className="text-gradient-cyan">Financial Analytics</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Supervise all traveler trip itineraries, PayPal Developer Sandbox escrow captures, pending transactions, traveler-wise revenue distribution, and operational reconciliation.
-            </p>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> Platform Security & Financial Intelligence
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Executive Admin & <span className="text-gradient-cyan">Financial Analytics</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+                Supervise all traveler trip itineraries, PayPal Developer Sandbox escrow captures, pending transactions, traveler-wise revenue distribution, and operational reconciliation.
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <Link
+              to="/admin/profile"
+              className="px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 hover:text-white font-semibold text-xs border border-purple-500/40 flex items-center gap-1.5 shadow transition-colors"
+            >
+              <Camera className="w-3.5 h-3.5 text-purple-400" /> Admin Profile & Photo
+            </Link>
             <Button
               variant="outline"
               size="sm"

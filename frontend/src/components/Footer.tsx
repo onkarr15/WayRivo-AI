@@ -93,7 +93,9 @@ const Footer: React.FC = () => {
           </h4>
           <div className="space-y-3">
             {[
-              ['Explore Destinations', '/explore'],
+              ['Featured Destinations', '/destinations'],
+              ['Curated Packages', '/packages'],
+              ['Explore Marketplace', '/explore'],
               ['How It Works', '/how-it-works'],
               ['About WayRivo AI', '/about'],
               ['Create Trip Request', '/traveler/create-trip'],

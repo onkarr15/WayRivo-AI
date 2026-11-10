@@ -30,6 +30,7 @@ interface MessageItem {
   content: string;
   metadata?: any;
   createdAt?: string;
+  isStreaming?: boolean;
 }
 
 interface ConversationItem {
@@ -38,6 +39,149 @@ interface ConversationItem {
   createdAt: string;
   updatedAt: string;
 }
+
+const parseBoldAndItalic = (text: string): React.ReactNode[] => {
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return tokens.map((token, i) => {
+    if (token.startsWith('**') && token.endsWith('**')) {
+      return (
+        <strong key={i} className="font-bold text-white">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (token.startsWith('*') && token.endsWith('*')) {
+      return (
+        <em key={i} className="italic text-slate-300">
+          {token.slice(1, -1)}
+        </em>
+      );
+    }
+    return token;
+  });
+};
+
+const renderInlineFormatting = (text: string) => {
+  // Strip any leading # from headers if present
+  const cleaned = text.replace(/^#{1,6}\s*/, '');
+
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkRegex.exec(cleaned)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(...parseBoldAndItalic(cleaned.substring(lastIndex, match.index)));
+    }
+    const linkText = match[1];
+    const linkUrl = match[2];
+
+    if (linkUrl.startsWith('file://')) {
+      // Do not display raw file paths, render as clean bold text
+      parts.push(
+        <strong key={`link-${match.index}`} className="font-bold text-white">
+          {linkText}
+        </strong>
+      );
+    } else {
+      parts.push(
+        <a
+          key={`link-${match.index}`}
+          href={linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-cyan-400 underline hover:text-cyan-300 font-semibold"
+        >
+          {linkText}
+        </a>
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < cleaned.length) {
+    parts.push(...parseBoldAndItalic(cleaned.substring(lastIndex)));
+  }
+
+  return parts;
+};
+
+const renderFormattedMessage = (content: string, isUser: boolean, isStreaming?: boolean) => {
+  if (!content) {
+    if (isStreaming) {
+      return (
+        <span className="inline-block w-2 h-4 bg-cyan-400 animate-pulse rounded-xs align-middle shadow-[0_0_8px_rgba(0,242,254,0.6)]" />
+      );
+    }
+    return null;
+  }
+
+  // Split into lines
+  const lines = content.split('\n');
+
+  return (
+    <div className={`space-y-1.5 ${isUser ? 'text-white' : 'text-slate-200'}`}>
+      {lines.map((rawLine, idx) => {
+        const line = rawLine.trim();
+
+        if (!line) {
+          return <div key={idx} className="h-1" />;
+        }
+
+        const isLastLine = idx === lines.length - 1;
+
+        // Header line with hashtags (e.g. ### 🌟 Title, #### 📍 Destination) -> Strip hashtags and style as clean heading
+        const headerMatch = line.match(/^#{1,6}\s*(.*)$/);
+        if (headerMatch) {
+          const headerText = headerMatch[1].trim();
+          const isMain = line.startsWith('#') && (line.startsWith('# ') || line.startsWith('## ') || line.startsWith('### '));
+          return (
+            <div
+              key={idx}
+              className={`${
+                isMain
+                  ? 'text-sm sm:text-base font-extrabold text-white tracking-tight pt-1 pb-0.5 border-b border-white/10'
+                  : 'text-xs sm:text-sm font-bold text-cyan-300 pt-2 pb-0.5'
+              }`}
+            >
+              {renderInlineFormatting(headerText)}
+              {isLastLine && isStreaming && (
+                <span className="inline-block w-1.5 h-3.5 ml-1.5 bg-cyan-400 animate-pulse rounded-xs align-middle shadow-[0_0_8px_rgba(0,242,254,0.6)]" />
+              )}
+            </div>
+          );
+        }
+
+        // Bullet point line (- or • or * followed by space)
+        const bulletMatch = line.match(/^[-•*]\s+(.*)$/);
+        if (bulletMatch && !line.startsWith('**')) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className="text-cyan-400 font-bold leading-tight select-none">•</span>
+              <span className="flex-1">
+                {renderInlineFormatting(bulletMatch[1])}
+                {isLastLine && isStreaming && (
+                  <span className="inline-block w-1.5 h-3.5 ml-1.5 bg-cyan-400 animate-pulse rounded-xs align-middle shadow-[0_0_8px_rgba(0,242,254,0.6)]" />
+                )}
+              </span>
+            </div>
+          );
+        }
+
+        // Regular line
+        return (
+          <p key={idx} className="leading-relaxed">
+            {renderInlineFormatting(line)}
+            {isLastLine && isStreaming && (
+              <span className="inline-block w-1.5 h-3.5 ml-1.5 bg-cyan-400 animate-pulse rounded-xs align-middle shadow-[0_0_8px_rgba(0,242,254,0.6)]" />
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 export const AiTravelAgentPage: React.FC = () => {
   const { toast } = useToast();
@@ -59,15 +203,16 @@ export const AiTravelAgentPage: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamingIntervalRef = useRef<any>(null);
 
-  // Auto-scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Clean up streaming interval on unmount
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]);
+    return () => {
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Load Suggested Prompts & Conversations
   useEffect(() => {
@@ -128,6 +273,10 @@ export const AiTravelAgentPage: React.FC = () => {
 
   // Start New Conversation
   const handleNewConversation = () => {
+    if (streamingIntervalRef.current) {
+      clearInterval(streamingIntervalRef.current);
+      streamingIntervalRef.current = null;
+    }
     setActiveConversationId(null);
     setMessages([]);
     setInputMessage('');
@@ -151,10 +300,15 @@ export const AiTravelAgentPage: React.FC = () => {
     }
   };
 
-  // Send Message
+  // Send Message with Slow, Deliberate Progressive Output Generation
   const handleSendMessage = async (textToSend?: string) => {
     const query = (textToSend || inputMessage).trim();
     if (!query || loading) return;
+
+    if (streamingIntervalRef.current) {
+      clearInterval(streamingIntervalRef.current);
+      streamingIntervalRef.current = null;
+    }
 
     setInputMessage('');
 
@@ -168,10 +322,21 @@ export const AiTravelAgentPage: React.FC = () => {
     setMessages((prev) => [...prev, tempUserMsg]);
 
     setLoading(true);
-    setTypingStatus('Analyzing requirements & consulting database tools...');
+    setTypingStatus('Analyzing your travel preferences & requirements...');
+
+    const t1 = setTimeout(() => {
+      setTypingStatus('Querying live database inventory & verified hotels...');
+    }, 700);
+
+    const t2 = setTimeout(() => {
+      setTypingStatus('Calculating budget expenditure & structuring itinerary...');
+    }, 1600);
 
     try {
       const res = await aiAgentService.chat(query, activeConversationId || undefined);
+
+      clearTimeout(t1);
+      clearTimeout(t2);
 
       if (res.data?.success && res.data.data) {
         const data = res.data.data;
@@ -180,31 +345,84 @@ export const AiTravelAgentPage: React.FC = () => {
           loadConversations();
         }
 
-        const assistantMsg: MessageItem = {
-          id: data.messageId || `asst-${Date.now()}`,
+        const fullReply = data.reply || '';
+        const assistantMsgId = data.messageId || `asst-${Date.now()}`;
+        const finalMetadata = {
+          toolsExecuted: data.toolsExecuted || data.metadata?.toolsExecuted,
+          destinations: data.destinations || data.metadata?.destinations,
+          hotels: data.hotels || data.metadata?.hotels,
+          activities: data.activities || data.metadata?.activities,
+          packages: data.packages || data.metadata?.packages,
+          budgetAnalysis: data.budgetAnalysis || data.metadata?.budgetAnalysis,
+          itinerary: data.itinerary || data.metadata?.itinerary,
+          suggestedActions: data.suggestedActions || data.metadata?.suggestedActions,
+          savedItineraryId: data.savedItineraryId || data.metadata?.savedItineraryId,
+        };
+
+        // Initialize streaming assistant message with empty content and typing state
+        const initialAssistantMsg: MessageItem = {
+          id: assistantMsgId,
           sender: 'ASSISTANT',
-          content: data.reply,
-          metadata: {
-            toolsExecuted: data.toolsExecuted,
-            destinations: data.destinations,
-            hotels: data.hotels,
-            activities: data.activities,
-            packages: data.packages,
-            budgetAnalysis: data.budgetAnalysis,
-            itinerary: data.itinerary,
-            suggestedActions: data.suggestedActions,
-            savedItineraryId: data.savedItineraryId,
-          },
+          content: '',
+          metadata: null, // Defer cards until typing completes
+          isStreaming: true,
           createdAt: new Date().toISOString(),
         };
 
-        setMessages((prev) => [...prev, assistantMsg]);
+        setMessages((prev) => [...prev, initialAssistantMsg]);
+        setTypingStatus('');
+
+        // Progressively stream words at a natural, readable speed (slow & steady)
+        const words = fullReply.split(/(\s+)/);
+        let currentIndex = 0;
+        // Pacing: 1 word chunk per tick (or 2 if very lengthy)
+        const step = words.length > 280 ? 2 : 1;
+
+        streamingIntervalRef.current = setInterval(() => {
+          currentIndex += step;
+          if (currentIndex >= words.length) {
+            if (streamingIntervalRef.current) {
+              clearInterval(streamingIntervalRef.current);
+              streamingIntervalRef.current = null;
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsgId
+                  ? {
+                      ...m,
+                      content: fullReply,
+                      metadata: finalMetadata,
+                      isStreaming: false,
+                    }
+                  : m
+              )
+            );
+            setLoading(false);
+            setTypingStatus('');
+          } else {
+            const partialText = words.slice(0, currentIndex).join('');
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsgId
+                  ? {
+                      ...m,
+                      content: partialText,
+                      isStreaming: true,
+                    }
+                  : m
+              )
+            );
+          }
+        }, 32); // 32ms produces deliberate, smooth progressive typing without rushing
       } else {
         toast.error(res.data?.error || 'Failed to get a response from AI agent.');
+        setLoading(false);
+        setTypingStatus('');
       }
     } catch (err: any) {
+      clearTimeout(t1);
+      clearTimeout(t2);
       toast.error(err.response?.data?.error || 'Network error communicating with AI agent.');
-    } finally {
       setLoading(false);
       setTypingStatus('');
     }
@@ -286,9 +504,6 @@ export const AiTravelAgentPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-black text-white">WayRivo AI 2.0 Autonomous Travel Agent</h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  Google Gemini + Live Supabase
-                </span>
               </div>
               <p className="text-xs text-slate-400">
                 Natural-language planning, real database inventory verification, and deterministic budget optimization.
@@ -441,8 +656,8 @@ export const AiTravelAgentPage: React.FC = () => {
                                 : 'bg-slate-800/80 border border-white/10 text-slate-100 rounded-tl-none shadow-md'
                             }`}
                           >
-                            <div className="prose prose-invert max-w-none whitespace-pre-line">
-                              {msg.content}
+                            <div>
+                              {renderFormattedMessage(msg.content, isUser, msg.isStreaming)}
                             </div>
 
                             {/* Tool Execution Badges */}
@@ -463,7 +678,7 @@ export const AiTravelAgentPage: React.FC = () => {
                           </div>
 
                           {/* Interactive Recommendation Cards with Staggered Entrance */}
-                          {!isUser && msg.metadata && (
+                          {!isUser && msg.metadata && !msg.isStreaming && (
                             <motion.div
                               variants={staggerContainer}
                               initial="hidden"
@@ -548,7 +763,7 @@ export const AiTravelAgentPage: React.FC = () => {
 
               {/* Dynamic Typing Indicator with Animated Pulsing Dots */}
               <AnimatePresence>
-                {loading && (
+                {loading && typingStatus && !messages.some((m) => m.isStreaming) && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

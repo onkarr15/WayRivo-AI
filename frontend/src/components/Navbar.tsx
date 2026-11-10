@@ -77,23 +77,11 @@ const Navbar: React.FC = () => {
 
   const messagesPath = user?.role === 'EXPERT' ? '/expert/messages' : '/traveler/messages';
 
-  const scrollToSection = (sectionId: string) => {
-    setMobileOpen(false);
-    if (location.pathname !== '/') {
-      navigate(`/#${sectionId}`);
-      return;
-    }
-    const elem = document.getElementById(sectionId);
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/explore', label: 'Explore' },
-    { id: 'destinations', label: 'Destinations', isScroll: true },
-    { id: 'packages', label: 'Packages', isScroll: true },
+    { to: '/destinations', label: 'Destinations' },
+    { to: '/packages', label: 'Packages' },
     { to: '/itinerary-planner', label: 'Itinerary & Budget' },
     { to: '/about', label: 'About' },
   ];
@@ -125,23 +113,11 @@ const Navbar: React.FC = () => {
           {/* Desktop Navigation Links */}
           <div className="hidden lg:flex items-center gap-7">
             {navLinks.map((item) => {
-              if (item.isScroll) {
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => scrollToSection(item.id!)}
-                    className="relative text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer py-1"
-                  >
-                    {item.label}
-                  </button>
-                );
-              }
-
               const isActive = location.pathname === item.to;
               return (
                 <Link
                   key={item.to}
-                  to={item.to!}
+                  to={item.to}
                   className={`relative text-xs font-bold transition-colors py-1 ${
                     isActive ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
                   }`}
@@ -330,18 +306,20 @@ const Navbar: React.FC = () => {
             >
               Explore
             </Link>
-            <button
-              onClick={() => scrollToSection('destinations')}
-              className="block w-full text-left py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            <Link
+              to="/destinations"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
             >
               Destinations
-            </button>
-            <button
-              onClick={() => scrollToSection('packages')}
-              className="block w-full text-left py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
+            </Link>
+            <Link
+              to="/packages"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-semibold text-slate-300 hover:text-cyan-400"
             >
               Packages
-            </button>
+            </Link>
             <Link
               to="/agent"
               onClick={() => setMobileOpen(false)}

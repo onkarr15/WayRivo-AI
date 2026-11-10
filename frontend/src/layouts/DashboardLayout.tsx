@@ -149,15 +149,23 @@ const DashboardLayout: React.FC = () => {
           </button>
 
           <div className="ml-auto flex items-center gap-4">
-            <div className="flex items-center gap-3 pl-3 py-1.5 pr-2 rounded-2xl bg-surface border border-border-light">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-sm">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
+            <Link
+              to={user?.role === 'ADMIN' ? '/admin/profile' : user?.role === 'EXPERT' ? '/expert/profile' : '/traveler/profile'}
+              className="flex items-center gap-3 pl-3 py-1.5 pr-3 rounded-2xl bg-surface border border-border-light hover:border-cyan-400/50 transition-colors group cursor-pointer"
+              title="View & Edit Profile / Photo"
+            >
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user?.name || 'User'} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
+                )}
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold text-white leading-tight">{user?.name || 'Traveler'}</p>
+                <p className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-tight">{user?.name || 'Traveler'}</p>
                 <p className="text-[10px] text-cyan-400 font-medium">{user?.role || 'MEMBER'}</p>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 

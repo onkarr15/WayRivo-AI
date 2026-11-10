@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userService, adminService } from '../../services';
 import {
@@ -12,6 +12,12 @@ import {
   Layers,
   DollarSign,
   Users,
+  Camera,
+  Upload,
+  Laptop,
+  Smartphone,
+  CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -21,12 +27,17 @@ import { useToast } from '../../components/ui/Toast';
 export const AdminProfile: React.FC = () => {
   const { user, updateUser, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(user?.name || '');
   const [email] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '+91 98000 00001');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [preferredCurrency, setPreferredCurrency] = useState(user?.preferredCurrency || 'INR');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [uploadSource, setUploadSource] = useState('');
 
   // Password Modal State
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
@@ -43,9 +54,88 @@ export const AdminProfile: React.FC = () => {
     if (user) {
       setName(user.name || '');
       setPhone(user.phone || '+91 98000 00001');
+      setAvatarUrl(user.avatarUrl || '');
       setPreferredCurrency(user.preferredCurrency || 'INR');
     }
   }, [user]);
+
+  // Handle device file upload (Laptop files & Mobile gallery / camera)
+  const processSelectedFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (PNG, JPG, WebP, etc.)');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Image file exceeds the 15MB size limit.');
+      return;
+    }
+
+    setIsProcessingImage(true);
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const img = new Image();
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxDim = 512;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const optimized = canvas.toDataURL('image/jpeg', 0.88);
+            setAvatarUrl(optimized);
+            setUploadSource(file.name);
+            toast.success(`Photo selected from device (${file.name})! Click Save Administrator Profile to apply.`);
+          } else {
+            setAvatarUrl(dataUrl);
+            setUploadSource(file.name);
+          }
+        } catch {
+          setAvatarUrl(dataUrl);
+          setUploadSource(file.name);
+        } finally {
+          setIsProcessingImage(false);
+        }
+      };
+
+      img.onerror = () => {
+        setIsProcessingImage(false);
+        toast.error('Failed to parse image from device.');
+      };
+
+      img.src = dataUrl;
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processSelectedFile(file);
+    }
+    e.target.value = '';
+  };
 
   useEffect(() => {
     async function loadLogs() {
@@ -76,9 +166,10 @@ export const AdminProfile: React.FC = () => {
         name,
         phone,
         preferredCurrency,
+        avatarUrl,
       });
       if (updateUser) {
-        updateUser({ ...user, name, phone, preferredCurrency });
+        updateUser({ ...user, name, phone, preferredCurrency, avatarUrl });
       }
       if (refreshProfile) {
         await refreshProfile();
@@ -127,12 +218,38 @@ export const AdminProfile: React.FC = () => {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 border border-purple-500/30 p-6 sm:p-8 shadow-2xl">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-purple-500/20 border border-purple-400/40 shrink-0">
-              {user?.name?.charAt(0).toUpperCase() || 'A'}
+            <div className="relative group shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-purple-500/20 border border-purple-400/40 overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={name || 'Administrator'} className="w-full h-full object-cover" />
+                ) : (
+                  user?.name?.charAt(0).toUpperCase() || 'A'
+                )}
+              </div>
+
+              {/* Hidden file input for native device library upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+                aria-label="Upload administrator profile photo from device library"
+              />
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:brightness-110 shadow-lg cursor-pointer transition-all border border-purple-300/40"
+                title="Upload administrator photo from device library (Laptop / Phone)"
+              >
+                <Camera className="w-3.5 h-3.5 text-white" />
+              </button>
             </div>
+
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-black text-white tracking-tight">{user?.name || 'Super Administrator'}</h1>
+                <h1 className="text-2xl font-black text-white tracking-tight">{name || user?.name || 'Super Administrator'}</h1>
                 <Badge variant="gold" size="sm">SUPER ADMIN</Badge>
                 <Badge variant="success" size="sm">LEVEL 4 CLEARANCE</Badge>
               </div>
@@ -144,6 +261,15 @@ export const AdminProfile: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 text-xs flex items-center gap-1.5"
+            >
+              <Camera className="w-3.5 h-3.5 text-purple-400" /> Change Profile Picture
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -209,6 +335,94 @@ export const AdminProfile: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              {/* Administrator Profile Photo Device Upload */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-purple-400" /> Administrator Profile Picture
+                  </label>
+                  <span className="text-[11px] text-slate-400 flex items-center gap-2">
+                    <span className="flex items-center gap-1"><Laptop className="w-3 h-3 text-purple-400" /> Laptop</span>
+                    <span>&bull;</span>
+                    <span className="flex items-center gap-1"><Smartphone className="w-3 h-3 text-purple-400" /> Phone Library</span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-purple-500/10 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-md">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Admin preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl font-black text-purple-400">
+                        {name ? name.charAt(0).toUpperCase() : 'A'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2 text-center sm:text-left">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isProcessingImage}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-purple-500/20"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isProcessingImage ? 'Optimizing photo...' : 'Upload Photo from Device'}</span>
+                      </button>
+
+                      {avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAvatarUrl('');
+                            setUploadSource('');
+                            toast.info('Administrator profile photo removed.');
+                          }}
+                          className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                        className="text-[11px] text-slate-400 hover:text-purple-300 underline cursor-pointer ml-1"
+                      >
+                        {showUrlInput ? 'Hide URL input' : 'Or paste image URL'}
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {uploadSource ? (
+                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Selected from device: {uploadSource}
+                        </span>
+                      ) : (
+                        'Upload administrator portrait from phone gallery, camera, or laptop files (JPG, PNG, WebP up to 15MB).'
+                      )}
+                    </p>
+
+                    {showUrlInput && (
+                      <div className="pt-2">
+                        <input
+                          type="url"
+                          value={avatarUrl}
+                          onChange={(e) => {
+                            setAvatarUrl(e.target.value);
+                            setUploadSource('');
+                          }}
+                          placeholder="https://example.com/admin-avatar.jpg"
+                          className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1.5">Administrator Full Name</label>

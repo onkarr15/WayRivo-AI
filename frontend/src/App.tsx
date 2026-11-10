@@ -10,7 +10,9 @@ import ProtectedRoute from './routes/ProtectedRoute';
 // Public pages
 import HomePage from './pages/public/HomePage';
 import MarketplacePage from './pages/public/MarketplacePage';
+import DestinationsPage from './pages/public/DestinationsPage';
 import DestinationDetailPage from './pages/public/DestinationDetailPage';
+import PackagesPage from './pages/public/PackagesPage';
 import AiTravelAgentPage from './pages/public/AiTravelAgentPage';
 import ExpertPublicProfile from './pages/public/ExpertPublicProfile';
 import HowItWorksPage from './pages/public/HowItWorksPage';
@@ -74,8 +76,9 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/explore" element={<MarketplacePage />} />
                 <Route path="/marketplace" element={<MarketplacePage />} />
-                <Route path="/destinations" element={<MarketplacePage />} />
+                <Route path="/destinations" element={<DestinationsPage />} />
                 <Route path="/destinations/:id" element={<DestinationDetailPage />} />
+                <Route path="/packages" element={<PackagesPage />} />
                 <Route path="/agent" element={<AiTravelAgentPage />} />
                 <Route path="/ai" element={<AiTravelAgentPage />} />
                 <Route path="/itinerary-planner" element={<ItineraryDashboard />} />

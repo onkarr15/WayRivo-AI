@@ -181,7 +181,16 @@ CORE OPERATIONAL RULES:
 2. SAFE BOOKINGS: Never claim a reservation is booked or payment is confirmed without explicit user payment. The create_booking_proposal tool creates an unconfirmed proposal in PENDING_PAYMENT state only.
 3. BUDGET TRANSPARENCY: Always call calculate_trip_budget to provide realistic, itemized expenditure breakdowns with a contingency buffer.
 4. STRUCTURED EXCELLENCE: Highlight selected hotels and activities clearly so the conversational UI can render interactive cards.
-5. CONVERSATIONAL TONE: Be warm, knowledgeable, concise, and proactive. Encourage travelers to customize or modify their trip.`;
+5. CONVERSATIONAL TONE: Be warm, knowledgeable, concise, and proactive. Encourage travelers to customize or modify their trip.
+6. NO HASHTAGS OR RAW MARKDOWN HEADINGS: Never use hashtags (#, ##, ###, ####) for headings or formatting in your responses. Present headings and section titles cleanly using bold text (e.g., **Recommended Destination**, **Verified Stays & Excursions**) or emojis instead.`;
+
+export function cleanHashtagsFromText(text: string): string {
+  if (!text) return '';
+  return text
+    .split('\n')
+    .map((line) => line.replace(/^#{1,6}\s*/, ''))
+    .join('\n');
+}
 
 export class AgentService {
   /**
@@ -384,6 +393,9 @@ export class AgentService {
         'Prepare Booking Proposal',
       ];
     }
+
+    // Sanitize any hashtags from the response text
+    responseText = cleanHashtagsFromText(responseText);
 
     // 3. Persist Assistant Response in PostgreSQL
     const assistantMessage = await prisma.message.create({
@@ -725,34 +737,34 @@ export class AgentService {
         : `Slightly exceeds target budget by ₹${Math.abs(budgetResult.remainingBalance || 0).toLocaleString('en-IN')}. Consider switching to a 3-star property.`;
 
     const hotelHighlight = selectedHotel
-      ? `• **Accommodation**: [${selectedHotel.name}](file:///D:/WayRivo_Hackathon/frontend/src/pages/public/MarketplacePage.tsx) (${selectedHotel.stars}★, ₹${selectedHotel.pricePerNight.toLocaleString('en-IN')}/night, ${selectedHotel.availableRooms} rooms available)`
-      : '• **Accommodation**: Curated boutique boutique stay matched to your travel style.';
+      ? `• **Accommodation**: **${selectedHotel.name}** (${selectedHotel.stars}★, ₹${selectedHotel.pricePerNight.toLocaleString('en-IN')}/night, ${selectedHotel.availableRooms} rooms available)`
+      : '• **Accommodation**: Curated boutique stay matched to your travel style.';
 
     const actHighlights = selectedActivities.length > 0
       ? selectedActivities.map((a: any) => `• **Curated Excursion**: ${a.title} (${a.category}, ₹${a.pricePerPerson.toLocaleString('en-IN')}/person, ${a.availableSlots} slots remaining)`).join('\n')
       : '• **Activities**: Scenic beach exploration, sunset viewpoints, and regional artisan markets.';
 
-    const reply = `### 🌟 Your Personalized ${duration}-Day ${destName} Travel Plan
+    const reply = `🌟 **Your Personalized ${duration}-Day ${destName} Travel Plan**
 
 I have analyzed your request for **${travelers} traveler(s)** and queried our live database inventory.
 
-#### 📍 Recommended Destination
+📍 **Recommended Destination**
 **${destName}** (${destObj?.state || 'India'})
 ${destObj?.description || 'A world-class destination offering rich heritage, vibrant coastal sights, and serene vistas.'}
 *Best time to visit*: **${destObj?.bestTimeToVisit || 'October to March'}**.
 
-#### 🏨 Verified Stays & Excursions
+🏨 **Verified Stays & Excursions**
 ${hotelHighlight}
 ${actHighlights}
 
-#### 📊 Live Budget Breakdown (Total: ${totalCostStr})
+📊 **Live Budget Breakdown (Total: ${totalCostStr})**
 - **Stay**: ₹${budgetResult.breakdown?.accommodation?.toLocaleString('en-IN')} (${budgetResult.breakdownPercentage?.accommodation || 45}%)
 - **Activities**: ₹${budgetResult.breakdown?.activities?.toLocaleString('en-IN')} (${budgetResult.breakdownPercentage?.activities || 20}%)
 - **Dining**: ₹${budgetResult.breakdown?.mealsAndDining?.toLocaleString('en-IN')} (${budgetResult.breakdownPercentage?.mealsAndDining || 25}%)
 - **Transport**: ₹${budgetResult.breakdown?.localTransport?.toLocaleString('en-IN')} (${budgetResult.breakdownPercentage?.localTransport || 10}%)
 *Status*: **${budgetResult.budgetStatus}** — ${budgetStatusNote}
 
-#### 🗓️ Day-by-Day Itinerary Preview
+🗓️ **Day-by-Day Itinerary Preview**
 Check the interactive **Itinerary Preview** below. You can save this plan to your account or prepare an unconfirmed booking proposal locked with PayPal Escrow protection!`;
 
     richMetadata.suggestedActions = [

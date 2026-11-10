@@ -227,9 +227,24 @@ const TravelerDashboard: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> WayRivo AI Traveler Portal
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Welcome back, <span className="text-gradient-cyan">{user?.name || 'Traveler'}</span> 👋
-            </h1>
+            <div className="flex items-center gap-3.5 pt-1">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name || 'Traveler'}
+                  className="w-12 h-12 rounded-2xl object-cover border-2 border-cyan-400/40 shadow-lg shadow-cyan-500/10 shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border-2 border-cyan-500/30 text-cyan-300 font-extrabold flex items-center justify-center text-lg shadow-lg shrink-0">
+                  {user?.name?.charAt(0).toUpperCase() || 'T'}
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                  Welcome back, <span className="text-gradient-cyan">{user?.name || 'Traveler'}</span> 👋
+                </h1>
+              </div>
+            </div>
             <p className="text-xs sm:text-sm text-slate-400 max-w-xl">
               Track your upcoming journeys, inspect escrow transactions, resume AI trip planning dialogues, and customize personal travel preferences.
             </p>
@@ -1373,10 +1388,10 @@ const TravelerDashboard: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-3">
                 <div>
                   <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Profile
+                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" /> Edit Profile & Photo
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Update your personal and account information.
+                    Update personal details, upload photo from device library, or customize travel style.
                   </p>
                 </div>
                 <button
@@ -1384,7 +1399,7 @@ const TravelerDashboard: React.FC = () => {
                   onClick={() => navigate('/traveler/profile?edit=true')}
                   className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
                 >
-                  Edit Profile
+                  Edit Profile & Photo
                 </button>
               </div>
 

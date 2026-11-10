@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services';
@@ -17,6 +17,9 @@ import {
   Edit3,
   Trash2,
   X,
+  Upload,
+  Laptop,
+  Smartphone,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -85,6 +88,101 @@ const TravelerProfile: React.FC = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
   const [profileError, setProfileError] = useState('');
+
+  // Device Library Photo Upload State (Laptop / Mobile / Phone)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState<boolean>(false);
+  const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
+  const [uploadSource, setUploadSource] = useState<string>('');
+
+  const processSelectedFile = (file: File) => {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file (JPEG, PNG, WebP).');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Selected image exceeds the 15MB size limit.');
+      return;
+    }
+
+    setIsProcessingImage(true);
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setIsProcessingImage(false);
+      toast.error('Could not read image from device.');
+    };
+
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) {
+        setIsProcessingImage(false);
+        return;
+      }
+
+      // Optimize image via Canvas to max 512px
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxDim = 512;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const optimized = canvas.toDataURL('image/jpeg', 0.88);
+            setAvatarUrl(optimized);
+            setUploadSource(file.name);
+            toast.success(`Photo selected from device (${file.name})! Click Save Profile to apply.`);
+          } else {
+            setAvatarUrl(dataUrl);
+            setUploadSource(file.name);
+          }
+        } catch {
+          setAvatarUrl(dataUrl);
+          setUploadSource(file.name);
+        } finally {
+          setIsProcessingImage(false);
+        }
+      };
+
+      img.onerror = () => {
+        setIsProcessingImage(false);
+        toast.error('Failed to parse image from device.');
+      };
+
+      img.src = dataUrl;
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processSelectedFile(file);
+    }
+    e.target.value = '';
+  };
 
   // Password modal state
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
@@ -285,19 +383,31 @@ const TravelerProfile: React.FC = () => {
               name.charAt(0).toUpperCase() || 'T'
             )}
           </div>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={() => {
-                const url = prompt('Enter image URL for your profile picture:', avatarUrl);
-                if (url !== null) setAvatarUrl(url);
-              }}
-              className="absolute -bottom-1 -right-1 p-1.5 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 shadow-md cursor-pointer"
-              title="Change avatar image URL"
-            >
-              <Camera className="w-3.5 h-3.5" />
-            </button>
-          )}
+          {/* Hidden File Input for Device Library (Laptop, iPhone, Android) */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+            aria-label="Upload profile photo from device library"
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!isEditing) {
+                setIsEditing(true);
+                setTimeout(() => fileInputRef.current?.click(), 80);
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}
+            className="absolute -bottom-1 -right-1 p-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 hover:brightness-110 shadow-lg cursor-pointer transition-all border border-cyan-300/40"
+            title="Upload photo from device library (Laptop / Phone)"
+          >
+            <Camera className="w-4 h-4 text-slate-950" />
+          </button>
         </div>
 
         <div className="flex-1 text-center sm:text-left space-y-1.5">
@@ -390,17 +500,98 @@ const TravelerProfile: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Profile Picture URL
-                </label>
-                <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-white text-xs focus:outline-none focus:border-cyan-400"
-                />
+              {/* Profile Photo Device Upload Block */}
+              <div className="sm:col-span-2 p-4 rounded-2xl bg-surface border border-border/80 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-cyan-400" /> Profile Picture
+                  </label>
+                  <span className="text-[11px] text-slate-400 flex items-center gap-2">
+                    <span className="flex items-center gap-1">
+                      <Laptop className="w-3 h-3 text-cyan-400" /> Laptop
+                    </span>
+                    <span>&bull;</span>
+                    <span className="flex items-center gap-1">
+                      <Smartphone className="w-3 h-3 text-cyan-400" /> Phone Library
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+                  {/* Avatar Preview Thumbnail */}
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0 shadow-md">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl font-black text-cyan-400">
+                        {name ? name.charAt(0).toUpperCase() : 'T'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions & Description */}
+                  <div className="flex-1 space-y-2 text-center sm:text-left">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isProcessingImage}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-cyan-400 hover:to-teal-300 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-cyan-500/20"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isProcessingImage ? 'Optimizing photo...' : 'Upload Photo from Device'}</span>
+                      </button>
+
+                      {avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAvatarUrl('');
+                            setUploadSource('');
+                            toast.info('Profile picture cleared.');
+                          }}
+                          className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove Photo</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                        className="text-[11px] text-slate-400 hover:text-cyan-300 underline cursor-pointer ml-1"
+                      >
+                        {showUrlInput ? 'Hide URL input' : 'Or enter image URL'}
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {uploadSource ? (
+                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Selected from device: {uploadSource}
+                        </span>
+                      ) : (
+                        'Upload directly from your phone photo gallery, camera, or laptop files (JPG, PNG, WebP up to 15MB).'
+                      )}
+                    </p>
+
+                    {showUrlInput && (
+                      <div className="pt-2">
+                        <input
+                          type="url"
+                          value={avatarUrl}
+                          onChange={(e) => {
+                            setAvatarUrl(e.target.value);
+                            setUploadSource('');
+                          }}
+                          placeholder="https://example.com/avatar.jpg"
+                          className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-cyan-400"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div>
