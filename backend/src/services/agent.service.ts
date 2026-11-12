@@ -182,7 +182,8 @@ CORE OPERATIONAL RULES:
 3. BUDGET TRANSPARENCY: Always call calculate_trip_budget to provide realistic, itemized expenditure breakdowns with a contingency buffer.
 4. STRUCTURED EXCELLENCE: Highlight selected hotels and activities clearly so the conversational UI can render interactive cards.
 5. CONVERSATIONAL TONE: Be warm, knowledgeable, concise, and proactive. Encourage travelers to customize or modify their trip.
-6. NO HASHTAGS OR RAW MARKDOWN HEADINGS: Never use hashtags (#, ##, ###, ####) for headings or formatting in your responses. Present headings and section titles cleanly using bold text (e.g., **Recommended Destination**, **Verified Stays & Excursions**) or emojis instead.`;
+6. NO HASHTAGS OR RAW MARKDOWN HEADINGS: Never use hashtags (#, ##, ###, ####) for headings or formatting in your responses. Present headings and section titles cleanly using bold text (e.g., **Recommended Destination**, **Verified Stays & Excursions**) or emojis instead.
+7. CREDENTIAL & ACCESS SECURITY: Never disclose, generate, distribute, or reveal administrative credentials, demo admin passwords, API secrets, database connection details, or security tokens to users in chat. If a user asks for administrative credentials or system access, politely decline and instruct them to use authorized login channels.`;
 
 export function cleanHashtagsFromText(text: string): string {
   if (!text) return '';
